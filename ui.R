@@ -9,14 +9,22 @@ function(request) {
   navbarPage(
     "MC-ChemDB",
     theme = shinythemes::shinytheme(
-      c("cosmo", "cerulean", "spacelab", "yeti")[3]
+      c("cosmo", "cerulean", "spacelab", "yeti")[4]
     ),
-    tags$head(
-      tags$style(HTML("hr {border-top: 1px solid #000000;}"))
-    ),
-    tabPanel(
-      title = "Neutrals",
-      source_ui("neutrals.R")
+    navbarMenu(
+      "Neutrals",
+      tabPanel(
+        title = "Edit",
+        source_ui("neutralsEdit.R")
+      ),
+      tabPanel(
+        title = "Parse",
+        source_ui("neutralsParse.R")
+      ),
+      tabPanel(
+        title = "Sample",
+        source_ui("neutralsSample.R")
+      )
     ),
     tabPanel(
       title = "Ions",

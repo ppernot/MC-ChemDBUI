@@ -1,3 +1,3 @@
-# MC_ChemDBUI
+# MC-ChemDBUI
 
-UI for MC_ChemDB
+UI for MC-ChemDB

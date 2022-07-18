@@ -11,7 +11,7 @@ output$selNeuVersion = shiny::renderUI({
         list.dirs(
           path=neutralsSource, 
           full.names = FALSE, 
-          recursive = FALSE)
+          recursive  = FALSE)
       )
     )
   )
@@ -66,5 +66,17 @@ shiny::observe({
   shinyAce::updateAceEditor(
     session, "ace", 
     value = paste(neutralsReacs(),collapse = '\n')
+  )
+})
+
+output$checkSpecies <- renderText({ 
+  req(input$ace_cursor)
+  sp = input$ace_selection
+  compo = get.atoms(sp, stoechFilters = stoechFilters)
+  names(compo) = elements
+  mass  = massFormula(compo)
+  paste0(
+    "Selection: \"", sp, "\"\n",
+    "Mass= ", mass
   )
 })

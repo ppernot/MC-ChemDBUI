@@ -25,5 +25,13 @@ gPars = ErrViewLib::setgPars('shiny')
 gPars$cex = 1.5
 gPars$mar[3] = 2
 
-# Data paths ###
-neutralsSource = file.path('.','Neutrals','Source')
+# Data paths ####
+neutralsSource = file.path('..','MC-ChemDB','Neutrals','Source')
+
+# Load data and functions ####
+source('R/massCalc.R')
+elements      = unlist(read.csv("data/elements.csv", header = FALSE))
+massElem      = CHNOSZ::mass(elements)
+dummySpecies  = unlist(read.csv("data/dummySpecies.csv", header = FALSE))
+stoechFilters = read.csv("data/stoechFilters.csv", header = FALSE)
+

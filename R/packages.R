@@ -5,7 +5,7 @@
 # libs <- c(
 #   "devtools", "boot",
 #   "shiny", "shinyFiles","shinycssloaders",
-#   "data.table"
+#   "data.table","CHNOSZ"
 #
 # )
 # for (lib in libs) {
@@ -30,3 +30,4 @@ library("shinycssloaders")
 library("boot")
 library("ErrViewLib")
 library("data.table")
+library("CHNOSZ")
