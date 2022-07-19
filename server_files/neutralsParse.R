@@ -140,8 +140,10 @@ observeEvent(
     colnames(compo)=elements
     mass  = apply(compo,1,massFormula)
     names(mass) = species
-    dummyMass   = round(max(mass,na.rm=TRUE)+2)
-    mass[dummySpecies] = dummyMass    
+    # Dummy mass for dummy species
+    dummyMass = round(max(mass,na.rm=TRUE))+2
+    dum = dummySpecies[dummySpecies %in% species]
+    mass[dum] = dummyMass    
     
     if(any(is.na(mass))) {
       sp = names(mass[is.na(mass)])
@@ -222,21 +224,29 @@ output$tabScheme = DT::renderDT(
     } else {
       # Species-specific reaction list
       nOK = 0
-      for (i in 1:nbReac)
-        if (input$targetSpecies %in% reactants[[i]] ||
-            input$targetSpecies %in% products[[i]]) {
+      for (i in 1:nbReac) {
+        if(input$targetSpeciesKind == "Reactant") {
+          filter = input$targetSpecies %in% reactants[[i]] 
+        } else if(input$targetSpeciesKind == "Product"){
+          filter =input$targetSpecies %in% products[[i]]
+        } else {
+          filter = input$targetSpecies %in% reactants[[i]] ||
+            input$targetSpecies %in% products[[i]]
+        }
+        if(filter) {
           dat = rbind(dat, formatReac(
             reactants[[i]],products[[i]],params[[i]],type[[i]]
           ))
           nOK = nOK +1
         }
+      }
       if (nOK == 0)
-          id = shiny::showNotification(
-            h4(paste0('Species not in scheme: ', input$targetSpecies)),
-            closeButton = TRUE,
-            duration = NULL,
-            type = 'warning'
-          )
+        id = shiny::showNotification(
+          h4(paste0('Species not in scheme: ', input$targetSpecies)),
+          closeButton = TRUE,
+          duration = NULL,
+          type = 'warning'
+        )
     }
     
     return(dat[-1, ])
@@ -282,6 +292,11 @@ output$massScheme = DT::renderDT(
     dom         = 'Btip',
     deferRender = TRUE,
     scrollY     = 600,
-    scroller    = TRUE
+    scroller    = TRUE,
+    autoWidth   = TRUE,
+    columnDefs  = list(
+      list(width = '100px', targets = 0),
+      list(className = 'dt-center', targets = 0)
+    )
   )
 )

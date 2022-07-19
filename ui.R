@@ -9,7 +9,7 @@ function(request) {
   navbarPage(
     "MC-ChemDB",
     theme = shinythemes::shinytheme(
-      c("cosmo", "cerulean", "spacelab", "yeti")[4]
+      c("cosmo", "cerulean", "spacelab", "yeti")[3]
     ),
     navbarMenu(
       "Neutrals",

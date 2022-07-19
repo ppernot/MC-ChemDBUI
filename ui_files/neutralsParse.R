@@ -8,20 +8,39 @@ tabPanel(
         "neutralsParseBtn",
         label = "Parse",
         icon  = icon('gear',verify_fa = FALSE)
-      ),
-      hr(),
-      textInput(
-        "targetSpecies",
-        label = NULL,
-        value = NA,
-        placeholder = "Select species"
       )
     ),
     mainPanel(
       width = mainWidth,
       tabsetPanel(
         tabPanel(
-          title = "Reactions", 
+          "Reactions",
+          br(),
+          fluidRow(
+            column(
+              3,
+              textInput(
+                "targetSpecies",
+                label = NULL,
+                value = NA,
+                placeholder = "Filter by species"
+              )
+            ),
+            column(
+              6,
+              radioButtons(
+                "targetSpeciesKind",
+                label = "",
+                choices = c(
+                  "Reactant" = "Reactant",
+                  "Product" = "Product",
+                  "Both" = "Both"
+                ),
+                selected = "Both",
+                inline = TRUE
+              )
+            )
+          ),
           DT::DTOutput("tabScheme")
         ),
         tabPanel(
