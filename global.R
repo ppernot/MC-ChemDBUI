@@ -15,7 +15,7 @@ source("R/packages.R")
 # Proportions of Side/Main Panels ####
 sideWidth  <- 3
 mainWidth  <- 12 - sideWidth
-plotHeight <- 550
+plotHeight <- 600
 plotWidth  <- 550
 
 # Graphical parameters ####

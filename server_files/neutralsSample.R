@@ -127,12 +127,58 @@ output$plotRate = renderPlot({
   req(input$reacNbPlot)
   iReac = as.numeric(input$reacNbPlot)
 
-  # req(reacScheme())
-  # nbReac    = reacScheme()$nbReac
-  # reactants = reacScheme()$reactants
-  # products  = reacScheme()$products
-  # params    = reacScheme()$params
-  # type      = reacScheme()$type
+  req(reacScheme())
+  reac0   = reacScheme()$reactants[[iReac]]
+  prod0   = reacScheme()$products[[iReac]]
+  params0 = reacScheme()$params[[iReac]]
+  typ0    = reacScheme()$type[[iReac]]
+
+  tag  = paste0(
+    'Reac. ',iReac, ': ',
+    paste0(reac0, collapse = ' + '),' --> ',
+    paste0(prod0, collapse = ' + ')
+  )
+  legText = paste0(tag, '\n', 'Rate law: ', typ0)
+  legText = switch(
+    typ0,
+    kooij    = paste0(
+      legText,
+      '\n',
+      'Parameters: ',
+      paste0(params0[1:5],
+             collapse = ' / '),
+      '\n'
+    ),
+    assocMD  = paste0(
+      legText,
+      '\n',
+      'Parameters Fc : ', params0[16],'\n',
+      'Parameters k0 : ',
+      paste0(params0[1:5], collapse = ' / '),
+      '\n',
+      'Parameters kInf : ',
+      paste0(params0[6:10], collapse = ' / '),
+      '\n',
+      'Parameters kr : ',
+      paste0(params0[11:15], collapse = ' / '),
+      '\n'
+    ),
+    assocVV  = paste0(
+      legText,
+      '\n',
+      'Parameters Fc : ', params0[16],'\n',
+      'Parameters kInf : ',
+      paste0(params0[1:5], collapse = ' / '),
+      '\n',
+      'Parameters k0 : ',
+      paste0(params0[6:10], collapse = ' / '),
+      '\n',
+      'Parameters kR : ',
+      paste0(params0[11:15], collapse = ' / '),
+      '\n'
+    ),
+    legText
+  )
   
   # Samples directory
   neutralsSampleDir = paste0(neutralsPublic,'_',neutralsVersion())
@@ -157,22 +203,17 @@ output$plotRate = renderPlot({
     irun = irun + 1
     
     # Get params and generate tags
-    scheme  = read.csv(file = file,
-                       skip = iReac-1,
-                       nrows = 1,
-                       header = FALSE,
-                       sep = ';')
+    scheme  = read.csv(
+      file = file,
+      skip = iReac-1,
+      nrows = 1,
+      header = FALSE,
+      sep = ';'
+    )
     scheme  = gsub(" ", "", scheme)
-    terms = scheme[1:3]
-    reactants = terms[!is.na(terms) & terms != ""]
-    terms = scheme[4:7]
-    products = terms[!is.na(terms) & terms != ""]
-    terms = scheme[8:23]
-    params = terms[!is.na(terms) & terms != ""]
-    type = scheme[ 24]
-    
-    
-    pars = as.numeric(params)
+    params = scheme[8:23]
+    pars   = as.numeric(params)
+    type   = scheme[ 24]
     
     krateT[,irun] = switch(
       type,
@@ -196,62 +237,6 @@ output$plotRate = renderPlot({
   }
   
   # Plot 
-  tag  = paste0(
-    iReac,
-    ': ',
-    paste0(reactants, collapse =
-             '+'),
-    '->',
-    paste0(products, collapse = '+')
-  )
-  legText = paste0(tag, '\n',
-                   'Rate law: ', type)
-  
-  legText = switch(
-    type,
-    kooij    = paste0(
-      legText,
-      '\n',
-      'Parameters: ',
-      paste0(params[1:5],
-             collapse = ' / '),
-      '\n'
-    ),
-    assocMD  = paste0(
-      legText,
-      '\n',
-      'Parameters Fc : ',
-      params[16],
-      '\n',
-      'Parameters k0 : ',
-      paste0(params[1:5], collapse = ' / '),
-      '\n',
-      'Parameters kInf : ',
-      paste0(params[6:10], collapse = ' / '),
-      '\n',
-      'Parameters kr : ',
-      paste0(params[11:15], collapse = ' / '),
-      '\n'
-    ),
-    assocVV  = paste0(
-      legText,
-      '\n',
-      'Parameters Fc : ',
-      params[16],
-      '\n',
-      'Parameters kInf : ',
-      paste0(params[1:5], collapse = ' / '),
-      '\n',
-      'Parameters k0 : ',
-      paste0(params[6:10], collapse = ' / '),
-      '\n',
-      'Parameters kR : ',
-      paste0(params[11:15], collapse = ' / '),
-      '\n'
-    ),
-    legText
-  )
-  
   col2tr = function(x, alpha = 80) {
     rgb(unlist(t(col2rgb(x))), alpha = alpha, maxColorValue = 255)
   }
@@ -259,8 +244,10 @@ output$plotRate = renderPlot({
   
   par(
     mfrow = c(1, 2),
-    mar = c(4, 4, 10, 2),
-    cex = 1
+    mar = c(3, 3, 8, 2),
+    mgp = c(2,.75,0),
+    tcl = -0.5,
+    cex = 1.5
   )
   
   tempRange = tRange
@@ -274,18 +261,18 @@ output$plotRate = renderPlot({
       lwd = 3,
       log = 'y',
       xlab = 'T [K]',
-      ylab = 'rate ct. [cm^3.s^-1]',
+      ylab = 'Rate constant [cm^3.s^-1]',
       main = ''
     )
     lines(tempRange, krateT[, 1], col = 'red', lwd = 3)
     grid(col = 'darkgray')
-    legend('topright',title = 'M = 1e18 cm^-3', legend = NA, bty='n')
+    legend('top',title = paste0('M = ',M0,'cm^-3'), legend = NA, bty='n')
     mtext(
       legText,
       side = 3,
       cex = 1.5,
       adj = 0,
-      line = 9,
+      line = 7,
       padj = 1,
       col = 'darkgreen'
     )
@@ -303,12 +290,12 @@ output$plotRate = renderPlot({
       lwd = 3,
       log = 'xy',
       xlab = 'M [cm^-3]',
-      ylab = 'rate ct. [cm^3.s^-1]',
+      ylab = 'Rate constant [cm^3.s^-1]',
       main = ''
     )
     lines(mRange, krateM[, 1], col = 'red', lwd = 3)
     grid(col = 'darkgray')
-    legend('topright',title = 'T = 150 K', legend = NA, bty='n')
+    legend('top',title = paste0('T = ',T0,' K'), legend = NA, bty='n')
     box(lwd = 4)
   }  
 
