@@ -7,56 +7,26 @@ tabPanel(
       selectInput(
         'sampleSize',
         label    = '# MC samples (0: nominal)',
-        choices  = seq(0,1000,by=100),
-        selected = 500
+        choices  = c(seq(0,100,by=10),seq(200,1000,by = 100)),
+        selected = 0
       ),
       actionButton(
         "neutralsSampleBtn",
         label = "Generate",
         icon  = icon('gear',verify_fa = FALSE)
+      ),
+      wellPanel(
+        textInput(
+          "reacNbPlot",
+          label = NULL,
+          value = NULL,
+          placeholder = "Enter reac. number"
+        )
       )
     ),
     mainPanel(
       width = mainWidth,
-      # tabsetPanel(
-      #   tabPanel(
-      #     "Reactions",
-      #     br(),
-      #     fluidRow(
-      #       column(
-      #         3,
-      #         textInput(
-      #           "targetSpecies",
-      #           label = NULL,
-      #           value = NA,
-      #           placeholder = "Filter by species"
-      #         )
-      #       ),
-      #       column(
-      #         6,
-      #         radioButtons(
-      #           "targetSpeciesKind",
-      #           label = "",
-      #           choices = c(
-      #             "Reactant" = "Reactant",
-      #             "Product" = "Product",
-      #             "Both" = "Both"
-      #           ),
-      #           selected = "Both",
-      #           inline = TRUE
-      #         )
-      #       )
-      #     ),
-      #     DT::DTOutput("tabScheme")
-      #   ),
-      #   tabPanel(
-      #     title = "Checks",
-      #     # h4("Species with no mass"),
-      #     # verbatimTextOutput("spNoMass"),
-      #     h4("Species per mass"),
-      #     DT::DTOutput("massScheme")
-      #   )
-      # )
+      plotOutput("plotRate")
     )
   )
 )

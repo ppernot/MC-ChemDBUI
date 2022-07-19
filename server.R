@@ -4,7 +4,7 @@ function(input, output, session) {
   files <- c(
     "neutralsEdit.R" ,
     "neutralsParse.R" ,
-    # "neutralsSample.R" ,
+    "neutralsSample.R",
     "ions.R",
     "photo.R"
   )
