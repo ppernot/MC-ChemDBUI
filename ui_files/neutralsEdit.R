@@ -4,8 +4,27 @@ tabPanel(
     sidebarPanel(
       width = sideWidth,
       h4("Neutrals - Edit",.noWS = "outside"),
-      uiOutput("selNeuVersion"),
+      fluidRow(
+        column(
+          6,
+          uiOutput("selNeuOrigVersion"),
+        ),
+        column(
+          6,
+          textInput(
+            "neuCopyVersion",
+            "Target DB Version:",
+            value = NULL,
+            placeholder = "v_X.X"
+          )
+        )
+      ),
       uiOutput("selNeuFile"),
+      actionButton(
+        "neuSave",
+        "Save",
+        icon = icon('save',verify_fa = FALSE)
+      ),
       h5("Check Species Mass"),
       verbatimTextOutput("checkSpecies", placeholder = TRUE)
     ),

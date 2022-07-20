@@ -4,12 +4,30 @@ tabPanel(
     sidebarPanel(
       width = sideWidth,
       h4("Neutrals - Parse"),
-      actionButton(
-        "neutralsParseBtn",
-        label = "Parse",
-        icon  = icon('gear',verify_fa = FALSE),
-        class = "btn-primary"
-      )
+      fluidRow(
+        column(
+          3,offset = 8,
+          actionButton(
+            "neutralsParseBtn",
+            label = "Parse !",
+            icon  = icon('gear',verify_fa = FALSE),
+            class = "btn-primary"
+          )
+        )
+      ),
+      br(),br(),
+      wellPanel(
+        h4("About",.noWS = "before"),
+        HTML("Parse the data files to extract and check information
+             (reactants, products, rate law type, parameters...).
+             The reactions are checked for mass balance.<br>
+             The reaction list might be filtered by species,
+             either as reactant, product or both.<br>
+             A complementary check is provided as a list of species
+             sorted by mass. All isomers or states of a species should 
+             fall at the same mass.
+             ")
+      )  
     ),
     mainPanel(
       width = mainWidth,
@@ -19,7 +37,7 @@ tabPanel(
           br(),
           fluidRow(
             column(
-              3,
+              2,
               textInput(
                 "targetSpecies",
                 label = NULL,
@@ -28,7 +46,7 @@ tabPanel(
               )
             ),
             column(
-              6,
+              8,
               radioButtons(
                 "targetSpeciesKind",
                 label = "",
@@ -46,9 +64,7 @@ tabPanel(
         ),
         tabPanel(
           title = "Checks",
-          # h4("Species with no mass"),
-          # verbatimTextOutput("spNoMass"),
-          h4("Species per mass"),
+          h4("Species vs. mass"),
           DT::DTOutput("massScheme")
         )
       )

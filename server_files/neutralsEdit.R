@@ -1,12 +1,13 @@
-neutralsVersion = shiny::reactiveVal()
-neutralsFile    = shiny::reactiveVal()
-neutralsReacs   = shiny::reactiveVal()
+neutralsOrigVersion = shiny::reactiveVal()
+neutralsCopyVersion = shiny::reactiveVal()
+neutralsFile        = shiny::reactiveVal()
+neutralsReacs       = shiny::reactiveVal()
 
-output$selNeuVersion = shiny::renderUI({
+output$selNeuOrigVersion = shiny::renderUI({
   list(
     shiny::selectInput(
-      "neuVersion",
-      "Neutrals DB Version:",
+      "neuOrigVersion",
+      "Source DB Version:",
       rev(
         list.dirs(
           path=neutralsSource, 
@@ -18,14 +19,14 @@ output$selNeuVersion = shiny::renderUI({
 })
 
 output$selNeuFile = shiny::renderUI({
-  req(neutralsVersion())
+  req(neutralsOrigVersion())
   list(
     shiny::selectInput(
       "neuFile",
       "Neutrals DB File:",
       c("Choose a file..." = "",
         list.files(
-          path=file.path(neutralsSource,neutralsVersion()), 
+          path=file.path(neutralsSource,neutralsOrigVersion()), 
           full.names = FALSE, 
           recursive = FALSE)
       )
@@ -34,7 +35,11 @@ output$selNeuFile = shiny::renderUI({
 })
 
 shiny::observe({
-  neutralsVersion(input$neuVersion)
+  neutralsOrigVersion(input$neuOrigVersion)
+})
+
+shiny::observe({
+  neutralsCopyVersion(input$neuCopyVersion)
 })
 
 shiny::observe({
@@ -42,13 +47,13 @@ shiny::observe({
 })
 
 shiny::observe({
-  req(neutralsVersion())
+  req(neutralsOrigVersion())
   req(neutralsFile())
   neutralsReacs(
     readLines(
       con <- file(file.path(
         neutralsSource,
-        neutralsVersion(),
+        neutralsOrigVersion(),
         neutralsFile()
       ))
     )
@@ -58,7 +63,7 @@ shiny::observe({
 
 output$neuHeader = shiny::renderUI({
   list(
-    h4(file.path(neutralsVersion(),neutralsFile()))
+    h4(file.path(neutralsOrigVersion(),neutralsFile()))
   )
 })
   
@@ -80,3 +85,39 @@ output$checkSpecies <- renderText({
     "Mass= ", mass
   )
 })
+
+shiny::observeEvent(
+  input$neuSave,
+  {
+    req(neutralsCopyVersion())
+   
+    # Make copy of source directory
+    neutralsOrigDir = file.path(neutralsSource,neutralsOrigVersion())
+    neutralsCopyDir = file.path(neutralsSource,neutralsCopyVersion())
+    if(!dir.exists(neutralsCopyDir))
+      dir.create(neutralsCopyDir)
+    files = list.files(path=neutralsOrigDir)
+    for(file in files)
+      file.copy(
+        from = file.path(neutralsOrigDir,file),
+        to   = file.path(neutralsCopyDir,file),
+        overwrite = TRUE
+      )
+    id = shiny::showNotification(
+      h4(paste0('Created version: ', neutralsCopyVersion())),
+      closeButton = FALSE,
+      duration = 5
+    )
+    # Save modified file to target version
+    data = isolate(input$ace)
+    writeLines(
+      data,
+      con = file.path(neutralsCopyDir,neutralsFile())
+    )
+    id = shiny::showNotification(
+      h4(paste0('Saved file: ', neutralsFile())),
+      closeButton = FALSE,
+      duration = 5
+    )
+  }
+)

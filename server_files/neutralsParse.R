@@ -264,6 +264,7 @@ output$tabScheme = DT::renderDT(
     return(dat)
   },
   rownames = TRUE,
+  colnames = c('Id.' = 1),
   extensions = c('Scroller'),
   options = list(
     dom         = 'Btip',
