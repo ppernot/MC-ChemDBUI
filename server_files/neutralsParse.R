@@ -1,5 +1,6 @@
-reacScheme = reactiveVal(NULL)
-reacDf     = reactiveVal(NULL)
+neutralsVersion = reactiveVal()
+reacScheme      = reactiveVal(NULL)
+reacDf          = reactiveVal(NULL)
 
 # id = shiny::showNotification(
 #   h4(paste0('Processing ',filename)),
@@ -8,6 +9,24 @@ reacDf     = reactiveVal(NULL)
 #   type = 'message'
 # )
 
+output$selNeuVersion = shiny::renderUI({
+  list(
+    shiny::selectInput(
+      "neuVersion",
+      "Source DB Version:",
+      rev(
+        list.dirs(
+          path=neutralsSource, 
+          full.names = FALSE, 
+          recursive  = FALSE)
+      )
+    )
+  )
+})
+
+shiny::observe({
+  neutralsVersion(input$neuVersion)
+})
 
 observeEvent(
   input$neutralsParseBtn,

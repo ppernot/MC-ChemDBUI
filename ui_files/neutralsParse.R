@@ -4,18 +4,27 @@ tabPanel(
     sidebarPanel(
       width = sideWidth,
       h4("Neutrals - Parse"),
+      br(),
       fluidRow(
         column(
-          3,offset = 8,
+          8,
+          uiOutput("selNeuVersion"),
+        ),
+        column(
+          4,
           actionButton(
             "neutralsParseBtn",
             label = "Parse !",
             icon  = icon('gear',verify_fa = FALSE),
             class = "btn-primary"
+          ),
+          tags$style(
+            type='text/css',
+            "#neutralsParseBtn { width:100%; margin-top: 20px;}"
           )
         )
       ),
-      br(),br(),
+      br(),
       wellPanel(
         h4("About",.noWS = "before"),
         HTML("Parse the data files to extract and check information
