@@ -12,7 +12,7 @@ calcAtoms = function(formula) {
   compo = matrix(0, nrow = 1, ncol = length(elements))
   colnames(compo) = elements
   if (!(formula %in% c("E","HV"))) { # Mass = 0
-    atoms = CHNOSZ::i2A(formula)
+    atoms = suppressWarnings(CHNOSZ::i2A(formula))
     compo[1, colnames(atoms)] = atoms
   }
   return(compo[1, ])

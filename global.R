@@ -38,7 +38,9 @@ stoechFilters = read.csv("data/stoechFilters.csv", header = FALSE)
 
 source('R/rateFormulas.R')
 
-
+col2tr = function(x, alpha = 80) {
+  rgb(unlist(t(col2rgb(x))), alpha = alpha, maxColorValue = 255)
+}
 
 
 

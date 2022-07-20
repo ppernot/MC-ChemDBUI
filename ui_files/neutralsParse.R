@@ -7,7 +7,8 @@ tabPanel(
       actionButton(
         "neutralsParseBtn",
         label = "Parse",
-        icon  = icon('gear',verify_fa = FALSE)
+        icon  = icon('gear',verify_fa = FALSE),
+        class = "btn-primary"
       )
     ),
     mainPanel(

@@ -132,6 +132,7 @@ output$plotRate = renderPlot({
   prod0   = reacScheme()$products[[iReac]]
   params0 = reacScheme()$params[[iReac]]
   typ0    = reacScheme()$type[[iReac]]
+  note    = reacScheme()$notes[[iReac]]
 
   tag  = paste0(
     'Reac. ',iReac, ': ',
@@ -179,6 +180,7 @@ output$plotRate = renderPlot({
     ),
     legText
   )
+  legText = paste0(legText,note)
   
   # Samples directory
   neutralsSampleDir = paste0(neutralsPublic,'_',neutralsVersion())
@@ -190,11 +192,10 @@ output$plotRate = renderPlot({
   )
   
   # Generate curves
-  # T varies, fixed density (M)
-  T0 = 150
-  tRange = seq(50, 350, by = 5)
-  M0  = 1e18 # molec/cm^3
-  mRange = 10^seq(8,20,by=1) # molec/cm^3
+  T0 = as.numeric(input$T0Plot)
+  tRange = seq(input$tempRangePlot[1],input$tempRangePlot[2],5)
+  M0  = 10^as.numeric(input$M0Plot)
+  mRange = 10^seq(input$densRangePlot[1],input$densRangePlot[2],0.5)
   
   irun = 0
   krateT = matrix(NA,ncol = length(samplesList),nrow= length(tRange))
@@ -237,16 +238,16 @@ output$plotRate = renderPlot({
   }
   
   # Plot 
-  col2tr = function(x, alpha = 80) {
-    rgb(unlist(t(col2rgb(x))), alpha = alpha, maxColorValue = 255)
-  }
+  
   trBlue = col2tr('blue', 60)
   
   par(
     mfrow = c(1, 2),
-    mar = c(3, 3, 8, 2),
-    mgp = c(2,.75,0),
-    tcl = -0.5,
+    mar = c(3,3,8,2),
+    mgp = gPars$mgp,
+    tcl = gPars$tcl,
+    lwd = gPars$lwd,
+    pty = 's',
     cex = 1.5
   )
   
@@ -257,15 +258,15 @@ output$plotRate = renderPlot({
       krateT,
       type = 'l',
       lty = 1,
-      col = trBlue,
-      lwd = 3,
+      col = gPars$cols_tr2[6],
+      lwd = 1.5*gPars$lwd,
       log = 'y',
       xlab = 'T [K]',
       ylab = 'Rate constant [cm^3.s^-1]',
       main = ''
     )
-    lines(tempRange, krateT[, 1], col = 'red', lwd = 3)
-    grid(col = 'darkgray')
+    grid()
+    lines(tempRange, krateT[, 1], col = gPars$cols[2],lwd = 1.5*gPars$lwd)
     legend('top',title = paste0('M = ',M0,'cm^-3'), legend = NA, bty='n')
     mtext(
       legText,
@@ -274,9 +275,9 @@ output$plotRate = renderPlot({
       adj = 0,
       line = 7,
       padj = 1,
-      col = 'darkgreen'
+      col = gPars$cols[1]
     )
-    box(lwd = 4)
+    box()
   }
   
   # P-dep
@@ -286,14 +287,14 @@ output$plotRate = renderPlot({
       krateM,
       type = 'l',
       lty = 1,
-      col = trBlue,
-      lwd = 3,
+      col = gPars$cols_tr2[6],
+      lwd = 1.5*gPars$lwd,
       log = 'xy',
       xlab = 'M [cm^-3]',
       ylab = 'Rate constant [cm^3.s^-1]',
       main = ''
     )
-    lines(mRange, krateM[, 1], col = 'red', lwd = 3)
+    lines(mRange, krateM[, 1], col = gPars$cols[2], lwd = 1.5*gPars$lwd)
     grid(col = 'darkgray')
     legend('top',title = paste0('T = ',T0,' K'), legend = NA, bty='n')
     box(lwd = 4)

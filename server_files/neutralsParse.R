@@ -1,4 +1,5 @@
 reacScheme = reactiveVal(NULL)
+reacDf     = reactiveVal(NULL)
 
 # id = shiny::showNotification(
 #   h4(paste0('Processing ',filename)),
@@ -14,14 +15,14 @@ observeEvent(
     req(neutralsVersion())
     
     nbReac = 0
-    reactants = products = params = type = orig =  list()
+    reactants = products = params = type = orig = notes = list()
     
         filename = 'Titan - Réactions bimoléculaires.csv'
         scheme  = read.csv(
           file = file.path(neutralsSource,neutralsVersion(),filename),
           header = FALSE
         )
-        comments = scheme[, ncol(scheme)]
+        comments = apply(scheme, 1, function(x) paste(x[15:length(x)],collapse=" "))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -35,6 +36,7 @@ observeEvent(
           params[[nbReac]][6] = 'kooij'
           type[[nbReac]]      = 'kooij'
           orig[[nbReac]]      = filename
+          notes[[nbReac]]     = comments[i]
         }
         
         filename = 'Titan - Réactions trimoléculaires.csv'
@@ -42,7 +44,7 @@ observeEvent(
           file = file.path(neutralsSource,neutralsVersion(),filename),
           header = FALSE
         )
-        comments = c(comments, scheme[, ncol(scheme)])
+        comments = apply(scheme, 1, function(x) paste(x[25:length(x)],collapse=" "))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -56,6 +58,7 @@ observeEvent(
           params[[nbReac]][17]= 'assocMD'
           type[[nbReac]]      = 'assocMD'
           orig[[nbReac]]      = filename
+          notes[[nbReac]]     = comments[i]
         }
         
         ## Additional bimolecular data from misc. sources
@@ -64,7 +67,7 @@ observeEvent(
           file = file.path(neutralsSource,neutralsVersion(),filename),
           header = FALSE
         )
-        comments = c(comments, scheme[, ncol(scheme)])
+        comments = apply(scheme, 1, function(x) paste(x[15:length(x)],collapse=" "))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -78,6 +81,7 @@ observeEvent(
           params[[nbReac]][6] = 'kooij'
           type[[nbReac]]      = 'kooij'
           orig[[nbReac]]      = filename
+          notes[[nbReac]]     = comments[i]
         }
         
         ## Additional bimolecular data from misc. sources
@@ -86,7 +90,7 @@ observeEvent(
           file = file.path(neutralsSource,neutralsVersion(),filename),
           header = FALSE
         )
-        comments = c(comments, scheme[, ncol(scheme)])
+        comments = apply(scheme, 1, function(x) paste(x[25:length(x)],collapse=" "))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -100,6 +104,7 @@ observeEvent(
           params[[nbReac]][17]= 'assocMD'
           type[[nbReac]]      = 'assocMD'
           orig[[nbReac]]      = filename
+          notes[[nbReac]]     = comments[i]
         }
         
         ## Additional trimolecular data from Vuitton2019
@@ -111,7 +116,7 @@ observeEvent(
           header = FALSE,
           stringsAsFactors = FALSE
         )
-        comments = c(comments, scheme[, ncol(scheme)])
+        comments = apply(scheme, 1, function(x) paste(x[25:length(x)],collapse=" "))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -125,9 +130,9 @@ observeEvent(
           params[[nbReac]][17]= 'assocVV'
           type[[nbReac]]      = 'assocVV'
           orig[[nbReac]]      = filename
+          notes[[nbReac]]     = comments[i]
         }
 
-    
     # Auxilliary data
     species = sort(unique(unlist(c(reactants, products))))
     compo = 
@@ -166,24 +171,14 @@ observeEvent(
         products  = products,
         params    = params,
         type      = type,
-        orig      =  orig,
+        orig      = orig,
+        notes     = notes,
         species   = species,
         mass      = mass
       )
     )
-  }
-)
-output$tabScheme = DT::renderDT(
-  {
-    req(reacScheme())
-    
-    nbReac    = reacScheme()$nbReac
-    reactants = reacScheme()$reactants
-    products  = reacScheme()$products
-    params    = reacScheme()$params
-    type      = reacScheme()$type
-    orig      = reacScheme()$orig
-    
+
+    # Generate dataframe to display
     formatReac <- function(reactants, products, params, type) {
       react = paste0(reactants, collapse = ' + ')
       prods = paste0(products , collapse = ' + ')
@@ -207,57 +202,65 @@ output$tabScheme = DT::renderDT(
           Params = NA,
           Type = NA
         )
-        if (is.na(input$targetSpecies) |
-            input$targetSpecies == "") {
-          for (i in 1:nbReac) {
-            incProgress(1/nbReac, detail = paste(i,'/',nbReac))
-            msg = checkBalance(reactants[[i]],products[[i]],
-                               stoechFilters = stoechFilters)
-            if(!is.null(msg))
-              id = shiny::showNotification(
-                h4(msg),
-                closeButton = TRUE,
-                duration = NULL,
-                type = 'error'
-              )
-            dat = rbind(dat, formatReac(
-              reactants[[i]],products[[i]],params[[i]],type[[i]]
-            ))
-            
-          }
-          
-        } else {
-          # Species-specific reaction list
-          nOK = 0
-          for (i in 1:nbReac) {
-            incProgress(1/nbReac, detail = paste(i,'/',nbReac))
-            if(input$targetSpeciesKind == "Reactant") {
-              filter = input$targetSpecies %in% reactants[[i]] 
-            } else if(input$targetSpeciesKind == "Product"){
-              filter =input$targetSpecies %in% products[[i]]
-            } else {
-              filter = input$targetSpecies %in% reactants[[i]] ||
-                input$targetSpecies %in% products[[i]]
-            }
-            if(filter) {
-              dat = rbind(dat, formatReac(
-                reactants[[i]],products[[i]],params[[i]],type[[i]]
-              ))
-              nOK = nOK +1
-            }
-          }
-          if (nOK == 0)
+        for (i in 1:nbReac) {
+          incProgress(1/nbReac, detail = paste(i,'/',nbReac))
+          msg = checkBalance(reactants[[i]],products[[i]],
+                             stoechFilters = stoechFilters)
+          if(!is.null(msg))
             id = shiny::showNotification(
-              h4(paste0('Species not in scheme: ', input$targetSpecies)),
+              h4(msg),
               closeButton = TRUE,
               duration = NULL,
-              type = 'warning'
+              type = 'error'
             )
+          dat = rbind(dat, formatReac(
+            reactants[[i]],products[[i]],params[[i]],type[[i]]
+          ))
         }
       })
     dat = dat[-1, ] # Get correct row numbers for table
     rownames(dat) = 1:nrow(dat)
     
+    reacDf(dat)
+  }
+)
+output$tabScheme = DT::renderDT(
+  {
+    req(reacDf())
+    dat = reacDf()
+
+    req(reacScheme())
+    nbReac    = reacScheme()$nbReac 
+    reactants = reacScheme()$reactants 
+    products  = reacScheme()$products 
+    
+    listOK = rep(TRUE,nbReac)
+    
+    if (!is.na(input$targetSpecies) &
+        input$targetSpecies != "") {
+      # Species-specific reaction list
+
+      for (i in 1:nbReac) {
+        if(input$targetSpeciesKind == "Reactant") {
+          filter = input$targetSpecies %in% reactants[[i]] 
+        } else if(input$targetSpeciesKind == "Product"){
+          filter =input$targetSpecies %in% products[[i]]
+        } else {
+          filter = input$targetSpecies %in% reactants[[i]] ||
+            input$targetSpecies %in% products[[i]]
+        }
+        if(!filter) 
+          listOK[i] = FALSE
+      }
+      if (sum(listOK) == 0)
+        id = shiny::showNotification(
+          h4(paste0('Species not in scheme: ', input$targetSpecies)),
+          closeButton = TRUE,
+          duration = NULL,
+          type = 'warning'
+        )
+    }
+    dat = dat[listOK,]
     return(dat)
   },
   rownames = TRUE,
