@@ -18,15 +18,16 @@
 # }
 # # ## Other libraries ----
 # devtools::install_github("ppernot/ErrViewLib")
-# library(lib,character.only = TRUE)
 
 # Cloud deployment ----
 
 library("devtools")
 library("shiny")
+library("shinythemes")
 library("shinyFiles")
 library("shinyAce")
 library("shinycssloaders")
+library("DT")
 library("boot")
 library("ErrViewLib")
 library("data.table")

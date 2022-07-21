@@ -27,7 +27,7 @@ gPars$mar[3] = 2
 
 # Data paths ####
 neutralsSource = file.path('..','MC-ChemDB','Neutrals','Source')
-neutralsPublic = file.path('.','ChemDBPublic','Neutrals')
+neutralsPublic = file.path('..','ChemDBPublic','Neutrals')
 
 # Load data and functions ####
 source('R/massCalc.R')

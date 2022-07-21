@@ -1,0 +1,13 @@
+BUILD :
+    1/ cd MC-ChemDBUI
+    2/ docker build -t ppernot1/mc-chemdbui:v0.1 -t ppernot1/mc-chemdbui:latest -f docker/Dockerfile .
+    3/ docker login
+    4/ docker image push --all-tags ppernot1/mc-chemdbui
+
+RUN :
+   UI :
+       1/ docker run -d -p 3820:3820 --mount type=bind,source="$(pwd)"/../ChemDBPublic,target=/ChemDBPublic --name mc-chemdbui ppernot1/mc-chemdbui
+       3/ access http://localhost:3820 in browser
+
+   BASH :
+       * docker run -ti ppernot1/mc-chemdbui bash

@@ -90,16 +90,19 @@ shiny::observeEvent(
   input$neuSave,
   {
     req(neutralsCopyVersion())
+    req(neutralsFile())
    
     # Make copy of source directory
     neutralsOrigDir = file.path(neutralsSource,neutralsOrigVersion())
     neutralsCopyDir = file.path(neutralsSource,neutralsCopyVersion())
     if(!dir.exists(neutralsCopyDir)) {
-      file.copy(
-        from = file.path(neutralsOrigDir,file),
-        to   = file.path(neutralsCopyDir,file),
-        recursive = TRUE
-      )
+      dir.create(neutralsCopyDir)
+      files = list.files(path = neutralsOrigDir)
+      for(file in files)
+        file.copy(
+          from = file.path(neutralsOrigDir,file),
+          to   = file.path(neutralsCopyDir,file)
+        )
       id = shiny::showNotification(
         h4(paste0('Created new version: ', neutralsCopyVersion())),
         closeButton = FALSE,
