@@ -16,18 +16,21 @@ To run the container:
 1. Type the following command in a terminal
 ```
 docker run -d -p 3820:3820 --mount type=bind,source="$(pwd)"/../ChemDBPublic,target=/ChemDBPublic --name mc-chemdbui ppernot1/mc-chemdbui
-```      where `ChemDBPublic` is a local directory containing the processed MC samples
+```
+where `ChemDBPublic` is a local directory containing the processed MC samples
 
 2. Access MC-ChemDBUI at `http://localhost:3820` in your favorite browser
 
 3. When finished
 ```
 docker kill mc-chemdbui
-```   __Warning__: all modifs to the database will be lost. To keep them,
+```
+__Warning__: all modifs to the database will be lost. To keep them,
 you need to create a new image of the modified container...
 ```
 docker commit mc-chemdbui mc-chemdbui:vX.X
-```  where `X.X` is the new tag. 
+```
+where `X.X` is the new tag. 
 You should then refer to this specific version... 
 
 4. For further sessions
