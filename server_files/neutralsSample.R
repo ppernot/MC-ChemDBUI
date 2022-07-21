@@ -243,7 +243,7 @@ output$plotRate = renderPlot({
   
   par(
     mfrow = c(1, 2),
-    mar = c(3,3,8,2),
+    mar = c(3,3,9,2),
     mgp = gPars$mgp,
     tcl = gPars$tcl,
     lwd = gPars$lwd,
@@ -273,7 +273,7 @@ output$plotRate = renderPlot({
       side = 3,
       cex = 1.5,
       adj = 0,
-      line = 7,
+      line = 8,
       padj = 1,
       col = gPars$cols[1]
     )

@@ -94,20 +94,19 @@ shiny::observeEvent(
     # Make copy of source directory
     neutralsOrigDir = file.path(neutralsSource,neutralsOrigVersion())
     neutralsCopyDir = file.path(neutralsSource,neutralsCopyVersion())
-    if(!dir.exists(neutralsCopyDir))
-      dir.create(neutralsCopyDir)
-    files = list.files(path=neutralsOrigDir)
-    for(file in files)
+    if(!dir.exists(neutralsCopyDir)) {
       file.copy(
         from = file.path(neutralsOrigDir,file),
         to   = file.path(neutralsCopyDir,file),
-        overwrite = TRUE
+        recursive = TRUE
       )
-    id = shiny::showNotification(
-      h4(paste0('Created version: ', neutralsCopyVersion())),
-      closeButton = FALSE,
-      duration = 5
-    )
+      id = shiny::showNotification(
+        h4(paste0('Created new version: ', neutralsCopyVersion())),
+        closeButton = FALSE,
+        duration = 5
+      )
+    }
+    
     # Save modified file to target version
     data = isolate(input$ace)
     writeLines(
@@ -119,5 +118,6 @@ shiny::observeEvent(
       closeButton = FALSE,
       duration = 5
     )
+    
   }
 )

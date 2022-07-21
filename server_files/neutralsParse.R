@@ -33,6 +33,10 @@ observeEvent(
   {
     req(neutralsVersion())
     
+    pasteNoNA = function(x) {
+      paste(x[!is.na(x)],collapse=" ")
+    }
+    
     nbReac = 0
     reactants = products = params = type = orig = notes = list()
     
@@ -41,7 +45,7 @@ observeEvent(
           file = file.path(neutralsSource,neutralsVersion(),filename),
           header = FALSE
         )
-        comments = apply(scheme, 1, function(x) paste(x[15:length(x)],collapse=" "))
+        comments = apply(scheme, 1, function(x) pasteNoNA(x[15:length(x)]))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -63,7 +67,7 @@ observeEvent(
           file = file.path(neutralsSource,neutralsVersion(),filename),
           header = FALSE
         )
-        comments = apply(scheme, 1, function(x) paste(x[25:length(x)],collapse=" "))
+        comments = apply(scheme, 1, function(x) pasteNoNA(x[25:length(x)]))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -86,7 +90,7 @@ observeEvent(
           file = file.path(neutralsSource,neutralsVersion(),filename),
           header = FALSE
         )
-        comments = apply(scheme, 1, function(x) paste(x[15:length(x)],collapse=" "))
+        comments = apply(scheme, 1, function(x) pasteNoNA(x[15:length(x)]))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -109,7 +113,7 @@ observeEvent(
           file = file.path(neutralsSource,neutralsVersion(),filename),
           header = FALSE
         )
-        comments = apply(scheme, 1, function(x) paste(x[25:length(x)],collapse=" "))
+        comments = apply(scheme, 1, function(x) pasteNoNA(x[25:length(x)]))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
@@ -135,7 +139,7 @@ observeEvent(
           header = FALSE,
           stringsAsFactors = FALSE
         )
-        comments = apply(scheme, 1, function(x) paste(x[25:length(x)],collapse=" "))
+        comments = apply(scheme, 1, function(x) pasteNoNA(x[25:length(x)]))
         scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
           if(substr(scheme[i,1],1,1)=='#') next
