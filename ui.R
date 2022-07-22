@@ -26,9 +26,20 @@ function(request) {
         source_ui("neutralsSample.R")
       )
     ),
-    tabPanel(
-      title = "Ions",
-      source_ui("ions.R")
+    navbarMenu(
+      "Ions",
+      tabPanel(
+        title = "Edit",
+        source_ui("ionsEdit.R")
+      ),
+      tabPanel(
+        title = "Parse",
+        source_ui("ionsParse.R")
+      ),
+      tabPanel(
+        title = "Sample",
+        source_ui("ionsSample.R")
+      )
     ),
     tabPanel(
       title = "Photo-processes",

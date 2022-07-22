@@ -20,6 +20,9 @@ plotWidth  <- 550
 
 # Graphical parameters ####
 gPars = ErrViewLib::setgPars('shiny')
+col2tr =function(x,alpha=80){
+  rgb(unlist(t(col2rgb(x))),alpha=alpha,maxColorValue = 255)
+}
 
 # Fine tune graph. params
 gPars$cex = 1.5
@@ -28,19 +31,26 @@ gPars$mar[3] = 2
 # Data paths ####
 neutralsSource = file.path('..','MC-ChemDB','Neutrals','Source')
 neutralsPublic = file.path('..','ChemDBPublic','Neutrals')
+ionsSource     = file.path('..','MC-ChemDB','Ions','Source')
+ionsPublic     = file.path('..','ChemDBPublic','Ions')
 
 # Load data and functions ####
 source('R/massCalc.R')
-elements      = unlist(read.csv("data/elements.csv", header = FALSE))
+maxReacts     = 3     # Max number of reactants slots in generated dBases
+maxProds      = 4     # Max number of product slots in generated dBases
+elements      = unlist(read.csv(file.path('data','elements.csv'), header = FALSE))
 massElem      = CHNOSZ::mass(elements)
-dummySpecies  = unlist(read.csv("data/dummySpecies.csv", header = FALSE))
-stoechFilters = read.csv("data/stoechFilters.csv", header = FALSE)
+dummySpecies  = unlist(read.csv(file.path('data','dummySpecies.csv'), header = FALSE))
+stoechFilters = read.csv(file.path('data','stoechFilters.csv'), header = FALSE)
+tabNeuFiles   = read.csv(file.path('data','neutralsDBFiles.csv'),header = FALSE)
 
 source('R/rateFormulas.R')
 
-col2tr = function(x, alpha = 80) {
-  rgb(unlist(t(col2rgb(x))), alpha = alpha, maxColorValue = 255)
-}
+ionsRateParKwdList = c('ALPHA','BETA','GAMMA') 
+ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
+source('R/ionsFunctions.R')
+
+
 
 
 

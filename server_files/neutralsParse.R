@@ -37,124 +37,41 @@ observeEvent(
       paste(x[!is.na(x)],collapse=" ")
     }
     
+    # Get reactions data
     nbReac = 0
     reactants = products = params = type = orig = notes = list()
-    
-        filename = 'Titan - Réactions bimoléculaires.csv'
-        scheme  = read.csv(
-          file = file.path(neutralsSource,neutralsVersion(),filename),
-          header = FALSE
-        )
-        comments = apply(scheme, 1, function(x) pasteNoNA(x[15:length(x)]))
-        scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
+    for (i in 1:NROW(tabNeuFiles)) {
+      fileName = tabNeuFiles[i, 1]
+      fileType = tabNeuFiles[i, 2]
+      file = file.path(neutralsSource, neutralsVersion(), fileName)
+      if (file.exists(file)) {
+        
+        indxCom = ifelse(fileType == 'kooij', 15, 25)
+        indxPar = ifelse(fileType == 'kooij', 13, 24)
+        indxTag = ifelse(fileType == 'kooij',  6, 17)
+        
+        scheme  = read.csv(file = file, header = FALSE)
+        comments = apply(scheme, 1, function(x)
+          pasteNoNA(x[indxCom:length(x)]))
+        scheme  = t(apply(scheme, 1, function(x)
+          gsub(" ", "", x)))
         for (i in 1:nrow(scheme)) {
-          if(substr(scheme[i,1],1,1)=='#') next
+          if (substr(scheme[i, 1], 1, 1) == '#')
+            next
           nbReac = nbReac + 1
           terms = scheme[i, 1:3]
           reactants[[nbReac]] = terms[!is.na(terms) & terms != ""]
           terms = scheme[i, 4:8]
           products[[nbReac]]  = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 9:13]
+          terms = scheme[i, 9:indxPar]
           params[[nbReac]]    = terms[!is.na(terms) & terms != ""]
-          params[[nbReac]][6] = 'kooij'
-          type[[nbReac]]      = 'kooij'
-          orig[[nbReac]]      = filename
+          params[[nbReac]][indxTag] = fileType
+          type[[nbReac]]      = fileType
+          orig[[nbReac]]      = fileName
           notes[[nbReac]]     = comments[i]
         }
-        
-        filename = 'Titan - Réactions trimoléculaires.csv'
-        scheme  = read.csv(
-          file = file.path(neutralsSource,neutralsVersion(),filename),
-          header = FALSE
-        )
-        comments = apply(scheme, 1, function(x) pasteNoNA(x[25:length(x)]))
-        scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
-        for (i in 1:nrow(scheme)) {
-          if(substr(scheme[i,1],1,1)=='#') next
-          nbReac = nbReac + 1
-          terms = scheme[i, 1:3]
-          reactants[[nbReac]] = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 4:8]
-          products[[nbReac]]  = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 9:24]
-          params[[nbReac]]    = terms[!is.na(terms) & terms != ""]
-          params[[nbReac]][17]= 'assocMD'
-          type[[nbReac]]      = 'assocMD'
-          orig[[nbReac]]      = filename
-          notes[[nbReac]]     = comments[i]
-        }
-        
-        ## Additional bimolecular data from misc. sources
-        filename = 'bimol_supp.csv'
-        scheme  = read.csv(
-          file = file.path(neutralsSource,neutralsVersion(),filename),
-          header = FALSE
-        )
-        comments = apply(scheme, 1, function(x) pasteNoNA(x[15:length(x)]))
-        scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
-        for (i in 1:nrow(scheme)) {
-          if(substr(scheme[i,1],1,1)=='#') next
-          nbReac = nbReac + 1
-          terms = scheme[i, 1:3]
-          reactants[[nbReac]] = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 4:8]
-          products[[nbReac]]  = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 9:13]
-          params[[nbReac]]    = terms[!is.na(terms) & terms != ""]
-          params[[nbReac]][6] = 'kooij'
-          type[[nbReac]]      = 'kooij'
-          orig[[nbReac]]      = filename
-          notes[[nbReac]]     = comments[i]
-        }
-        
-        ## Additional bimolecular data from misc. sources
-        filename = 'trimol_supp.csv'
-        scheme  = read.csv(
-          file = file.path(neutralsSource,neutralsVersion(),filename),
-          header = FALSE
-        )
-        comments = apply(scheme, 1, function(x) pasteNoNA(x[25:length(x)]))
-        scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
-        for (i in 1:nrow(scheme)) {
-          if(substr(scheme[i,1],1,1)=='#') next
-          nbReac = nbReac + 1
-          terms = scheme[i, 1:3]
-          reactants[[nbReac]] = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 4:8]
-          products[[nbReac]]  = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 9:24]
-          params[[nbReac]]    = terms[!is.na(terms) & terms != ""]
-          params[[nbReac]][17]= 'assocMD'
-          type[[nbReac]]      = 'assocMD'
-          orig[[nbReac]]      = filename
-          notes[[nbReac]]     = comments[i]
-        }
-        
-        ## Additional trimolecular data from Vuitton2019
-        ## (With specific parameterization)
-        
-        filename = 'trimol_VV.csv'
-        scheme  = read.csv(
-          file = file.path(neutralsSource,neutralsVersion(),filename),
-          header = FALSE,
-          stringsAsFactors = FALSE
-        )
-        comments = apply(scheme, 1, function(x) pasteNoNA(x[25:length(x)]))
-        scheme  = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
-        for (i in 1:nrow(scheme)) {
-          if(substr(scheme[i,1],1,1)=='#') next
-          nbReac = nbReac + 1
-          terms = scheme[i, 1:3]
-          reactants[[nbReac]] = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 4:8]
-          products[[nbReac]]  = terms[!is.na(terms) & terms != ""]
-          terms = scheme[i, 9:24]
-          params[[nbReac]]    = terms[!is.na(terms) & terms != ""]
-          params[[nbReac]][17]= 'assocVV'
-          type[[nbReac]]      = 'assocVV'
-          orig[[nbReac]]      = filename
-          notes[[nbReac]]     = comments[i]
-        }
+      }
+    } 
 
     # Auxilliary data
     species = sort(unique(unlist(c(reactants, products))))
@@ -200,19 +117,21 @@ observeEvent(
         mass      = mass
       )
     )
-
+    
     # Generate dataframe to display
-    formatReac <- function(reactants, products, params, type) {
+    formatReac <- function(reactants, products, params, type, orig) {
       react = paste0(reactants, collapse = ' + ')
       prods = paste0(products , collapse = ' + ')
       pars  = paste0(params, collapse = ', ')
       typ   = unlist(type)
+      orig  = unlist(orig)
       
       return(data.frame(
         Reactants = react,
         Products  = prods,
         Params    = pars,
-        Type      = typ
+        Type      = typ,
+        Origin    = orig
       ))
     }
     
@@ -221,9 +140,10 @@ observeEvent(
       {
         dat = data.frame(
           Reactants = NA,
-          Products = NA,
-          Params = NA,
-          Type = NA
+          Products  = NA,
+          Params    = NA,
+          Type      = NA,
+          Origin    = NA
         )
         for (i in 1:nbReac) {
           incProgress(1/nbReac, detail = paste(i,'/',nbReac))
@@ -237,7 +157,7 @@ observeEvent(
               type = 'error'
             )
           dat = rbind(dat, formatReac(
-            reactants[[i]],products[[i]],params[[i]],type[[i]]
+            reactants[[i]],products[[i]],params[[i]],type[[i]],orig[[i]]
           ))
         }
       })
@@ -251,7 +171,7 @@ output$tabScheme = DT::renderDT(
   {
     req(reacDf())
     dat = reacDf()
-
+    
     req(reacScheme())
     nbReac    = reacScheme()$nbReac 
     reactants = reacScheme()$reactants 
@@ -262,7 +182,7 @@ output$tabScheme = DT::renderDT(
     if (!is.na(input$targetSpecies) &
         input$targetSpecies != "") {
       # Species-specific reaction list
-
+      
       for (i in 1:nbReac) {
         if(input$targetSpeciesKind == "Reactant") {
           filter = input$targetSpecies %in% reactants[[i]] 

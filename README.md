@@ -2,12 +2,32 @@
 
 # MC-ChemDBUI
 
-UI for MC-ChemDB
+UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
+
+## News
+
+* `2022/07/21` First docker version to handle neutral reactions with three main functions:
+
+    1. Open and edit DB files; create new DB version
+
+    2. Parse the DB files to check the consistency (names, masses, mass balance...)
+    
+    3. Generate MC samples and plot resulting reaction rates as a function of temperature
+    and density.
+    
+## To Be Done...
+
+* Add possibility to Import/Export MC-ChemDB (to and from github ?)
+
+* Manage ion-molecule reactions
+
+* Manage photo-processes
+
 
 ## Docker container
 
 The [mc-chemdbui](https://hub.docker.com/repository/docker/ppernot1/mc-chemdbui)
-Docker container has all elements preinstalled.
+Docker container has all elements pre-installed, including [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 
 To run the container:
 
