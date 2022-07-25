@@ -67,6 +67,9 @@ shiny::observe({
     )
   )
   close(con)
+   
+  # (Re-)Init samples for plots
+  ionsSimulSamples(NULL)
   
   # Format data for masks
   mask = list()
@@ -162,6 +165,11 @@ output$ionsMask = shiny::renderUI({
     fluidRow(
       column(
         3,
+        shiny::textInput(
+          "ionsReacReactants",
+          "Reactants:",
+          value = paste0(mask[['REACTANTS']],collapse = ' + ')
+        ),
         shiny::selectInput(
           "ionsReacTYPE",
           "Reaction type:",
@@ -197,18 +205,27 @@ output$ionsBR = DT::renderDT({
   return(ionsBRMask()[['XBR']])
 },
 rownames = FALSE,
+editable = "all",
 extensions = c('Scroller'),
 options = list(
   dom         = 'Btip',
   deferRender = TRUE,
-  scrollY     = 300,
+  scrollY     = plotHeight,
   scroller    = TRUE,
-  autoWidth   = TRUE #,
-  # columnDefs  = list(
-  #   list(width = '100px', targets = 0),
-  #   list(className = 'dt-center', targets = 0)
-  # )
+  autoWidth   = TRUE
 ))
+
+observeEvent(
+  input$ionsBR_cell_edit,
+  {
+    # Apply modifications
+    info = input$ionsBR_cell_edit
+    XBR = ionsBRMask()$XBR
+    for(i in 1:NROW(info))
+      XBR[info$row,1+info$col] = info$value
+    ionsBRMask(list(XBR=XBR))
+  }
+)
 
 observeEvent(
   input$ionsSimulateBtn,
@@ -235,8 +252,12 @@ observeEvent(
     }
     
     # Branching ratios
-    XBR = ionsBRMask()$XBR
+    XBR  = ionsBRMask()$XBR
     tags = XBR[-1,1]
+    treeDepth = 0
+    for(i in 2:ncol(XBR)) # Exclude NA columns
+      treeDepth = treeDepth + 1 - 
+      as.numeric(sum(is.na(XBR[,i])) == nrow(XBR))
 
     if (length(tags) >= 2) {
       # Build tree #####
@@ -301,8 +322,9 @@ observeEvent(
       }    
       # Generate BR sample #
       sampleBR = nds(nMC,stringBR)
-      
-      # Build Newick string for tree plotting #####
+      updateTextInput("ionsStringDist",value=stringBR,session=session)
+
+      # Build Newick string for tree plotting 
       newickBR = oneNewick(nc, d, tags)
       while (grepl("LINK/", newickBR)) {
         poc = regmatches(newickBR, gregexpr('LINK/[0-9]+/', newickBR))
@@ -315,6 +337,7 @@ observeEvent(
         }
       }
       newickBR = paste0(newickBR, ";")
+      # updateTextInput("ionsStringDist",value=newickBR,session=session)
       mytree <- ape::read.tree(text = newickBR)
       
       # Build edge tags for tree annotation #
@@ -352,6 +375,7 @@ observeEvent(
       nodeTags = NULL
       edgeTags = NULL
       mytree   = NULL
+      treeDepth= NULL
       
     }
     
@@ -364,6 +388,7 @@ observeEvent(
         nodeTags         = nodeTags,
         edgeTags         = edgeTags,
         mytree           = mytree,
+        treeDepth        = treeDepth,
         tags             = tags
       )
     )
@@ -375,7 +400,7 @@ output$plotIonsParsSample = renderPlot({
   req(ionsSimulSamples())
   req(ionsRateMask())
   
-  mask = ionsRateMask(); print(mask)
+  mask = isolate(ionsRateMask())
   reacType  = mask$TYPE
   reactants = mask$REACTANTS
   
@@ -402,62 +427,166 @@ output$plotIonsParsSample = renderPlot({
   split.screen(c(1,3),1)
   iscreen=2
   for (kwd in ionsRateParKwdList) {
-    iscreen = iscreen+1; screen(iscreen)
-    if(!is.finite(sigPars[kwd]) | sigPars[kwd] == 1 ) next
-    par(mar=c(4,5,1,1)) 
-    hist(sampleRateParams[,kwd],
-         xlab=paste0(kwd,'~',rateParDistStrings[kwd]),
-         col=gPars$cols_tr2[5],
-         main='')
-    abline(v=meanPars[kwd],col=gPars$cols[2],lwd=2)
-    abline(v=range(sampleRateParams[,kwd]),col=gPars$cols[2],lty=2,lwd=1)
+    iscreen = iscreen + 1
+    screen(iscreen)
+    if (!is.finite(sigPars[kwd]) | sigPars[kwd] == 1)
+      next
+    par(mar = c(4, 5, 1, 1),
+        mgp = gPars$mgp,
+        tcl = gPars$tcl,
+        lwd = gPars$lwd,
+        cex = 1.2)
+    d = density(sampleRateParams[, kwd])
+    plot(
+      d,
+      xlim = range(sampleRateParams[, kwd]),
+      xaxs = 'i',
+      xlab = paste0(kwd, '~', rateParDistStrings[kwd]),
+      yaxs = 'i',
+      ylim = c(0,1.1*max(d$y)),
+      col = gPars$cols_tr2[5],
+      main = ''
+    )
+    polygon(d$x, d$y, col = gPars$cols_tr[5], border = NA)
+    # grid()
+    abline(v = meanPars[kwd],
+           col = gPars$cols[2],
+           lwd = 2)
+    abline(
+      v = ErrViewLib::vhd(sampleRateParams[, kwd],p = c(0.05,0.95)),
+      col = gPars$cols[2],
+      lty = 2,
+      lwd = 1
+    )
+    box()
   }
   
   screen(2)
-  par(mar=c(4,5,1,1))
-  temp=seq(150,1000,by=10)
-  nt=length(temp)
-  if(reacType =='kooij') {
-    if('E' %in% reactants) { 
-      rateFun = function(t,pars) 
-        pars['ALPHA']*(300/t)^pars['BETA']
+  par(mar = c(4, 5, 1, 1),
+      mgp = gPars$mgp,
+      tcl = gPars$tcl,
+      lwd = gPars$lwd,
+      cex = 1.2)
+  temp = seq(input$ionsTempRangePlot[1],
+             input$ionsTempRangePlot[2],
+             10)
+  nt = length(temp)
+  if (reacType == 'kooij') {
+    if ('E' %in% reactants) {
+      rateFun = function(t, pars)
+        pars['ALPHA'] * (300 / t) ^ pars['BETA']
     } else {
-      rateFun = function(t,pars) 
-        pars['ALPHA']*(t/300)^pars['BETA']*exp(-pars['GAMMA']/t)          
+      rateFun = function(t, pars)
+        pars['ALPHA'] * (t / 300) ^ pars['BETA'] * exp(-pars['GAMMA'] / t)
     }
-  } else { 
-    if(reacType =='ionpol1') {
-      # KIDA::ionpol1 type 
+  } else {
+    if (reacType == 'ionpol1') {
+      # KIDA::ionpol1 type
       # BEWARE: notation change because here branching ratios are stored in BR
-      rateFun = function(t,pars) 
-        pars['ALPHA']*(0.62 + 
-                         0.4767*pars['BETA']*(300/t)^0.5
-        )          
+      rateFun = function(t, pars)
+        pars['ALPHA'] * (0.62 + 0.4767 * pars['BETA'] * (300 / t) ^ 0.5)
     } else {
-      # KIDA::ionpol2 type 
+      # KIDA::ionpol2 type
       # BEWARE: notation change because here branching ratios are stored in BR
-      rateFun = function(t,pars) 
-        pars['ALPHA']*(1 + 
-                         0.0967*pars['BETA']*(300/t)^0.5 +
-                         pars['BETA']^2*300/(10.526*t)
-        )          
+      rateFun = function(t, pars)
+        pars['ALPHA'] * (1 + 0.0967 * pars['BETA'] * (300 / t) ^ 0.5 +
+                           pars['BETA'] ^ 2 * 300 / (10.526 * t))
     }
   }
   
-  np = min(sampleSize,500) # nb of plotted samples
-  Y=matrix(NA,nrow=np,ncol=nt)
-  for (ip in 1:np) 
-    Y[ip,1:nt]=rateFun(temp,sampleRateParams[ip,])
-  matplot(temp,t(Y),type='l',lty=1,col=gPars$cols_tr2[5],lwd=2,log='y',
-          xlab='T / K', ylab='rate ct. / cm^3.s^-1',
-          ylim=c(min(Y)/1.5,max(Y)*1.5),
-          main='' )
-  lines(temp,rateFun(temp,meanPars),col=gPars$cols[2],lwd=2)
-  grid(col='darkgray')
+  np = min(sampleSize, 500) # nb of plotted samples
+  Y = matrix(NA, nrow = np, ncol = nt)
+  for (ip in 1:np)
+    Y[ip, 1:nt] = rateFun(temp, sampleRateParams[ip, ])
+  matplot(
+    temp, t(Y),
+    type = 'l',
+    lty = 1,
+    col = gPars$cols_tr[5],
+    lwd = 5,
+    log = 'y',
+    xlab = 'T / K',
+    xaxs = 'i',
+    ylab = 'Rate constant / cm^3.s^-1',
+    ylim = c(min(Y) / 1.5, max(Y) * 1.5),
+    main = ''
+  )  
+  grid()
+  lines(temp,
+        rateFun(temp, meanPars),
+        col = gPars$cols[2],
+        lwd = 2)
+  box()
   close.screen(all = TRUE)
 },
 height = plotHeight, width = 1.5*plotWidth)
 # Plot BRs ####
+## Sample ####
+output$plotIonsBRSample = renderPlot({
+  req(ionsSimulSamples())
+  
+  sampleSize       = ionsSimulSamples()$sampleSize
+  sampleBR         = ionsSimulSamples()$sampleBR
+  tags             = ionsSimulSamples()$tags
+  
+  meanBR    = colMeans(sampleBR)
+  meanBR    = meanBR / sum(meanBR)
+  sigBR     = apply(sampleBR, 2, sd)
+  
+  
+  np = min(sampleSize, 500) # nb of plotted samples
+  nt = length(tags)
+  if (nt >= 2) {
+    m0= max(1,40-3*nt)
+    par(
+      mar = c(m0, 15, 4, 1), 
+      cex.main = 1)
+    matplot(
+      t(sampleBR)[nt:1, 1:np],
+      1:nt,
+      main = '',
+      type = 'l',
+      lty = 1,
+      col = gPars$cols_tr[5],
+      lwd = 5,
+      yaxt = 'n',
+      ylab = '',
+      yaxs = 'i',
+      xlim = c(0, 1),
+      xlab = '',
+      xaxt = 'n',
+      xaxs = 'i'
+    )
+    lines(meanBR, nt:1, lwd = 3, col = gPars$cols[2])
+    text(
+      x = seq(0, 1, by = 0.1),
+      y = nt,
+      labels = seq(0, 1, by = 0.1),
+      xpd = TRUE,
+      cex = 1,
+      pos = 3
+    )
+    text(
+      x = -0.02,
+      y = nt:1,
+      labels = tags,
+      srt = 0,
+      adj = 1,
+      xpd = TRUE,
+      cex = 1
+    )
+    grid()
+    abline(
+      h = 1:length(tags),
+      col = 'darkgray',
+      lwd = 3,
+      lty = 3
+    )
+    box()
+  }
+},
+height = plotHeight, width =1.5* plotWidth)
+## Tree ####
 output$plotIonsBRTree = renderPlot({
   req(ionsSimulSamples())
   
@@ -467,6 +596,7 @@ output$plotIonsBRTree = renderPlot({
   edgeTags         = ionsSimulSamples()$edgeTags
   mytree           = ionsSimulSamples()$mytree
   tags             = ionsSimulSamples()$tags
+  depth            = ionsSimulSamples()$treeDepth
   
   meanBR    = colMeans(sampleBR)
   meanBR    = meanBR / sum(meanBR)
@@ -482,7 +612,11 @@ output$plotIonsBRTree = renderPlot({
                            signif(meanBR[ip], 2), ' +/- ',
                            signif(sigBR[ip], 1), ')')
     }
-    par(mar = c(1, 1, 1, 1), cex = 1)
+    m0 = max(1,40-3*nt)
+    m1 = max(1,40-3*depth)
+    par(
+      mar = c(m0, 0, 1, m1), 
+      cex = 1)
     mytree$tip.label = tagStat
     mytree$edge.length = rep(1, dim(mytree$edge)[1])
     plot(
@@ -505,67 +639,7 @@ output$plotIonsBRTree = renderPlot({
 },
 height = plotHeight, width = 2*plotWidth)
 
-output$plotIonsBRSample = renderPlot({
-  req(ionsSimulSamples())
-  
-  sampleSize       = ionsSimulSamples()$sampleSize
-  sampleBR         = ionsSimulSamples()$sampleBR
-  tags             = ionsSimulSamples()$tags
 
-  meanBR    = colMeans(sampleBR)
-  meanBR    = meanBR / sum(meanBR)
-  sigBR     = apply(sampleBR, 2, sd)
-  
-  
-  np = min(sampleSize, 100) # nb of plotted samples
-  nt = length(tags)
-  if (nt >= 2) {
-    par(mar = c(1, 15, 4, 1), cex.main = 1)
-    matplot(
-      t(sampleBR)[1:nt, 1:np],
-      1:nt,
-      main = '',
-      type = 'l',
-      lty = 1,
-      col = gPars$cols_tr2[5],
-      lwd = 2,
-      yaxt = 'n',
-      ylab = '',
-      yaxs = 'i',
-      xlim = c(0, 1),
-      xlab = '',
-      xaxt = 'n',
-      xaxs = 'i'
-    )
-    lines(meanBR[1:nt], 1:nt, lwd = 3, col = gPars$cols[2])
-    text(
-      x = seq(0, 1, by = 0.1),
-      y = nt,
-      labels = seq(0, 1, by = 0.1),
-      xpd = TRUE,
-      cex = 1,
-      pos = 3
-    )
-    text(
-      x = -0.02,
-      y = 1:nt,
-      labels = rev(tags),
-      srt = 0,
-      adj = 1,
-      xpd = TRUE,
-      cex = 1
-    )
-    grid()
-    abline(
-      h = 1:length(tags),
-      col = 'darkgray',
-      lwd = 3,
-      lty = 3
-    )
-    box()
-  }
-},
-height = plotHeight, width =1.5* plotWidth)
 
 # output$checkSpecies <- renderText({ 
 #   req(input$ace_cursor)

@@ -50,7 +50,26 @@ tabPanel(
             "#ionsSimulateBtn { width:100%; margin-top: 20px;}"
           )
         )
-      )
+      ),
+      sliderInput(
+        "ionsTempRangePlot",
+        label = "Temp. range [K]",
+        min   = 100, 
+        max   = 1000,
+        value = c(100,1000),
+        step  = 100,
+        round = TRUE
+      ),
+      br(),
+      wellPanel(
+        h4("About",.noWS = "before"),
+        HTML("<B>Edit</B> Choose a DB version and a DB file.
+             <br>
+             <B>Simulation</B> Random samples are generated to
+             build graphs for rate constants and branching 
+             ratios (Graphs panel)
+             ")
+      )  
     ),
     mainPanel(
       width = mainWidth,
@@ -69,6 +88,12 @@ tabPanel(
             ),
             tabPanel(
               'BR-Sample',
+              textAreaInput(
+                "ionsStringDist",
+                width = '600px',
+                cols  = 120,
+                label = 'Distribution'
+              ),
               plotOutput("plotIonsBRSample")
             ),
             tabPanel(
