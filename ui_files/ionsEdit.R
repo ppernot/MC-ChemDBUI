@@ -34,7 +34,7 @@ tabPanel(
             'ionsSampleSize',
             label    = '# MC samples (0: nominal)',
             choices  = c(seq(0,100,by=10),seq(200,1000,by = 100)),
-            selected = 0
+            selected = 100
           )
         ),
         column(
