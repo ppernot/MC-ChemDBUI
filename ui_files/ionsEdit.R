@@ -31,7 +31,7 @@ tabPanel(
         column(
           8,
           selectInput(
-            'ionsSampleSize',
+            'ionsSimulateSize',
             label    = '# MC samples',
             choices  = seq(100,1000,by = 100),
             selected = 500

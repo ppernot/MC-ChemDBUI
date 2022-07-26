@@ -283,7 +283,7 @@ observeEvent(
     req(ionsRateMask)
     req(ionsBRMask)
     
-    nMC = as.numeric(input$ionsSampleSize)
+    nMC = as.numeric(input$ionsSimulateSize)
     tagged = FALSE 
     
     # Rate parameters

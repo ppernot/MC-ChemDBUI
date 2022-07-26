@@ -32,6 +32,7 @@ gPars$mar[3] = 2
 neutralsSource = file.path('..','MC-ChemDB','Neutrals','Source')
 neutralsPublic = file.path('..','ChemDBPublic','Neutrals')
 ionsSource     = file.path('..','MC-ChemDB','Ions','Source')
+ionsTmp        = file.path('..','MC-ChemDB','Ions','Tmp')
 ionsPublic     = file.path('..','ChemDBPublic','Ions')
 
 # Load data and functions ####
