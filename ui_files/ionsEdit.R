@@ -32,9 +32,9 @@ tabPanel(
           8,
           selectInput(
             'ionsSampleSize',
-            label    = '# MC samples (0: nominal)',
-            choices  = c(seq(0,100,by=10),seq(200,1000,by = 100)),
-            selected = 100
+            label    = '# MC samples',
+            choices  = seq(100,1000,by = 100),
+            selected = 500
           )
         ),
         column(
@@ -54,10 +54,10 @@ tabPanel(
       sliderInput(
         "ionsTempRangePlot",
         label = "Temp. range [K]",
-        min   = 100, 
-        max   = 1000,
-        value = c(100,1000),
-        step  = 100,
+        min   = 10, 
+        max   = 600,
+        value = c(100,500),
+        step  =  50,
         round = TRUE
       ),
       br(),
@@ -67,7 +67,7 @@ tabPanel(
              <br>
              <B>Simulation</B> Random samples are generated to
              build graphs for rate constants and branching 
-             ratios (Graphs panel)
+             ratios.
              ")
       )  
     ),
@@ -79,48 +79,44 @@ tabPanel(
           'Rate',
           fluidRow(
             column(
-              3,
+              4,
               uiOutput("ionsRateMask")
             ),
             column(
-              9,
+              8,
               plotOutput("plotIonsParsSample")
             )
           )
         ),
         tabPanel(
           'BRs',
-          tabsetPanel(
-            tabPanel(
-              'Edit',
-              fluidRow(
-                column(
-                  6,
-                  uiOutput("ionsBRMask")
-                ),
-                column(
-                  6,
-                  tabPanel(
-                    'BR-Sample',
-                    # textAreaInput(
-                    #   "ionsStringDist",
-                    #   width = '400px',
-                    #   cols  = 120,
-                    #   label = 'Distribution'
-                    # ),
-                    plotOutput("plotIonsBRSample")
-                  )
-                )
-              )
+          fluidRow(
+            column(
+              6,
+              uiOutput("ionsBRMask")
             ),
-            tabPanel(
-              'BR-Tree',
-              plotOutput("plotIonsBRTree")
+            column(
+              6,
+              tabPanel(
+                'BR-Sample',
+                # textAreaInput(
+                #   "ionsStringDist",
+                #   width = '400px',
+                #   cols  = 120,
+                #   label = 'Distribution'
+                # ),
+                plotOutput("plotIonsBRSample")
+              )
             )
+            
           )
         ),
         tabPanel(
-          'Refs',
+          'BR-Tree',
+          plotOutput("plotIonsBRTree")
+        ),
+        tabPanel(
+          'Biblio',
           uiOutput("ionsBiblio")
         ),
         tabPanel(
