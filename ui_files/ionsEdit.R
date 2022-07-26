@@ -76,25 +76,42 @@ tabPanel(
       uiOutput("ionsHeader"),
       tabsetPanel(
         tabPanel(
-          'Mask',
-          uiOutput("ionsMask")
+          'Rate',
+          fluidRow(
+            column(
+              3,
+              uiOutput("ionsRateMask")
+            ),
+            column(
+              9,
+              plotOutput("plotIonsParsSample")
+            )
+          )
         ),
         tabPanel(
-          'Graphs',
+          'BRs',
           tabsetPanel(
             tabPanel(
-              'Rate',
-              plotOutput("plotIonsParsSample")
-            ),
-            tabPanel(
-              'BR-Sample',
-              textAreaInput(
-                "ionsStringDist",
-                width = '600px',
-                cols  = 120,
-                label = 'Distribution'
-              ),
-              plotOutput("plotIonsBRSample")
+              'Edit',
+              fluidRow(
+                column(
+                  6,
+                  uiOutput("ionsBRMask")
+                ),
+                column(
+                  6,
+                  tabPanel(
+                    'BR-Sample',
+                    # textAreaInput(
+                    #   "ionsStringDist",
+                    #   width = '400px',
+                    #   cols  = 120,
+                    #   label = 'Distribution'
+                    # ),
+                    plotOutput("plotIonsBRSample")
+                  )
+                )
+              )
             ),
             tabPanel(
               'BR-Tree',
@@ -103,7 +120,11 @@ tabPanel(
           )
         ),
         tabPanel(
-          'Text',
+          'Refs',
+          uiOutput("ionsBiblio")
+        ),
+        tabPanel(
+          'CSV',
           aceEditor(
             outputId = "aceIons",
             cursorId = "cursor",

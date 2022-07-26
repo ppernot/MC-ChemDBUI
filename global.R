@@ -50,7 +50,24 @@ ionsRateParKwdList = c('ALPHA','BETA','GAMMA')
 ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
 source('R/ionsFunctions.R')
 
-
+# Biblio for ions
+bibFile=file.path('..','MC-ChemDB','Doc','refsDR.bib')
+if(!file.exists('bib.Rdata')) {
+  cat('*** Processing .bib file\n')
+  bib = bibtex::read.bib(file=bibFile)
+  save(bib, file='bib.Rdata')
+} else {
+  sourceTime = file.info(bibFile)["mtime"]
+  bibTime    = file.info('bib.Rdata')["mtime"]
+  if(sourceTime > bibTime) {
+    cat('*** Processing .bib file\n')
+    bib = bibtex::read.bib(file=bibFile)
+    save(bib, file='bib.Rdata')    
+  } else {
+    cat('*** Loading  processed .bib file\n')
+    load('bib.Rdata')
+  }
+}
 
 
 
