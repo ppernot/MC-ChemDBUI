@@ -42,7 +42,8 @@ maxProds      = 4     # Max number of product slots in generated dBases
 elements      = unlist(read.csv(file.path('data','elements.csv'), header = FALSE))
 massElem      = CHNOSZ::mass(elements)
 dummySpecies  = unlist(read.csv(file.path('data','dummySpecies.csv'), header = FALSE))
-stoechFilters = read.csv(file.path('data','stoechFilters.csv'), header = FALSE)
+stoechFilters = read.csv(file.path('data','stoechFilters.csv'), header = FALSE, 
+                         allowEscapes = TRUE)
 tabNeuFiles   = read.csv(file.path('data','neutralsDBFiles.csv'),header = FALSE)
 
 source('R/rateFormulas.R')

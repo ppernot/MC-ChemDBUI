@@ -30,7 +30,7 @@ massFormula = function(sto) {
   # Compute mass from composition vector
   sum(sto * massElem)
 }
-getMassList = function (species,excludeList = 'Products', stoechFilters = NULL) {
+getMassList = function (species, excludeList = 'Products', stoechFilters = NULL) {
   # Compute mass for set of formulae
   if (any(species %in% excludeList)) {
     mass = NA

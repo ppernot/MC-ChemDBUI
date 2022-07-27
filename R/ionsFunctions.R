@@ -429,27 +429,25 @@ getSpecies = function (chain) {
   species = as.vector(sapply(species, str_trim))
   return(species)
 }
-writeSample = function(i,
+writeSample = function(iMC,
                        dir,
                        reac,
                        tags,
                        drawPars,
                        drawBR,
-                       type,
-                       maxReacts,
-                       maxProds) {
+                       type) {
   # Generate csv file of a database draw
   dbOut = data.frame()
-  reacts = getSpecies(reac, maxReacts)
+  reactants = getSpecies(reac)
   signBeta = 1
   if ('E' %in% reactants)
     signBeta = -1
   for (ip in 1:length(tags)) {
-    prods = getSpecies(tags[ip], maxProds)
+    prods = getSpecies(tags[ip])
     db1 = data.frame(
-      R1 = reacts[1],
-      R2 = reacts[2],
-      R3 = reacts[3],
+      R1 = reactants[1],
+      R2 = reactants[2],
+      R3 = reactants[3],
       P1 = prods[1],
       P2 = prods[2],
       P3 = prods[3],
@@ -465,11 +463,11 @@ writeSample = function(i,
   }
   dbOutm <- within(dbOut, {
     b <- sprintf("%6.3f", b)
-    a  <- sprintf("%6.3e", a)
+    a <- sprintf("%6.3e", a)
   })
   write.table(
     dbOutm,
-    file = paste0(dir, 'run_', sprintf('%04i', i), '.csv'),
+    file = file.path(dir, paste0('run_', sprintf('%04i', iMC), '.csv')),
     quote = TRUE,
     sep = ';',
     na = " ",

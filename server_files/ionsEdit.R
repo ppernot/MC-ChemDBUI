@@ -146,12 +146,21 @@ shiny::observe({
   XBR = X[topLeft[1]:nrow(X), topLeft[2]:ncol(X)]
   
   tags = XBR[2:nrow(XBR), 1] # List of channels
-  for (ip in 1:length(tags)) 
-    checkBalance(
+  for (ip in 1:length(tags)) {
+    msg = checkBalance(
       getSpecies(input$ionsFile), 
       getSpecies(tags[ip]), 
       stoechFilters = stoechFilters
     )
+    if(!is.null(msg))
+      id = shiny::showNotification(
+        h4(msg),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+  }
+    
   ionsBRMask(
     list(
       XBR    = XBR,

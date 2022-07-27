@@ -7,6 +7,24 @@ tabPanel(
       uiOutput("selIonsVersionSample"),
       fluidRow(
         column(
+          6,
+          checkboxInput(
+            'ionsSampleUpdate',
+            label = 'Update',
+            value = TRUE
+          )
+        ),
+        column(
+          6,
+          checkboxInput(
+            'ionsSampleCheck',
+            label = 'Check',
+            value = FALSE
+          )
+        )
+      ),
+      fluidRow(
+        column(
           7,
           selectInput(
             'ionsSampleSize',
@@ -19,7 +37,7 @@ tabPanel(
           5,
           actionButton(
             "ionsSampleBtn",
-            label = "Go !",
+            label = "Sample !",
             icon  = icon('gear',verify_fa = FALSE),
             class = "btn-primary"
           ),
@@ -32,11 +50,14 @@ tabPanel(
       br(),
       wellPanel(
         h4("About",.noWS = "before"),
-        HTML("<B>Edit</B> Choose a DB version and a DB file.
-             <br>
-             <B>Simulation</B> Random samples are generated to
-             build graphs for rate constants and branching 
-             ratios.
+        HTML(
+          "<B>Sample</B> Generate MC samples. For efficiency, this is done in
+          two steps:
+          <OL>
+          <LI> Generate intermediate samples for all reactions, stored in temporary files.
+          <LI> Gather and collate intermediate samples to ChemDBPublic
+          </OL>
+          This enables to update the DB without regenerating all samples.
              ")
       )  
     ),
