@@ -6,7 +6,6 @@ function(input, output, session) {
     "neutralsParse.R" ,
     "neutralsSample.R",
     "ionsEdit.R",
-    "ionsParse.R",
     "ionsSample.R",
     "photo.R"
   )

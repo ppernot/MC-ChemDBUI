@@ -9,6 +9,13 @@ options(
   stringsAsFactors = FALSE
 )
 
+source_ui <- function(...) {
+  source(
+    file.path("ui_files", ...),
+    local = TRUE
+  )$value
+}
+
 # Load packages ####
 source("R/packages.R")
 
@@ -53,21 +60,22 @@ ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
 source('R/ionsFunctions.R')
 
 # Biblio for ions
-bibFile=file.path('..','MC-ChemDB','Doc','refsDR.bib')
-if(!file.exists('bib.Rdata')) {
+bibFile = file.path('..','MC-ChemDB','Doc','refsDR.bib')
+bibProc = file.path('data','bib.Rdata')
+if(!file.exists(bibProc)) {
   cat('*** Processing .bib file\n')
   bib = bibtex::read.bib(file=bibFile)
-  save(bib, file='bib.Rdata')
+  save(bib, file=bibProc)
 } else {
   sourceTime = file.info(bibFile)["mtime"]
-  bibTime    = file.info('bib.Rdata')["mtime"]
+  bibTime    = file.info(bibProc)["mtime"]
   if(sourceTime > bibTime) {
     cat('*** Processing .bib file\n')
     bib = bibtex::read.bib(file=bibFile)
-    save(bib, file='bib.Rdata')    
+    save(bib, file=bibProc)    
   } else {
     cat('*** Loading  processed .bib file\n')
-    load('bib.Rdata')
+    load(bibProc)
   }
 }
 

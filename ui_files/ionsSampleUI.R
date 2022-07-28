@@ -28,9 +28,9 @@ tabPanel(
           7,
           selectInput(
             'ionsSampleSize',
-            label    = '# MC samples (0:nominal)',
-            choices  = c(0,10,seq(100,1000,by = 100)),
-            selected = 0
+            label    = '# MC samples',
+            choices  = c(0,10,100,500,1000),
+            selected = 500
           )
         ),
         column(
@@ -43,34 +43,46 @@ tabPanel(
           ),
           tags$style(
             type='text/css',
-            "#ionsSampleBtn { width:100%; margin-top: 20px;}"
+            "#ionsSampleBtn { width:100%; margin-top: 30px;}"
           )
         )
-      ),
-      br(),
+      )
+    ),
+    mainPanel(
+      width = mainWidth,
       wellPanel(
-        h4("About",.noWS = "before"),
-        HTML(
-          "<B>Sample</B> Generate MC samples. For efficiency, this is done in
-          two steps:
+        tabsetPanel(
+          tabPanel(
+            title = "Statistics",
+            verbatimTextOutput("ionsStats")
+          ),
+          tabPanel(
+            title = "Help",
+            HTML(
+              "<h4>Sample</h4> 
+          Generate MC samples. <BR>
+          For efficiency, this is done in two steps:
           <OL>
-          <LI> Generate intermediate samples for all reactions, stored in temporary files.
-          <LI> Gather and collate intermediate samples to ChemDBPublic
+          <LI> generate intermediate samples for all reactions, stored in temporary files.
+          <LI> gather and collate intermediate samples to ChemDBPublic.
           </OL>
-          This enables to update the DB without regenerating all samples.
+          This enables DB updates without regenerating all samples, which might be  
+          processor intensive.
+          <h4>Options</h4>
           <UL>
           <LI> <B>Update</B>: if checked, only reactions recently modified or with missing
           samples are sampled. If unchecked, all reactions are sampled, which might 
           take some time...
-          <LI> <B>Check only</B>: if checked, the data are tested for consistency, but samples are
-          not generated.
-          </UL>
-             ")
-      )  
-    ),
-    mainPanel(
-      width = mainWidth,
-      tabsetPanel(
+          <LI> <B>Check only</B>: if checked, the data are tested for consistency, 
+          but samples are not generated.
+          <LI> <B># MC samples</B>: number of samples, default (and recommended minimum
+          for production) is 500. Smaller values are used for testing. Zero (0) 
+          corresponds to a single draw with nominal values of parameters. It is always 
+          provided as the first sample in file run_0000.csv.
+          </UL>"
+            )
+          )
+        )  
       )
     )
   )

@@ -1,3 +1,5 @@
+collateDone = shiny::reactiveVal(NULL)
+
 output$selIonsVersionSample = shiny::renderUI({
   list(
     shiny::selectInput(
@@ -12,7 +14,7 @@ output$selIonsVersionSample = shiny::renderUI({
     )
   )
 })
-
+# Sampling ####
 observeEvent(
   input$ionsSampleBtn,
   {
@@ -26,7 +28,7 @@ observeEvent(
     tmpDir    = file.path(ionsTmp,input$ionsVersionSample)
     fpTmp     = file.path(tmpDir,'Reactions')
     
-    # Sampling loop ####
+    ## Sampling loop ####
     shiny::withProgress(
       message = 'Sampling ', 
       {
@@ -148,7 +150,7 @@ observeEvent(
           
           if (input$ionsSampleCheck) next
           
-          ## Generate BR samples ####
+          ### Generate BR samples ####
           if(length(tags) >=2) {
             # Build tree
             dist=XBR[1,2:ncol(XBR)] # List of distributions in tree
@@ -242,7 +244,7 @@ observeEvent(
           sigBR     = apply(sampleBR, 2, sd)
           
           
-          # Write samples ####
+          ## Write samples ####
           # Write sample to tmp file
           writeSample(0, samplesDir, reac, tags, meanPars, meanBR, reacType)
           for (i in 1:sampleSize) 
@@ -250,10 +252,10 @@ observeEvent(
                         sampleRateParams[i,], sampleBR[i,], 
                         reacType)     
           
-          # Auxiliary files
-          sink(file = file.path(targetDir, 'species.txt'), append = FALSE)
-          cat(unique(allSpecies))
-          sink(file = NULL)
+          # # Auxiliary files
+          # sink(file = file.path(targetDir, 'species.txt'), append = FALSE)
+          # cat(unique(allSpecies))
+          # sink(file = NULL)
           
           bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
           for (kwd in bibKwd) {
@@ -315,8 +317,8 @@ observeEvent(
         type = 'warning'
       )
     }
-
-    # Gather loop ####
+    
+    ## Gather loop ####
     
     if (!input$ionsSampleCheck) {
       
@@ -328,7 +330,7 @@ observeEvent(
       ionsSampleDir = paste0(ionsPublic,'_',input$ionsVersionSample)
       if(!dir.exists(ionsSampleDir))
         dir.create(ionsSampleDir)
-
+      
       dataTableFile = file.path(ionsSampleDir,'dataTable.html')
       if(file.exists(dataTableFile))
         file.remove(dataTableFile)
@@ -394,8 +396,74 @@ observeEvent(
         duration = NULL,
         type = 'message'
       )
+      
+      collateDone(TRUE)
     }   
   })
+
+# Statistics ####
+output$ionsStats = renderText({
+  req(collateDone())
+  
+  fileName = file.path(
+    paste0(ionsPublic,'_',input$ionsVersionSample),'run_0000.csv')
+  scheme   = as.data.frame(
+    data.table::fread(file = fileName, header = FALSE, sep = ';')
+  )
+  scheme   = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
+  nbReac=0
+  reactants = products = params = type = reacTagFull = list()
+  for (i in 1:nrow(scheme)) {
+    nbReac = nbReac + 1
+    terms=scheme[i,1:3]
+    reactants[[nbReac]] = terms[!is.na(terms) & terms!=""]
+    terms=scheme[i,4:7]
+    products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
+    terms=scheme[i,8:ncol(scheme)]
+    params[[nbReac]]    = terms[!is.na(terms) & terms!=""]
+    type[[nbReac]]      = terms[length(terms)]
+    rr = paste(reactants[[nbReac]],collapse = ' + ')
+    pp = paste(products[[nbReac]],collapse = ' + ')
+    reacTagFull[[nbReac]]   = paste0(rr,' --> ',pp)
+  }
+  
+  # Build species list from reactants and products
+  species   = levels(as.factor(unlist(c(reactants,products))))
+  nbSpecies = length(species)
+  reacts    = unique(unlist(reactants))
+  nbReacts  = length(reacts)
+  prods     = unique(unlist(products))
+  nbProds   = length(prods)
+  return(
+    paste0(
+      'Number of species = ',nbSpecies,'\n',
+      '__ as reactants   : ',nbReacts,'\n',
+      '__ as products    : ',nbProds,'\n'
+    )
+  )  
+  # # Stoechiometry
+  # mass = getMassList(species, excludeList = dummySpecies, 
+  #                     stoechFilters = stoechFilters)
+  # names(mass) = species
+  # 
+  # # Full R, L, D matrices
+  # L = R = D = matrix(0,ncol=nbSpecies,nrow=nbReac)
+  # for (m in 1:nbReac) {
+  #   reac = unlist(reactants[m])
+  #   prod = unlist(products[m] )
+  #   for (n in 1:nbSpecies) {
+  #     search=species[n]
+  #     L[m,n] = length(which( search == reac )) # Loss
+  #     R[m,n] = length(which( search == prod )) # Prod
+  #   }
+  # }
+  # D = R - L # Step change matrix
+  # colnames(L)=species
+  # colnames(R)=species
+  # colnames(D)=species
+  
+})
+
 
 # # Dummies 
 # selAux = is.na(masses) | masses < 1

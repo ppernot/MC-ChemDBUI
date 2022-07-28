@@ -1,15 +1,9 @@
 function(request) {
-  source_ui <- function(...) {
-    source(
-      file.path("ui_files", ...),
-      local = TRUE
-    )$value
-  }
-
   navbarPage(
     "MC-ChemDB",
-    theme = shinythemes::shinytheme(
-      c("cosmo", "cerulean", "spacelab", "yeti")[3]
+    theme = bslib::bs_theme(
+      version = 5, 
+      bootswatch = c("united","sketchy")[1]
     ),
     navbarMenu(
       "Neutrals",
