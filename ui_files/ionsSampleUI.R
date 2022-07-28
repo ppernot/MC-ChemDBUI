@@ -18,7 +18,7 @@ tabPanel(
           6,
           checkboxInput(
             'ionsSampleCheck',
-            label = 'Check',
+            label = 'Check only',
             value = FALSE
           )
         )
@@ -58,6 +58,13 @@ tabPanel(
           <LI> Gather and collate intermediate samples to ChemDBPublic
           </OL>
           This enables to update the DB without regenerating all samples.
+          <UL>
+          <LI> <B>Update</B>: if checked, only reactions recently modified or with missing
+          samples are sampled. If unchecked, all reactions are sampled, which might 
+          take some time...
+          <LI> <B>Check only</B>: if checked, the data are tested for consistency, but samples are
+          not generated.
+          </UL>
              ")
       )  
     ),

@@ -15,35 +15,43 @@ function(request) {
       "Neutrals",
       tabPanel(
         title = "Edit",
-        source_ui("neutralsEdit.R")
+        source_ui("neutralsEditUI.R")
       ),
       tabPanel(
         title = "Parse",
-        source_ui("neutralsParse.R")
+        source_ui("neutralsParseUI.R")
       ),
       tabPanel(
         title = "Sample",
-        source_ui("neutralsSample.R")
+        source_ui("neutralsSampleUI.R")
+      ),
+      tabPanel(
+        title = "Report",
+        source_ui("neutralsReportUI.R")
       )
     ),
     navbarMenu(
       "Ions",
       tabPanel(
         title = "Edit/Parse",
-        source_ui("ionsEdit.R")
+        source_ui("ionsEditUI.R")
       ),
       tabPanel(
         title = "Sample",
-        source_ui("ionsSample.R")
+        source_ui("ionsSampleUI.R")
+      ),
+      tabPanel(
+        title = "Report",
+        source_ui("ionsReportUI.R")
       )
     ),
     tabPanel(
       title = "Photo-processes",
-      source_ui("photo.R")
+      source_ui("photoUI.R")
     ),
     tabPanel(
       title = "About",
-      source_ui("about.R")
+      source_ui("aboutUI.R")
     )
   )
 }

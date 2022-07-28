@@ -26,12 +26,13 @@ observeEvent(
     tmpDir    = file.path(ionsTmp,input$ionsVersionSample)
     fpTmp     = file.path(tmpDir,'Reactions')
     
+    # Sampling loop ####
     shiny::withProgress(
       message = 'Sampling ', 
       {
         sampled = c()
         for (reac in listDirs) {
-    
+          
           # Check if sampling is necessary
           needSample = FALSE
           if(input$ionsSampleUpdate) {
@@ -64,7 +65,7 @@ observeEvent(
               needSample = TRUE
             }
           }
-
+          
           incProgress(1/length(listDirs), detail = reac)
           
           if(!needSample) next()
@@ -85,7 +86,7 @@ observeEvent(
               header=FALSE, sep='\t', fill=TRUE, na.strings=""
             )
           )
-
+          
           X = trimws(X) # remove unwanted spaces
           reacName = X[1,1]
           if(reacName != reac) 
@@ -147,8 +148,9 @@ observeEvent(
           
           if (input$ionsSampleCheck) next
           
+          ## Generate BR samples ####
           if(length(tags) >=2) {
-            # Build tree #####
+            # Build tree
             dist=XBR[1,2:ncol(XBR)] # List of distributions in tree
             dist=dist[!is.na(dist)]
             XT=XBR[-1,-1]          # Matrix of parameters
@@ -240,6 +242,7 @@ observeEvent(
           sigBR     = apply(sampleBR, 2, sd)
           
           
+          # Write samples ####
           # Write sample to tmp file
           writeSample(0, samplesDir, reac, tags, meanPars, meanBR, reacType)
           for (i in 1:sampleSize) 
@@ -282,7 +285,6 @@ observeEvent(
           cat('</TR>\n')
           if(length(tags) >= 2) {
             for(i in 2:length(tags)) {
-              #       cat('<TR><TD COLSPAN=5>HR</TD></TR>\n')
               cat('<TR>\n')
               cat(paste0('<TD> </TD>\n'))
               cat(paste0('<TD> </TD>\n'))
@@ -296,7 +298,8 @@ observeEvent(
           sink(file = NULL)
           
         }
-      })
+      }
+    )
     if(length(sampled)== 0) {
       id = shiny::showNotification(
         h4('Sampling: nothing to be done...'),
@@ -312,146 +315,98 @@ observeEvent(
         type = 'warning'
       )
     }
+
+    # Gather loop ####
+    
+    if (!input$ionsSampleCheck) {
       
-    # Gather ####
-    
-    # List of reacs in Tmp DB
-    tmpDir    = file.path(ionsTmp,input$ionsVersionSample,'Reactions')
-    listReacs = list.files(path = tmpDir, full.names = FALSE, recursive = FALSE)
-    
-    # Target directory
-    ionsSampleDir = paste0(ionsPublic,'_',input$ionsVersionSample)
-    if(!dir.exists(ionsSampleDir))
-      dir.create(ionsSampleDir)
-    
-    shiny::withProgress(
-      message = 'Collating ', 
-      {
-        allSpecies = allBibKeys = c()
-        for (reac in listReacs) {
-          
-          incProgress(1/length(listReacs), detail = reac)
-          
-          # sink(file=dataTableFile,append=TRUE)
-          # cat('<TR><TD COLSPAN=5><HR size=1></TD></TR>\n')
-          # sink(file=NULL)
-          # file.append(
-          #   file1=dataTableFile,
-          #   file2=paste0(tmpDir,'Reactions/',reac,'/dataTable.html')) 
-          
-          # # Generate Html index to summary files
-          # cat(paste0(reac,'\n'))
-          # sink(file=indexFile,append=TRUE)
-          # cat(paste0('<BR><A HREF="./Data/',reac,'/summary.html">',reac,'</A>\n')) 
-          # sink(file=NULL)
-          
-          # Generate collated Monte Carlo samples
-          for (i in 0:(sampleSize-1)) {
-            runFile = paste0('run_', sprintf('%04i', i), '.csv')
+      # List of reacs in Tmp DB
+      tmpDir    = file.path(ionsTmp,input$ionsVersionSample,'Reactions')
+      listReacs = list.files(path = tmpDir, full.names = FALSE, recursive = FALSE)
+      
+      # Target directory
+      ionsSampleDir = paste0(ionsPublic,'_',input$ionsVersionSample)
+      if(!dir.exists(ionsSampleDir))
+        dir.create(ionsSampleDir)
+
+      dataTableFile = file.path(ionsSampleDir,'dataTable.html')
+      if(file.exists(dataTableFile))
+        file.remove(dataTableFile)
+      sink(file=dataTableFile)
+      cat('<!DOCTYPE html>\n<HTML>\n
+      <HEAD>\n<STYLE>th {text-align: left;}</STYLE>\n</HEAD>\n
+      <BODY><TABLE BORDER=0>\n
+      <TR><TH>Reactants</TH><TH></TH><TH>Products</TH>
+          <TH>Branching Ratios</TH><TH>Alpha</TH></TR>\n')
+      sink(file=NULL)
+      
+      shiny::withProgress(
+        message = 'Collating ', 
+        {
+          allSpecies = allBibKeys = c()
+          for (reac in listReacs) {
+            
+            incProgress(1/length(listReacs), detail = reac)
+            
+            sink(file = dataTableFile, append = TRUE)
+            cat('<TR><TD COLSPAN=5><HR size=1></TD></TR>\n')
+            sink(file = NULL)
             file.append(
-              file1 = file.path(ionsSampleDir, runFile),
-              file2 = file.path(tmpDir, reac, 'Samples', runFile)
+              file1 = dataTableFile,
+              file2 = file.path(tmpDir, reac, 'dataTable.html')
             )
-          }
-          
-          # Collate full species list
-          # species = read.csv(file=paste0(tmpDir,'Reactions/',reac,'/species.txt'),
-          #                    sep=' ',header=FALSE,stringsAsFactors = FALSE)
-          # allSpecies=c(allSpecies,unlist(species))                   
-          # 
-          # Collate full biblio
-          # file=paste0(tmpDir,'Reactions/',reac,'/bibKeys.txt')
-          # if( file.info(file)$size != 0) {
-          #   bibKeys = read.csv(file,sep=' ',header=FALSE,stringsAsFactors = FALSE)
-          #   allBibKeys=c(allBibKeys,unlist(bibKeys))                   
-          # }
-          
-          
-          
-        } 
-      })
-    
+            
+            # Generate collated Monte Carlo samples
+            for (i in 0:(sampleSize-1)) {
+              runFile = paste0('run_', sprintf('%04i', i), '.csv')
+              file.append(
+                file1 = file.path(ionsSampleDir, runFile),
+                file2 = file.path(tmpDir, reac, 'Samples', runFile)
+              )
+            }
+            
+            # Collate full biblio
+            file = file.path(tmpDir, reac, 'bibKeys.txt')
+            if (file.info(file)$size != 0) {
+              bibKeys = read.csv(file,
+                                 sep = ' ',
+                                 header = FALSE,
+                                 stringsAsFactors = FALSE)
+              allBibKeys = c(allBibKeys, unlist(bibKeys))
+            }
+            
+          } 
+        })
       
-    
-    # allSpecies = unique(allSpecies)
-    # masses = sapply(allSpecies, getMassList)
-    # 
-    # sink(file=dataTableFile,append=TRUE)
-    # cat('</TABLE>')
-    # sink(file=NULL)
-    # 
-    # # Generate prod-loss file 
-    # sink(file=spIndexFile,append=FALSE)
-    # 
-    # cat('<H2>Neutrals</H2>')
-    # selIons=grepl('\\+$',allSpecies)
-    # spec = allSpecies[!selIons]
-    # mass  = masses[!selIons]
-    # mord=order(mass)
-    # for (sp in spec[mord]) {
-    #   specDir=paste0(tmpDir,'Species/',sp)
-    #   
-    #   cat(paste0('<BR><B>',sp,'</B> ')) 
-    #   pFile=paste0(specDir,'/prod.html')
-    #   if(file.exists(pFile)) 
-    #     cat(paste0(' <A HREF="',pFile,'">Productions</A>'))
-    #   
-    #   pFile=paste0(specDir,'/loss.html')
-    #   if(file.exists(pFile)) 
-    #     cat(paste0(' <A HREF="',pFile,'">Losses</A>'))
-    # }
-    # 
-    # cat('<H2>Ions</H2>')
-    # spec = allSpecies[selIons]
-    # mass  = masses[selIons]
-    # mord=order(mass)
-    # for (sp in spec[mord]) {
-    #   specDir=paste0(tmpDir,'Species/',sp)
-    #   
-    #   cat(paste0('<BR><B>',sp,'</B> ')) 
-    #   pFile=paste0(specDir,'/prod.html')
-    #   if(file.exists(pFile)) 
-    #     cat(paste0(' <A HREF="',pFile,'">Productions</A>'))
-    #   
-    #   pFile=paste0(specDir,'/loss.html')
-    #   if(file.exists(pFile)) 
-    #     cat(paste0(' <A HREF="',pFile,'">Losses</A>'))
-    # }
-    # sink(file=NULL)
-    # 
-    # targetHtml = paste0(sourceDir,'speciesList.html')
-    # sink(file=targetHtml, append=FALSE)
-    # cat('<H1>Species List</H1>')
-    # 
-    # # Dummies 
-    # selAux = is.na(masses) | masses < 1
-    # cat('<H2>Auxiliary species</H2>')
-    # cat(paste0(allSpecies[selAux],collapse='<BR>'))
-    # 
-    # # Neutrals
-    # trueSpecies=allSpecies[!selAux]
-    # trueMasses=masses[!selAux]
-    # selIons=grepl('\\+$',trueSpecies)
-    # species = trueSpecies[!selIons]
-    # spMass  = trueMasses[!selIons]
-    # mord=order(spMass)
-    # listSp = c()
-    # for (i in seq_along(mord)) 
-    #   listSp[i] = paste0('<font color="blue">',species[mord[i]],
-    #                      '</font> (',signif(spMass[mord[i]],4),')')
-    # cat('<H2>Neutrals</H2>')
-    # cat(paste0(listSp,collapse='<BR>'))
-    # 
-    # # Cations
-    # species = trueSpecies[selIons]
-    # spMass  = trueMasses[selIons]
-    # mord=order(spMass)
-    # listSp = c()
-    # for (i in seq_along(mord)) 
-    #   listSp[i] = paste0('<font color="blue">',species[mord[i]],
-    #                      '</font> (',signif(spMass[mord[i]],4),')')
-    # cat('<H2>Cations</H2>')
-    # cat(paste0(listSp,collapse='<BR>'))
-    # 
-    # sink(file = NULL)
+      sink(file=dataTableFile,append=TRUE)
+      cat('</TABLE></HTML>')
+      sink(file=NULL)
+      
+      targetHtml = file.path(ionsSampleDir,'bibliography.html')
+      sink(file=targetHtml, append=FALSE)
+      allBibKeys=sort(unique(allBibKeys))
+      printBib(allBibKeys,bib)
+      sink(file = NULL)
+      
+      id = shiny::showNotification(
+        h4('Samples written to ChemDBPublic'),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'message'
+      )
+    }   
   })
+
+# # Dummies 
+# selAux = is.na(masses) | masses < 1
+# 
+# # Neutrals
+# trueSpecies=allSpecies[!selAux]
+# trueMasses=masses[!selAux]
+# selIons=grepl('\\+$',trueSpecies)
+# species = trueSpecies[!selIons]
+# spMass  = trueMasses[!selIons]
+# 
+# # Cations
+# species = trueSpecies[selIons]
+# spMass  = trueMasses[selIons]

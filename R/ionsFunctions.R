@@ -429,13 +429,7 @@ getSpecies = function (chain) {
   species = as.vector(sapply(species, str_trim))
   return(species)
 }
-writeSample = function(iMC,
-                       dir,
-                       reac,
-                       tags,
-                       drawPars,
-                       drawBR,
-                       type) {
+writeSample = function(iMC, dir, reac, tags, drawPars, drawBR, type) {
   # Generate csv file of a database draw
   dbOut = data.frame()
   reactants = getSpecies(reac)
