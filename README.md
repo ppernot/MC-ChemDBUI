@@ -6,7 +6,7 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 
 ## News
 
-* `2022/07/21` First docker version to handle neutral reactions with three main functions:
+* `2022/07/21` First docker version (v0.1) to handle neutral reactions with three main functions:
 
     1. Open and edit DB files; create new DB version
 
@@ -14,12 +14,14 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
     
     3. Generate MC samples and plot resulting reaction rates as a function of temperature
     and density.
+
+* `2022/07/29` v0.2
+
+    1. Add ion/molecule reactions (edit/parse, sample). No `Save` feature yet...
     
 ## To Be Done...
 
 * Add possibility to Import/Export MC-ChemDB (to and from github ?)
-
-* Manage ion-molecule reactions
 
 * Manage photo-processes
 

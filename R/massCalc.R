@@ -1,7 +1,7 @@
 filterFormula <- function (sp) {
   # Normalize chemical formula for mass estimation
   if(is.null(stoechFilters))
-    stop(">>> Need stoechFilters !")
+    stop(">>> Need stoechFilters in global Env. !")
   sp1 = sp
   for(i in 1:nrow(stoechFilters))
     sp1 = sub(stoechFilters[i,1], stoechFilters[i,2], sp1)

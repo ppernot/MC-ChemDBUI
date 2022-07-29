@@ -80,7 +80,7 @@ observeEvent(
         apply(
           X = as.matrix(species,ncol=1), 
           MARGIN = 1,
-          FUN = function(x){get.atoms(x,stoechFilters)}
+          FUN = function(x){get.atoms(x)}
         )
       )
     colnames(compo)=elements
@@ -147,8 +147,7 @@ observeEvent(
         )
         for (i in 1:nbReac) {
           incProgress(1/nbReac, detail = paste(i,'/',nbReac))
-          msg = checkBalance(reactants[[i]],products[[i]],
-                             stoechFilters = stoechFilters)
+          msg = checkBalance(reactants[[i]],products[[i]])
           if(!is.null(msg))
             id = shiny::showNotification(
               h4(msg),

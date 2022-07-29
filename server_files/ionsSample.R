@@ -78,8 +78,7 @@ observeEvent(
           
           reactants = getSpecies(reac)
           allSpecies = c(allSpecies,reactants)
-          massReactants = getMassList(reactants, excludeList = dummySpecies,
-                                      stoechFilters = stoechFilters)
+          massReactants = getMassList(reactants, excludeList = dummySpecies)
           
           # Get data for this reaction #
           X = as.matrix(
@@ -140,7 +139,7 @@ observeEvent(
             prods = getSpecies(tags[ip])
             allProds = c(allProds, prods)
             allSpecies = c(allSpecies, prods)
-            msg = checkBalance(reactants, prods, stoechFilters = stoechFilters)
+            msg = checkBalance(reactants, prods)
             if (!is.null(msg))
               id = shiny::showNotification(h4(msg),
                                            closeButton = TRUE,

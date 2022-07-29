@@ -2,16 +2,18 @@ FROM ppernot1/shiny_base
 
 RUN apt-get install -y --no-install-recommends libharfbuzz-dev libfribidi-dev
 
-## renv
+# renv
 ENV RENV_VERSION 0.15.5
 RUN Rscript -e "install.packages('remotes', repos = c(CRAN = 'https://cloud.r-project.org'))"
 RUN Rscript -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
 
 RUN mkdir MC-ChemDBUI
-COPY .Rprofile /MC-ChemDBUI/
-COPY renv/activate.R /MC-ChemDBUI/renv/activate.R
-COPY renv.lock /MC-ChemDBUI/renv.lock
 WORKDIR /MC-ChemDBUI
+COPY .Rprofile .
+#ADD renv.tar.gz . # Pb unresolved shared libs...
+COPY renv/activate.R ./renv/activate.R
+COPY renv.lock ./renv.lock
+#WORKDIR /MC-ChemDBUI
 RUN R -e 'renv::consent(TRUE)' \
  && R -e 'renv::restore()'
 
@@ -20,16 +22,24 @@ WORKDIR /
 RUN mkdir ChemDBPublic
 ADD ChemDB.tar.gz /
 
-## app files
-COPY global.R /MC-ChemDBUI/
-COPY ui.R /MC-ChemDBUI/
-COPY server.R /MC-ChemDBUI/
-COPY ui_files /MC-ChemDBUI/ui_files/
-COPY server_files /MC-ChemDBUI/server_files/
-COPY R /MC-ChemDBUI/R/
-COPY data /MC-ChemDBUI/data/
-WORKDIR /MC-ChemDBUI
 
+## Sampler files
+WORKDIR /MC-ChemDBUI
+COPY Sampler ./Sampler/
+WORKDIR /MC-ChemDBUI/Sampler/Ranlib/src
+RUN ./comp
+WORKDIR /MC-ChemDBUI/Sampler
+RUN ./compile
+
+## app files
+WORKDIR /MC-ChemDBUI
+COPY global.R .
+COPY ui.R .
+COPY server.R .
+COPY ui_files ./ui_files/
+COPY server_files ./server_files/
+COPY R ./R/
+COPY data ./data/
 
 ## change user from root ### BREAKS renv links !!!
 #RUN addgroup --system app \

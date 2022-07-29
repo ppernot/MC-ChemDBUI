@@ -77,7 +77,7 @@ shiny::observe({
 output$checkSpecies <- renderText({ 
   req(input$ace_cursor)
   sp = input$ace_selection
-  compo = get.atoms(sp, stoechFilters = stoechFilters)
+  compo = get.atoms(sp)
   names(compo) = elements
   mass  = massFormula(compo)
   paste0(

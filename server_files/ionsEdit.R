@@ -75,8 +75,7 @@ shiny::observe({
   mask = list()
   reactants = getSpecies(input$ionsFile)
   mask[['REACTANTS']] = reactants
-  massReactants = getMassList(reactants, excludeList = dummySpecies,
-                              stoechFilters = stoechFilters)
+  massReactants = getMassList(reactants, excludeList = dummySpecies)
   # if(length(reactants) > maxReacts)
   #   id = shiny::showNotification(
   #     h4(paste0('Nb of products exceds maxProd=',maxProds)),
@@ -149,8 +148,7 @@ shiny::observe({
   for (ip in 1:length(tags)) {
     msg = checkBalance(
       getSpecies(input$ionsFile), 
-      getSpecies(tags[ip]), 
-      stoechFilters = stoechFilters
+      getSpecies(tags[ip])
     )
     if(!is.null(msg))
       id = shiny::showNotification(

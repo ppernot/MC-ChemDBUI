@@ -1,6 +1,7 @@
 BUILD :
     1/ cd MC-ChemDBUI
-    2/ docker build -t ppernot1/mc-chemdbui:v0.1 -t ppernot1/mc-chemdbui:latest -f docker/Dockerfile .
+    1.a/ source compressDB.sh
+    2/ docker build -t ppernot1/mc-chemdbui:v0.2 -t ppernot1/mc-chemdbui:latest -f docker/Dockerfile .
     3/ docker login
     4/ docker image push --all-tags ppernot1/mc-chemdbui
 
