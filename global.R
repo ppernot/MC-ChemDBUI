@@ -46,7 +46,9 @@ ionsPublic     = file.path('..','ChemDBPublic','Ions')
 source('R/massCalc.R')
 maxReacts     = 3     # Max number of reactants slots in generated dBases
 maxProds      = 4     # Max number of product slots in generated dBases
-elements      = unlist(read.csv(file.path('data','elements.csv'), header = FALSE))
+elTable       = read.csv(file.path('data','elements.csv'), header = FALSE)
+elements      = unlist(elTable[1,])
+numElecElem   = as.numeric(unlist(elTable[2,]))
 massElem      = CHNOSZ::mass(elements)
 dummySpecies  = unlist(read.csv(file.path('data','dummySpecies.csv'), header = FALSE))
 stoechFilters = read.csv(file.path('data','stoechFilters.csv'), header = FALSE, 

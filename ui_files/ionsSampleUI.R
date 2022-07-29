@@ -54,7 +54,7 @@ tabPanel(
         tabsetPanel(
           tabPanel(
             title = "Statistics",
-            verbatimTextOutput("ionsStats")
+            verbatimTextOutput("ionsStats",)
           ),
           tabPanel(
             title = "Help",

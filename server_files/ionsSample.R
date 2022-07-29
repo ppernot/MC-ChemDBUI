@@ -327,9 +327,14 @@ observeEvent(
       listReacs = list.files(path = tmpDir, full.names = FALSE, recursive = FALSE)
       
       # Target directory
-      ionsSampleDir = paste0(ionsPublic,'_',input$ionsVersionSample)
-      if(!dir.exists(ionsSampleDir))
+      ionsSampleDir = paste0(ionsPublic, '_', input$ionsVersionSample)
+      if (!dir.exists(ionsSampleDir)) {
         dir.create(ionsSampleDir)
+      } else {
+        # Clean
+        fileList = list.files(path = ionsSampleDir, full.name = TRUE)
+        file.remove(fileList)
+      }
       
       dataTableFile = file.path(ionsSampleDir,'dataTable.html')
       if(file.exists(dataTableFile))
@@ -370,10 +375,8 @@ observeEvent(
             # Collate full biblio
             file = file.path(tmpDir, reac, 'bibKeys.txt')
             if (file.info(file)$size != 0) {
-              bibKeys = read.csv(file,
-                                 sep = ' ',
-                                 header = FALSE,
-                                 stringsAsFactors = FALSE)
+              bibLine = readLines(con = file(file), n = 1)
+              bibKeys = str_split(bibLine, ' ')
               allBibKeys = c(allBibKeys, unlist(bibKeys))
             }
             
@@ -402,79 +405,107 @@ observeEvent(
   })
 
 # Statistics ####
-output$ionsStats = renderText({
+output$ionsStats = renderPrint({
   req(collateDone())
+  
+  id = shiny::showNotification(
+    h4('Computing statistics...'),
+    closeButton = TRUE,
+    duration = NULL,
+    type = 'message'
+  )
   
   fileName = file.path(
     paste0(ionsPublic,'_',input$ionsVersionSample),'run_0000.csv')
   scheme   = as.data.frame(
     data.table::fread(file = fileName, header = FALSE, sep = ';')
   )
-  scheme   = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
-  nbReac=0
+  nbReac   = nrow(scheme)
   reactants = products = params = type = reacTagFull = list()
-  for (i in 1:nrow(scheme)) {
-    nbReac = nbReac + 1
-    terms=scheme[i,1:3]
-    reactants[[nbReac]] = terms[!is.na(terms) & terms!=""]
-    terms=scheme[i,4:7]
-    products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
-    terms=scheme[i,8:ncol(scheme)]
-    params[[nbReac]]    = terms[!is.na(terms) & terms!=""]
-    type[[nbReac]]      = terms[length(terms)]
-    rr = paste(reactants[[nbReac]],collapse = ' + ')
-    pp = paste(products[[nbReac]],collapse = ' + ')
-    reacTagFull[[nbReac]]   = paste0(rr,' --> ',pp)
+  for (i in 1:nbReac) {
+    line = replace(scheme[i, ], scheme[i, ] == " ", "")
+    line = replace(line, is.na(line), "")
+    reactants[[i]] = line[1:3][line[1:3]!=""]
+    products[[i]]  = line[4:7][line[4:7]!=""]
+    type[[i]]      = line[ncol(scheme)]
+    reacTagFull[[i]] = paste0(
+      paste(reactants[[i]], collapse = ' + '), 
+      ' --> ', 
+      paste(products[[i]], collapse = ' + ')
+    )
   }
   
   # Build species list from reactants and products
-  species   = levels(as.factor(unlist(c(reactants,products))))
+  species   = unique(unlist(c(reactants,products)))
   nbSpecies = length(species)
   reacts    = unique(unlist(reactants))
   nbReacts  = length(reacts)
   prods     = unique(unlist(products))
   nbProds   = length(prods)
-  return(
-    paste0(
-      'Number of species = ',nbSpecies,'\n',
-      '__ as reactants   : ',nbReacts,'\n',
-      '__ as products    : ',nbProds,'\n'
-    )
-  )  
-  # # Stoechiometry
-  # mass = getMassList(species, excludeList = dummySpecies, 
-  #                     stoechFilters = stoechFilters)
-  # names(mass) = species
-  # 
-  # # Full R, L, D matrices
-  # L = R = D = matrix(0,ncol=nbSpecies,nrow=nbReac)
-  # for (m in 1:nbReac) {
-  #   reac = unlist(reactants[m])
-  #   prod = unlist(products[m] )
-  #   for (n in 1:nbSpecies) {
-  #     search=species[n]
-  #     L[m,n] = length(which( search == reac )) # Loss
-  #     R[m,n] = length(which( search == prod )) # Prod
-  #   }
-  # }
-  # D = R - L # Step change matrix
-  # colnames(L)=species
-  # colnames(R)=species
-  # colnames(D)=species
   
+  cat('Nb reactions       = ', nbReac   ,'\n')
+  cat('Nb species         = ', nbSpecies,'\n\n')
+  
+  # Nature of species
+  types = c("neutrals","ions")
+  chems = c("hydrocarbons","N-bearing","O-bearing")
+  heavy = c("C0","C1","C2","C3","C4","C5","C6","Cmore")
+  resu = matrix(0,
+                nrow = 1 + length(chems),
+                ncol = 2 + length(types))
+  rownames(resu) = c(chems,'total')
+  colnames(resu) = c(types,'radicals','total')
+  for (type in types)
+    resu['total',type] = sum(
+      selectSpecies(species,c(type,chems,heavy)))
+  resu['total','radicals'] = sum(
+    selectSpecies(species,c(types,'radicals',chems,heavy)))
+  for (chem in chems) {
+    resu[chem,'total'] = sum(
+      selectSpecies(species,c(types,chem,heavy)))
+    resu[chem,'radicals'] = sum(
+      selectSpecies(species,c(types,'radicals',chem,heavy)))
+  }
+  for (type in types)
+    for (chem in chems)
+      resu[chem,type] = sum(
+        selectSpecies(species,c(type,chem,heavy)))
+  resu['total','total'] = sum(resu[,'total'])
+  cat('Compositions (excl. dummies)\n')
+  cat('----------------------------\n\n')
+  print(resu)
+  cat('\n\n')
+  
+  # Loss and prod
+  L = R = matrix(0,ncol=nbSpecies,nrow=nbReac)
+  for (m in 1:nbReac) {
+    reac = unlist(reactants[m])
+    prod = unlist(products[m] )
+    for (n in 1:nbSpecies) {
+      search=species[n]
+      L[m,n] = length(which( search == reac )) # Loss
+      R[m,n] = length(which( search == prod )) # Prod
+    }
+  }
+  selLossless = colSums(L) == 0
+  nbLossless = sum(selLossless)
+  if(nbLossless != 0)
+    lossless = sort(species[selLossless])
+  selProdless = colSums(R) == 0
+  nbProdless = sum(selProdless)
+  if(nbProdless != 0)
+    prodless = sort(species[selProdless])
+
+  cat('Reactants   : ',nbReacts,'\n')
+  cat('Products    : ',nbProds,'\n\n')
+  cat('Number of lossless species = ',nbLossless)
+  if(nbLossless != 0) 
+    cat(strwrap(paste0(lossless, collapse = ', '),width=60,prefix='\n'),'\n\n')
+  cat('Number of prodless species = ',nbProdless)
+  if(nbProdless != 0) 
+    cat(strwrap(paste0(prodless, collapse = ', '),width=60,prefix='\n'),'\n\n')
+  
+  id0=shiny::removeNotification(id)
 })
 
 
-# # Dummies 
-# selAux = is.na(masses) | masses < 1
-# 
-# # Neutrals
-# trueSpecies=allSpecies[!selAux]
-# trueMasses=masses[!selAux]
-# selIons=grepl('\\+$',trueSpecies)
-# species = trueSpecies[!selIons]
-# spMass  = trueMasses[!selIons]
-# 
-# # Cations
-# species = trueSpecies[selIons]
-# spMass  = trueMasses[selIons]
