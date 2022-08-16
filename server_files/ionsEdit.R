@@ -258,13 +258,32 @@ output$ionsBRMask = shiny::renderUI({
 
 output$ionsBR = DT::renderDT({
   req(ionsBRMask())
-  return(ionsBRMask()[['XBR']])
+  dat = ionsBRMask()[['XBR']]
+  if(NCOL(dat) > 1) {
+    # Drop rightmost empty columns
+    ncd = ncol(dat)
+    empty = all(trimws(dat[,ncd]) == "" | is.na(dat[,ncd]))
+    while(empty) {
+      dat = dat[, -ncd, drop=FALSE]
+      ncd = ncol(dat)
+      empty = all(trimws(dat[,ncd]) == ""  | is.na(dat[,ncd]))
+    }
+    # Use first line as header and drop it ### Alignment and edition pbs...
+    # colnames(dat) = dat[1,]
+    # dat = dat[-1, , drop= FALSE]
+  } else {
+    # nam = dat[1]
+    # dat = dat[2]
+    # names(dat) = nam
+  }
+  return(dat)
 },
 rownames = FALSE,
 editable = "cell",
 extensions = c('Scroller'),
 options = list(
-  dom         = 'Btip',
+  dom         = 't',
+  ordering    = FALSE,
   deferRender = TRUE,
   scrollY     = '500px',
   scroller    = TRUE,
