@@ -497,24 +497,30 @@ printRQ = function(comments) {
 }
 
 # New BR representation in DB ####
-getNewickFromTaggedDist = function(str1) {
+getNewickFromTaggedDist = function(str) {
   # Get Newick string from tagged distribution
   newick = ''
-  match = regexpr('<',str1)
+  match = regexpr('<',str)
   while(match != -1) {
-    sbstr = substr(str1,1,1+match)
+    sbstr = substr(str,1,1+match)
     newick = paste0(newick,gsub('[[:alnum:]*.;+<[:blank:]]{1}?','',sbstr))
-    str1  = substr(str1,1+match,nchar(str1))
-    match = regexpr('>',str1)
-    sbstr = substr(str1,1,match-1)
+    str  = substr(str,1+match,nchar(str))
+    match = regexpr('>',str)
+    sbstr = substr(str,1,match-1)
     newick = paste0(newick,sbstr)
-    str1  = substr(str1,match+1,nchar(str1))
-    match = regexpr('<',str1)
+    str  = substr(str,match+1,nchar(str))
+    match = regexpr('<',str)
   }
-  newick = paste0(newick,gsub('[[:alnum:]*.;+>,[:blank:]]{1}?','',str1))
+  newick = paste0(newick,gsub('[[:alnum:]*.;+>,[:blank:]]{1}?','',str))
   newick = paste0(newick,';')
+  return(gsub('-','',newick))
 }
 getDistFromTaggedDist = function(str1) {
   # Get dist string from tagged distribution
   gsub('<.*>{1}?','',str1)
+}
+getTagsFromTaggedDist = function(str1) {
+  # Get Newick string from tagged distribution
+  newick = getNewickFromTaggedDist(str1)
+  unlist(strsplit(gsub(';','',gsub('\\(','',gsub('\\)','',newick))),','))
 }

@@ -535,7 +535,7 @@ observeEvent(
     )
     sink(file = NULL)
 
-    ## Sampling loop ####
+    ## Reactions loop ####
     shiny::withProgress(
       message = 'Converting ', 
       {
@@ -687,13 +687,15 @@ observeEvent(
           
           sink(file = outFile, append = TRUE)
           cat(
-            reac,';',
-            reacType,';',
-            paste0(rateParDistStrings,collapse=';'),';',
-            length(tags),';',
-            '"',stringBR,'";',
-            paste0(refBib,collapse=';'),';',
-            comments,'\n'
+            paste0(
+              '"',trimws(reac),'";',
+              '"',trimws(reacType),'";',
+              paste0('"',rateParDistStrings,'"',collapse=';'),';',
+              length(tags),';',
+              '"',trimws(stringBR),'";',
+              paste0(refBib,collapse=';'),';',
+              '"',comments,'"\n'
+            )
           )
           sink(file = NULL)
           

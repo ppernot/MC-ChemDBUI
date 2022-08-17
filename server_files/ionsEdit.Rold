@@ -1,7 +1,6 @@
 ionsOrigVersion = shiny::reactiveVal()
 ionsCopyVersion = shiny::reactiveVal()
-ionsDBFile      = shiny::reactiveVal()
-ionsDB          = shiny::reactiveVal()
+ionsFile        = shiny::reactiveVal()
 ionsReacs       = shiny::reactiveVal()
 ionsRateMask    = shiny::reactiveVal()
 ionsBRMask      = shiny::reactiveVal()
@@ -25,19 +24,15 @@ output$selIonsOrigVersion = shiny::renderUI({
 
 output$selIonsFile = shiny::renderUI({
   req(ionsOrigVersion())
-  ionsDBFile(file.path(ionsSource,ionsOrigVersion(),'ionsDB.csv'))
-  ionsDB(
-    read.table(
-      file = ionsDBFile(),
-      sep = ';',
-      header = TRUE)
-  )
   list(
     shiny::selectInput(
-      "ionsReaction",
+      "ionsFile",
       "Ions Reaction:",
       c("Choose a reaction..." = "",
-        ionsDB()$REACTANTS
+        list.files(
+          path=file.path(ionsSource,ionsOrigVersion(),'Data'), 
+          full.names = FALSE, 
+          recursive = FALSE)
       )
     )
   )
@@ -51,63 +46,130 @@ shiny::observe({
   ionsCopyVersion(input$ionsCopyVersion)
 })
 
-# shiny::observe({
-#   req(input$ionsFile)
-#   ionsFile(file.path('Data',input$ionsFile,'data.csv'))
-# })
-
+shiny::observe({
+  req(input$ionsFile)
+  ionsFile(file.path('Data',input$ionsFile,'data.csv'))
+})
 
 # Parse data file ####
 shiny::observe({
   req(ionsOrigVersion())
-  req(input$ionsReaction)
+  req(ionsFile())
   
-  # # Get data for text editor
-  # ionsReacs(
-  #   readLines(
-  #     con <- file(file.path(
-  #       ionsSource,
-  #       ionsOrigVersion(),
-  #       ionsFile()
-  #     ))
-  #   )
-  # )
-  # close(con)
-  
-  # Entry in table
-  iReac = which(ionsDB()$REACTANT == input$ionsReaction)
+  # Get data for text editor
+  ionsReacs(
+    readLines(
+      con <- file(file.path(
+        ionsSource,
+        ionsOrigVersion(),
+        ionsFile()
+      ))
+    )
+  )
+  close(con)
   
   # (Re-)Init samples for plots
   ionsSimulSamples(NULL)
   
   # Format data for masks
   mask = list()
-  reactants = getSpecies(input$ionsReaction)
+  reactants = getSpecies(input$ionsFile)
   mask[['REACTANTS']] = reactants
   massReactants = getMassList(reactants, excludeList = dummySpecies)
+  # if(length(reactants) > maxReacts)
+  #   id = shiny::showNotification(
+  #     h4(paste0('Nb of products exceds maxProd=',maxProds)),
+  #     closeButton = TRUE,
+  #     duration = NULL,
+  #     type = 'error'
+  #   )
   
-  mask[['TYPE']] = ionsDB()$TYPE[iReac]
-  for (kwd in ionsRateParKwdList)
-    mask[[kwd]] = ionsDB()[[kwd]][iReac]
-  bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
+  # Get data as matrix
+  X = as.matrix(read.csv(
+    file.path(ionsSource,ionsOrigVersion(),ionsFile()),
+    header=FALSE, sep='\t', fill=TRUE, na.strings=""
+  ))
+  
+  X = trimws(X) # remove unwanted spaces
+  reacName = X[1,1]
+  if(reacName != input$ionsFile) 
+    id = shiny::showNotification(
+      h4(paste0('Pb reac identity: ',reacName)),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'error'
+    )
+  
+  # lastMod = file.info(paste0(dataDir,fName))$mtime
+  
+  # Locate Rate Info in dataFrame by keywords #
+  
+  ## Reaction rate expression
+  
+  topLeft = which(X=='TYPE',arr.ind=TRUE)
+  if(length(topLeft)==0) {
+    reacType = 'kooij' # default
+    if('E' %in% reactants) reacType ='dr'
+  } else {  
+    reacType = X[topLeft[1],topLeft[2]+1]
+    if(! reacType %in% ionsReacTypes) 
+      id = shiny::showNotification(
+        h4(paste0('Improper rate type:',reacType)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+  }
+  mask[['TYPE']] = reacType
+  
+  ## Rate parameters 
+  rateParKwdList = c('ALPHA','BETA','GAMMA') 
+  for (kwd in rateParKwdList)
+    mask[[kwd]] = getDistString(X,kwd)
+  
+  ## Biblio
+  bibKwd = paste0('REF_',c(rateParKwdList,'BR'))
   for (kwd in bibKwd)
-    mask[[kwd]] = ionsDB()[[kwd]][iReac]
-  mask[['RQ']] = ionsDB()$COMMENTS[iReac]
-  ionsRateMask(mask)
+    mask[[kwd]] = paste0(getParams(X,kwd),collapse = ';')
 
-  # BRs
+  ## Comments
+  comments = getParams(X,'RQ')
+  if(!is.na(comments)) 
+    comments = paste0(comments,collapse=';')
+  mask[['RQ']] = comments
+  
+  ionsRateMask(mask)
+  
+  # Locate BR Info
+  topLeft =  which(X == 'BR', arr.ind = TRUE)
+  XBR = X[topLeft[1]:nrow(X), topLeft[2]:ncol(X)]
+  
+  tags = XBR[2:nrow(XBR), 1] # List of channels
+  for (ip in 1:length(tags)) {
+    msg = checkBalance(
+      getSpecies(input$ionsFile), 
+      getSpecies(tags[ip])
+    )
+    if(!is.null(msg))
+      id = shiny::showNotification(
+        h4(msg),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+  }
+    
   ionsBRMask(
     list(
-      nBR      = ionsDB()$NBR[iReac],
-      StringBR = ionsDB()$STRINGBR[iReac],
-      REF_BR   = mask[['REF_BR']]
+      XBR    = XBR,
+      REF_BR = mask[['REF_BR']]
     )
   )
 })
 
 output$ionsHeader = shiny::renderUI({
   list(
-    h4(file.path(ionsOrigVersion(),ionsDBFile()))
+    h4(file.path(ionsOrigVersion(),ionsFile()))
   )
 })
 
@@ -184,74 +246,67 @@ output$ionsBRMask = shiny::renderUI({
   req(ionsRateMask())
   req(ionsBRMask())
   list(
-   br(),
-   shiny::textAreaInput(
-      "ionsStringDist",
-      "StringBR",
-      width  = '400px',
-      height = '250px',
-      value  = ionsBRMask()[['StringBR']]
-      ),
+    DT::DTOutput('ionsBR'),
     shiny::textInput(
       "ionsReacREF_BR",
       "Refs BR",
-      width = '400px',
+      width = '300px',
       value = ionsBRMask()[['REF_BR']]
     )
   )
 })
 
-# output$ionsBR = DT::renderDT({
-#   req(ionsBRMask())
-#   dat = ionsBRMask()[['XBR']]
-#   if(NCOL(dat) > 1) {
-#     # Drop rightmost empty columns
-#     ncd = ncol(dat)
-#     empty = all(trimws(dat[,ncd]) == "" | is.na(dat[,ncd]))
-#     while(empty) {
-#       dat = dat[, -ncd, drop=FALSE]
-#       ncd = ncol(dat)
-#       empty = all(trimws(dat[,ncd]) == ""  | is.na(dat[,ncd]))
-#     }
-#     # Use first line as header and drop it ### Alignment and edition pbs...
-#     # colnames(dat) = dat[1,]
-#     # dat = dat[-1, , drop= FALSE]
-#   } else {
-#     # nam = dat[1]
-#     # dat = dat[2]
-#     # names(dat) = nam
-#   }
-#   colnames(dat) = paste0('Col_',1:NCOL(dat))
-#   return(dat)
-# },
-# rownames = FALSE,
-# editable = "cell",
-# extensions = c('Scroller'),
-# options = list(
-#   dom         = 't',
-#   ordering    = FALSE,
-#   deferRender = TRUE,
-#   scrollX     = '500px',
-#   scrollY     = '500px',
-#   scroller    = TRUE,
-#   autoWidth   = TRUE,
-#   initComplete = JS(
-#     "function(settings, json) {",
-#     "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
-#     "}")
-# ))
+output$ionsBR = DT::renderDT({
+  req(ionsBRMask())
+  dat = ionsBRMask()[['XBR']]
+  if(NCOL(dat) > 1) {
+    # Drop rightmost empty columns
+    ncd = ncol(dat)
+    empty = all(trimws(dat[,ncd]) == "" | is.na(dat[,ncd]))
+    while(empty) {
+      dat = dat[, -ncd, drop=FALSE]
+      ncd = ncol(dat)
+      empty = all(trimws(dat[,ncd]) == ""  | is.na(dat[,ncd]))
+    }
+    # Use first line as header and drop it ### Alignment and edition pbs...
+    # colnames(dat) = dat[1,]
+    # dat = dat[-1, , drop= FALSE]
+  } else {
+    # nam = dat[1]
+    # dat = dat[2]
+    # names(dat) = nam
+  }
+  colnames(dat) = paste0('Col_',1:NCOL(dat))
+  return(dat)
+},
+rownames = FALSE,
+editable = "cell",
+extensions = c('Scroller'),
+options = list(
+  dom         = 't',
+  ordering    = FALSE,
+  deferRender = TRUE,
+  scrollX     = '500px',
+  scrollY     = '500px',
+  scroller    = TRUE,
+  autoWidth   = TRUE,
+  initComplete = JS(
+    "function(settings, json) {",
+    "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+    "}")
+))
 
-# observeEvent(
-#   input$ionsBR_cell_edit,
-#   {
-#     # Apply modifications
-#     info = input$ionsBR_cell_edit
-#     XBR = ionsBRMask()$XBR
-#     for(i in 1:NROW(info))
-#       XBR[info$row,1+info$col] = info$value
-#     ionsBRMask(list(XBR=XBR))
-#   }
-# )
+observeEvent(
+  input$ionsBR_cell_edit,
+  {
+    # Apply modifications
+    info = input$ionsBR_cell_edit
+    XBR = ionsBRMask()$XBR
+    for(i in 1:NROW(info))
+      XBR[info$row,1+info$col] = info$value
+    ionsBRMask(list(XBR=XBR))
+  }
+)
 
 # Sampling ####
 observeEvent(
@@ -261,6 +316,7 @@ observeEvent(
     req(ionsBRMask)
     
     nMC = as.numeric(input$ionsSimulateSize)
+    tagged = FALSE 
     
     # Rate parameters
     sampleRateParams = matrix(
@@ -271,29 +327,147 @@ observeEvent(
     rateParDistStrings = rep(NA,length(ionsRateParKwdList))
     names(rateParDistStrings) = ionsRateParKwdList
     for (kwd in ionsRateParKwdList) {
-      stringDist = ionsRateMask()[[kwd]]
+      stringDist = input[[paste0('ionsReac', kwd)]]
       rateParDistStrings[kwd]=stringDist
       sampleDist = sampleDistString(stringDist, nMC)
       sampleRateParams[1:nMC, kwd] = sampleDist
     }
     
     # Branching ratios
-    if(ionsBRMask()$nBR > 1) {
+    XBR  = ionsBRMask()$XBR
+    tags = XBR[-1,1]
+    treeDepth = 0
+    for(i in 2:ncol(XBR)) # Exclude NA columns
+      treeDepth = treeDepth + 1 - 
+      as.numeric(sum(is.na(XBR[,i])) == nrow(XBR))
+    
+    if (length(tags) >= 2) {
+      dist = XBR[1, 2:ncol(XBR)] # List of distributions in tree
+      dist = dist[!is.na(dist)]
+      XT = XBR[-1, -1]          # Matrix of parameters
+      nc = 1
+      nl = nrow(XT)
+      X1 = matrix(XT[1:nl, 1:nc], nrow = nl, ncol = nc)
+      for (ic in 2:ncol(XT))
+        if (sum(is.na(XT[, ic])) != nl) {
+          nc = nc + 1
+          X1 = cbind(X1, XT[, ic])
+        }
+      
+      d = list()
+      dSub = list()
+      for (ic in 1:nc) {
+        dSub$elem = which(X1[, ic] != '')
+        dSub$dist = dist[ic]
+        pars = as.vector(X1[dSub$elem, ic])
+        dSub$mu = dSub$sig = c()
+        for (ip in 1:length(pars)) {
+          if (grepl("/", pars[ip])) {
+            loc  = gregexpr("(?<mu>.*)/(?<sig>.*)", pars, perl = TRUE)
+            start = attr(loc[[ip]], 'capture.start')[1]
+            stop  = start + attr(loc[[ip]], 'capture.length')[1] - 1
+            dSub$mu[ip] = substr(pars[ip], start, stop)
+            start = attr(loc[[ip]], 'capture.start')[2]
+            stop  = start + attr(loc[[ip]], 'capture.length')[2] - 1
+            dSub$sig[ip] = substr(pars[ip], start, stop)
+          } else {
+            dSub$mu[ip]  = pars[ip]
+            dSub$sig[ip] = NA
+          }
+        }
+        dSub$link = rep(0, length(dSub$elem))
+        if (ic != 1) {
+          for (iel in 1:length(dSub$elem)) {
+            ip = dSub$elem[iel]
+            for (ic1 in 1:(ic - 1)) {
+              links = ip %in% d[[ic1]]$elem
+              if (sum(links) != 0)
+                dSub$link[iel] = ic1
+            }
+          }
+        }
+        d[[ic]] = dSub
+      }
+      
+      # Build probabilistic tree string for sampler #
+      stringBR = oneDist(nc, d, tags, tagged)
+      while (grepl("LINK/", stringBR)) {
+        poc = regmatches(stringBR, gregexpr('LINK/[0-9]+/', stringBR))
+        po = sapply(poc[[1]],
+                    function(x)
+                      as.numeric(sub('LINK', '', gsub('/', '', x))))
+        for (ip in 1:length(po)) {
+          str = oneDist(po[ip], d, tags, tagged)
+          stringBR = sub(poc[[1]][ip], str, stringBR)
+        }
+      }    
       # Generate BR sample #
-      stringBR = getDistFromTaggedDist(ionsBRMask()$StringBR)
       sampleBR = nds(nMC,stringBR)
+      # updateTextInput("ionsStringDist",value=stringBR,session=session)
       
       # Build Newick string for tree plotting 
-      newickBR = getNewickFromTaggedDist(ionsBRMask()$StringBR)
+      newickBR = oneNewick(nc, d, tags)
+      while (grepl("LINK/", newickBR)) {
+        poc = regmatches(newickBR, gregexpr('LINK/[0-9]+/', newickBR))
+        po = sapply(poc[[1]],
+                    function(x)
+                      as.numeric(sub('LINK', '', gsub('/', '', x))))
+        for (ip in 1:length(po)) {
+          str = oneNewick(po[ip], d, tags)
+          newickBR = sub(poc[[1]][ip], str, newickBR)
+        }
+      }
+      newickBR = paste0(newickBR, ";")
+     
+      # Test with tagged dist to store data (mixed dist + newick) 
+      stringBRTagged = oneDist(nc, d, tags, tagged=TRUE)
+      while (grepl("LINK/", stringBRTagged)) {
+        poc = regmatches(stringBRTagged, 
+                         gregexpr('LINK/[0-9]+/', stringBRTagged))
+        po = sapply(poc[[1]],
+                    function(x)
+                      as.numeric(sub('LINK', '', gsub('/', '', x))))
+        for (ip in 1:length(po)) {
+          str = oneDist(po[ip], d, tags, tagged=TRUE)
+          stringBRTagged = sub(poc[[1]][ip], str, stringBRTagged)
+        }
+      }    
+      updateTextInput(
+        "ionsStringDist",
+        value = paste(stringBRTagged),
+        session = session)
+      
       mytree <- ape::read.tree(text = newickBR)
-
-      tags = getTagsFromTaggedDist(ionsBRMask()$StringBR)
       
-      nodeTags = NULL
-      edgeTags = NULL
-      treeDepth= max(ape::node.depth(mytree))
+      # Build edge tags for tree annotation #
+      edgeTags = oneEdgeTag(nc, d, tags)
+      while (grepl("LINK/", edgeTags)) {
+        poc = regmatches(edgeTags, gregexpr('LINK/[0-9]+/', edgeTags))
+        po = sapply(poc[[1]],
+                    function(x)
+                      as.numeric(sub('LINK', '', gsub('/', '', x))))
+        for (ip in 1:length(po)) {
+          str = oneEdgeTag(po[ip], d, tags)
+          edgeTags = sub(poc[[1]][ip], str, edgeTags)
+        }
+      }
+      edgeTags = unlist(strsplit(edgeTags, ','))
       
-    
+      # Build node tags for tree annotation #
+      nodeTags = oneNodeTag(nc, d, tags)
+      while (grepl("LINK/", nodeTags)) {
+        poc = regmatches(nodeTags, gregexpr('LINK/[0-9]+/', nodeTags))
+        po = sapply(poc[[1]],
+                    function(x)
+                      as.numeric(sub('LINK', '', gsub('/', '', x))))
+        for (ip in 1:length(po)) {
+          str = oneNodeTag(po[ip], d, tags)
+          nodeTags = sub(poc[[1]][ip], str, nodeTags)
+        }
+      }
+      nodeTags = unlist(strsplit(nodeTags, ','))
+      nodeTags = nodeTags[nodeTags != 'NA']
+      
     } else {
       # Single pathway with BR=1
       sampleBR = matrix(1,ncol=1,nrow=nMC)
@@ -431,7 +605,7 @@ output$plotIonsParsSample = renderPlot({
   
   matplot(
     temp, t(Y),
-    type = 'l', 
+    type = 'l',
     lty = 1,
     col = gPars$cols_tr[5],
     lwd = 4,

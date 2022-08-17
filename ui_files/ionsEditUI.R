@@ -88,16 +88,7 @@ tabPanel(
               ),
               column(
                 6,
-                tabPanel(
-                  'BR-Sample',
-                  textAreaInput(
-                    "ionsStringDist",
-                    width = '400px',
-                    cols  = 120,
-                    label = 'Distribution'
-                  ),
-                  plotOutput("plotIonsBRSample",height = plotHeight)
-                )
+                plotOutput("plotIonsBRSample",height = plotHeight)
               )
               
             )
