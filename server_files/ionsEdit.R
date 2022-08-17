@@ -276,6 +276,7 @@ output$ionsBR = DT::renderDT({
     # dat = dat[2]
     # names(dat) = nam
   }
+  colnames(dat) = paste0('Col_',1:NCOL(dat))
   return(dat)
 },
 rownames = FALSE,
@@ -285,9 +286,14 @@ options = list(
   dom         = 't',
   ordering    = FALSE,
   deferRender = TRUE,
+  scrollX     = '500px',
   scrollY     = '500px',
   scroller    = TRUE,
-  autoWidth   = TRUE
+  autoWidth   = TRUE,
+  initComplete = JS(
+    "function(settings, json) {",
+    "$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+    "}")
 ))
 
 observeEvent(
@@ -412,10 +418,25 @@ observeEvent(
         }
       }
       newickBR = paste0(newickBR, ";")
-      # updateTextInput(
-      #   "ionsStringDist",
-      #   value=paste0(newickBR,' ~ ',stringBR),
-      #   session=session)
+     
+      # Test with tagged dist to store data (mixed dist + newick) 
+      stringBRTagged = oneDist(nc, d, tags, tagged=TRUE)
+      while (grepl("LINK/", stringBRTagged)) {
+        poc = regmatches(stringBRTagged, 
+                         gregexpr('LINK/[0-9]+/', stringBRTagged))
+        po = sapply(poc[[1]],
+                    function(x)
+                      as.numeric(sub('LINK', '', gsub('/', '', x))))
+        for (ip in 1:length(po)) {
+          str = oneDist(po[ip], d, tags, tagged=TRUE)
+          stringBRTagged = sub(poc[[1]][ip], str, stringBRTagged)
+        }
+      }    
+      updateTextInput(
+        "ionsStringDist",
+        value = paste(stringBRTagged),
+        session = session)
+      
       mytree <- ape::read.tree(text = newickBR)
       
       # Build edge tags for tree annotation #

@@ -508,3 +508,203 @@ output$ionsStats = renderPrint({
 })
 
 
+# Convert to single-file DB ####
+observeEvent(
+  input$ionsCnvrtBtn,
+  {
+    
+    # List of reacs in DB
+    fp        = file.path(ionsSource,input$ionsVersionSample,'Data')
+    listDirs  = list.files(path = fp, full.names = FALSE, recursive = FALSE)
+    
+    ionsSampleDir = paste0(ionsPublic, '_', input$ionsVersionSample)
+    outFile = file.path(ionsSampleDir,'ionsDB.csv')
+    if(file.exists(outFile))
+      file.remove(outFile)
+    
+    bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
+    sink(file = outFile, append = TRUE)
+    cat(
+      'REACTANTS;',
+      'TYPE;',
+      paste0(ionsRateParKwdList,collapse=';'),';',
+      'NBR;',
+      'STRINGBR;',
+      paste0(bibKwd,collapse=';'),';',
+      'COMMENTS\n'
+    )
+    sink(file = NULL)
+
+    ## Sampling loop ####
+    shiny::withProgress(
+      message = 'Converting ', 
+      {
+        allSpecies = c()
+        sampled = c()
+        for (reac in listDirs) {
+          
+          incProgress(1/length(listDirs), detail = reac)
+          
+          sampled = c(sampled, reac)
+          
+          reactants = getSpecies(reac)
+          
+          # Get data for this reaction #
+          X = as.matrix(
+            read.csv(
+              file.path(fp,reac,'data.csv'),
+              header=FALSE, sep='\t', fill=TRUE, na.strings=""
+            )
+          )
+          
+          X = trimws(X) # remove unwanted spaces
+          reacName = X[1,1]
+          if(reacName != reac) 
+            id = shiny::showNotification(
+              h4(paste0('Pb reac identity: ',reacName)),
+              closeButton = TRUE,
+              duration = NULL,
+              type = 'error'
+            )
+          
+          # Locate Rate Info in X by keywords #
+          topLeft = which(X=='TYPE',arr.ind=TRUE)
+          if(length(topLeft)==0) {
+            reacType = 'kooij' # default
+            if('E' %in% reactants) reacType ='dr'
+          } else {  
+            reacType = X[topLeft[1],topLeft[2]+1]
+            if(! reacType %in% ionsReacTypes) 
+              id = shiny::showNotification(
+                h4(paste0('Improper rate type:',reacType)),
+                closeButton = TRUE,
+                duration = NULL,
+                type = 'error'
+              )
+          }
+          
+          # Rate parameters 
+          rateParDistStrings = rep(NA, length(ionsRateParKwdList))
+          names(rateParDistStrings) = ionsRateParKwdList
+          for (kwd in ionsRateParKwdList) {
+            stringDist = getDistString(X, kwd)
+            rateParDistStrings[kwd] = stringDist
+          }
+          
+          refBib = rep(NA, length(bibKwd))
+          names(refBib) = bibKwd
+          for (kwd in bibKwd)
+            refBib[kwd] = paste0('"',paste0(getParams(X,kwd),collapse = ';'),'"')
+          
+          comments = getParams(X,'RQ')
+          if(!is.na(comments)) 
+            comments = paste0(comments,collapse=';')
+          
+          # Locate BR Info #
+          topLeft =  which(X == 'BR', arr.ind = TRUE)
+          XBR = X[topLeft[1]:nrow(X), topLeft[2]:ncol(X)]
+          tags = XBR[2:nrow(XBR), 1] # List of channels
+          
+          # Check mass compatibility
+          allProds = c()
+          for (ip in 1:length(tags)) {
+            prods = getSpecies(tags[ip])
+            allProds = c(allProds, prods)
+            allSpecies = c(allSpecies, prods)
+            msg = checkBalance(reactants, prods)
+            if (!is.null(msg))
+              id = shiny::showNotification(h4(msg),
+                                           closeButton = TRUE,
+                                           duration = NULL,
+                                           type = 'error')
+          }
+          
+          ### Generate BR distrib ####
+          if(length(tags) >=2) {
+            # Build tree
+            dist=XBR[1,2:ncol(XBR)] # List of distributions in tree
+            dist=dist[!is.na(dist)]
+            XT=XBR[-1,-1]          # Matrix of parameters
+            nc=1
+            nl=nrow(XT)
+            X1=matrix(XT[1:nl,1:nc],nrow=nl,ncol=nc)
+            for (ic in 2:ncol(XT)) 
+              if(sum(is.na(XT[,ic]))!=nl) {
+                nc=nc+1
+                X1=cbind(X1,XT[,ic])
+              }
+            
+            d=list()
+            dSub=list()
+            for(ic in 1:nc){
+              dSub$elem = which(X1[,ic] !='')
+              dSub$dist = dist[ic]
+              pars = as.vector(X1[dSub$elem,ic])
+              dSub$mu = dSub$sig = c()
+              for (ip in 1:length(pars)) {
+                if( grepl("/",pars[ip]) ) {      
+                  loc  = gregexpr("(?<mu>.*)/(?<sig>.*)",pars,perl=TRUE)      
+                  start = attr(loc[[ip]],'capture.start')[1]
+                  stop  = start + attr(loc[[ip]],'capture.length')[1] -1
+                  dSub$mu[ip] = substr(pars[ip],start,stop)
+                  start = attr(loc[[ip]],'capture.start')[2]
+                  stop  = start + attr(loc[[ip]],'capture.length')[2] -1
+                  dSub$sig[ip] = substr(pars[ip],start,stop)  
+                } else {
+                  dSub$mu[ip]  = pars[ip]
+                  dSub$sig[ip] = NA
+                }    
+              }
+              dSub$link = rep(0,length(dSub$elem))
+              if(ic!=1) {
+                for (iel in 1:length(dSub$elem)) {
+                  ip = dSub$elem[iel]
+                  for (ic1 in 1:(ic-1)) {
+                    links = ip %in% d[[ic1]]$elem
+                    if(sum(links)!=0) dSub$link[iel] = ic1  
+                  }
+                }
+              }
+              d[[ic]] = dSub
+            }
+            
+            # Build probabilistic tree string for sampler #
+            stringBR = oneDist(nc, d, tags, tagged=TRUE)
+            while (grepl("LINK/", stringBR)) {
+              poc = regmatches(stringBR, gregexpr('LINK/[0-9]+/', stringBR))
+              po = sapply(poc[[1]],
+                          function(x)
+                            as.numeric(sub('LINK', '', gsub('/', '', x))))
+              for (ip in 1:length(po)) {
+                str = oneDist(po[ip], d, tags, tagged=TRUE)
+                stringBR = sub(poc[[1]][ip], str, stringBR)
+              }
+            }    
+
+          } else {
+            stringBR = tags
+          }
+          
+          sink(file = outFile, append = TRUE)
+          cat(
+            reac,';',
+            reacType,';',
+            paste0(rateParDistStrings,collapse=';'),';',
+            length(tags),';',
+            '"',stringBR,'";',
+            paste0(refBib,collapse=';'),';',
+            comments,'\n'
+          )
+          sink(file = NULL)
+          
+        }
+      }
+    )
+
+    id = shiny::showNotification(
+      h4('Samples written to ChemDBPublic'),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'message'
+    )
+  })

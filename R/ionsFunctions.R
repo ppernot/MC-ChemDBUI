@@ -347,7 +347,8 @@ oneDist = function(ic, d, tags, tagged = FALSE) {
       ifelse(
         dSub$link[ip] == 0,
         ifelse(tagged,
-               paste0(":'", tags[dSub$elem[ip]], "'"),
+               # paste0(":'", tags[dSub$elem[ip]], "'"),
+               paste0("<", tags[dSub$elem[ip]], ">"),
                ''),
         paste0('*LINK/', dSub$link[ip], '/')
       ),
@@ -493,4 +494,27 @@ printRQ = function(comments) {
     cat('<H2>Comments</H2>\n')
     cat(paste0('<font color="red">', comments, '</font>\n'))
   }
+}
+
+# New BR representation in DB ####
+getNewickFromTaggedDist = function(str1) {
+  # Get Newick string from tagged distribution
+  newick = ''
+  match = regexpr('<',str1)
+  while(match != -1) {
+    sbstr = substr(str1,1,1+match)
+    newick = paste0(newick,gsub('[[:alnum:]*.;+<[:blank:]]{1}?','',sbstr))
+    str1  = substr(str1,1+match,nchar(str1))
+    match = regexpr('>',str1)
+    sbstr = substr(str1,1,match-1)
+    newick = paste0(newick,sbstr)
+    str1  = substr(str1,match+1,nchar(str1))
+    match = regexpr('<',str1)
+  }
+  newick = paste0(newick,gsub('[[:alnum:]*.;+>,[:blank:]]{1}?','',str1))
+  newick = paste0(newick,';')
+}
+getDistFromTaggedDist = function(str1) {
+  # Get dist string from tagged distribution
+  gsub('<.*>{1}?','',str1)
 }
