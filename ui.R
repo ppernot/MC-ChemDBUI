@@ -27,8 +27,12 @@ function(request) {
     navbarMenu(
       "Ions",
       tabPanel(
-        title = "Edit/Parse",
+        title = "Edit",
         source_ui("ionsEditUI.R")
+      ),
+      tabPanel(
+        title = "Parse",
+        source_ui("ionsParseUI.R")
       ),
       tabPanel(
         title = "Sample",

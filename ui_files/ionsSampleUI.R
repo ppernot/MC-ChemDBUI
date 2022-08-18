@@ -44,17 +44,17 @@ tabPanel(
           tags$style(
             type='text/css',
             "#ionsSampleBtn { width:100%; margin-top: 30px;}"
-          ),
-          actionButton(
-            "ionsCnvrtBtn",
-            label = "Convert !",
-            icon  = icon('gear',verify_fa = FALSE),
-            class = "btn-primary"
-          ),
-          tags$style(
-            type='text/css',
-            "#ionsCnvrtBtn { width:100%; margin-top: 30px;}"
-          )
+          )#,
+          # actionButton(
+          #   "ionsCnvrtBtn",
+          #   label = "Convert !",
+          #   icon  = icon('gear',verify_fa = FALSE),
+          #   class = "btn-primary"
+          # ),
+          # tags$style(
+          #   type='text/css',
+          #   "#ionsCnvrtBtn { width:100%; margin-top: 30px;}"
+          # )
         )
       )
     ),

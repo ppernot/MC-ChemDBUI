@@ -499,8 +499,11 @@ printRQ = function(comments) {
 # New BR representation in DB ####
 getNewickFromTaggedDist = function(str) {
   # Get Newick string from tagged distribution
-  newick = ''
   match = regexpr('<',str)
+  if(match == -1)
+    return(str)
+  
+  newick = ''
   while(match != -1) {
     sbstr = substr(str,1,1+match)
     newick = paste0(newick,gsub('[[:alnum:]*.;+<[:blank:]]{1}?','',sbstr))
@@ -515,12 +518,52 @@ getNewickFromTaggedDist = function(str) {
   newick = paste0(newick,';')
   return(gsub('-','',newick))
 }
-getDistFromTaggedDist = function(str1) {
+getDistFromTaggedDist = function(str) {
   # Get dist string from tagged distribution
-  gsub('<.*>{1}?','',str1)
+  gsub('<.*>{1}?','',str)
 }
-getTagsFromTaggedDist = function(str1) {
-  # Get Newick string from tagged distribution
-  newick = getNewickFromTaggedDist(str1)
+getTagsFromTaggedDist = function(str) {
+  # Get Tags from Newick string
+  newick = getNewickFromTaggedDist(str)
   unlist(strsplit(gsub(';','',gsub('\\(','',gsub('\\)','',newick))),','))
 }
+getNodesFromTaggedDist = function(str) {
+  # Remove all except character strings (distributions)
+  # The extracted list is in correct order for tree plotting
+  str = getDistFromTaggedDist(str) # Remove Tags
+  str = gsub('\n','',str)   
+  str = gsub('[[:punct:]]',' ',str)
+  str = gsub('[[:digit:]]',' ',str)
+  str = gsub('[[:space:]]+',' ',str)
+  str = trimws(unlist(strsplit(str,' ')))
+  return(str)
+} 
+formatStringBR = function(str) {
+  match = regexpr('<',str)
+  if(match == -1)
+    return(str)
+  indent = function(char,depth) {
+    paste0(char,'\n',paste0(rep('\t',depth),collapse=""))
+  }
+  formstr = ''
+  depth   = 0
+  for(i in 1:nchar(str)) {
+    char = substr(str,i,i)
+    if( char == '(' ) {
+      depth = depth+1
+      char1 = indent(char,depth)
+    } else if( char == ',' ) {
+      char1 = indent(char,depth)
+    } else  if( char == ';' ) {
+      char1 = indent(char,depth)
+    } else  if( char == ')' ) {
+      depth = depth-1
+      char1 = char
+    } else {
+      char1 = char
+    }
+    formstr = paste0(formstr,char1)
+  }
+  
+  return(formstr)
+}  
