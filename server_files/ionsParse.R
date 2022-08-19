@@ -1,46 +1,113 @@
-ionsDBFile      = shiny::reactiveVal()
 ionsDB          = shiny::reactiveVal()
 ionsReacs       = shiny::reactiveVal()
 ionsRateMask    = shiny::reactiveVal()
 ionsBRMask      = shiny::reactiveVal()
 ionsSimulSamples= shiny::reactiveVal()
 
-#
 
-output$selIonsFile = shiny::renderUI({
-  req(ionEditOrigVersion())
-  ionsDBFile(file.path(ionsSource,ionsEditOrigVersion(),'ionsDB.csv'))
+shiny::observe({
+  req(ionsEditDBText())
   ionsDB(
-    read.table(
-      file = ionsDBFile(),
-      sep = ';',
-      header = TRUE)
+    read.table(header = TRUE, text = ionsEditDBText(), sep=';')
   )
+})
+
+output$selIonsReac = shiny::renderUI({
+  req(ionsDB())
+  reacs = ionsDB()$REACTANTS
+  nums  = 0:length(reacs)
+  names(nums) = c("Choose a reaction...",reacs)
   list(
-    shiny::selectInput(
-      "ionsReaction",
-      "Ions Reaction:",
-      c("Choose a reaction..." = "",
-        ionsDB()$REACTANTS
+    fluidRow(
+      column(
+        8,
+        shiny::selectInput(
+          "ionsReaction",
+          "Ions Reaction:",
+          choices = nums,
+          selected = 0
+        )
+      ),
+      column(
+        4,
+        fluidRow(
+          column(
+            6,
+            actionButton(
+              "ionsMinus",
+              "",
+              # width = "50px",
+              icon = icon('angle-down',verify_fa = FALSE)
+            ),
+            tags$style(
+              type='text/css',
+              "#ionsMinus { width:100%; margin-top: 30px;}"
+            )
+          ),
+          column(
+            6,
+            actionButton(
+              "ionsPlus",
+              "",
+              # width = "50px",
+              icon = icon('angle-up',verify_fa = FALSE)
+            ),
+            tags$style(
+              type='text/css',
+              "#ionsPlus { width:100%; margin-top: 30px;}"
+            )
+          )
+        )
       )
     )
   )
 })
 
+observeEvent(
+  input$ionsMinus,
+  {
+    iReac = as.numeric(input$ionsReaction)
+    if(iReac > 2) {
+      iReac = iReac - 1
+      updateSelectInput(
+        session=session,
+        "ionsReaction",
+        selected = iReac
+      )      
+    }
+  })
+
+observeEvent(
+  input$ionsPlus,
+  {
+    req(ionsDB())
+    reacs = ionsDB()$REACTANTS
+    iReac = as.numeric(input$ionsReaction)
+    if(iReac <= length(reacs)) {
+      iReac = iReac + 1
+      updateSelectInput(
+        session=session,
+        "ionsReaction",
+        selected = iReac
+      )      
+    }
+  })
+
 # Parse data file ####
 shiny::observe({
-  req(ionsEditOrigVersion())
-  req(input$ionsReaction)
+  req(ionsDB())
+  req(input$ionsReaction != "0")
   
   # Entry in table
-  iReac = which(ionsDB()$REACTANT == input$ionsReaction)
+  iReac = as.numeric(input$ionsReaction)
+  reac = ionsDB()$REACTANTS[iReac]
   
   # (Re-)Init samples for plots
   ionsSimulSamples(NULL)
   
   # Format data for masks
   mask = list()
-  reactants = getSpecies(input$ionsReaction)
+  reactants = getSpecies(reac)
   mask[['REACTANTS']] = reactants
   massReactants = getMassList(reactants, excludeList = dummySpecies)
   
@@ -51,6 +118,7 @@ shiny::observe({
   for (kwd in bibKwd)
     mask[[kwd]] = ionsDB()[[kwd]][iReac]
   mask[['RQ']] = ionsDB()$COMMENTS[iReac]
+  mask[['TIMESTAMP']] = ionsDB()$TIMESTAMP[iReac]
   ionsRateMask(mask)
 
   # BRs
@@ -92,10 +160,11 @@ output$ionsRateMask = shiny::renderUI({
           "GAMMA dist.",
           value = mask[['GAMMA']]
         ),
-        shiny::textInput(
+        shiny::textAreaInput(
           "ionsReacRQ",
           "Comments",
-          value = mask[['RQ']]
+          value = mask[['RQ']],
+          height = '200px'
         )
       ),
       column(
@@ -120,6 +189,11 @@ output$ionsRateMask = shiny::renderUI({
           "ionsReacREF_GAMMA",
           "Refs GAMMA",
           value = mask[['REF_GAMMA']]
+        ),
+        shiny::textInput(
+          "ionsReacTIMESTAMP",
+          "Time Stamp",
+          value = mask[['TIMESTAMP']]
         )
       )
     )
@@ -128,23 +202,34 @@ output$ionsRateMask = shiny::renderUI({
 outputOptions(output, "ionsRateMask", suspendWhenHidden = FALSE)
 
 output$ionsBRMask = shiny::renderUI({
-  req(ionsRateMask())
   req(ionsBRMask())
 
   list(
-   br(),
-   shiny::textAreaInput(
+    br(),
+    shiny::textAreaInput(
       "ionsStringDist",
       "StringBR",
       width  = '400px',
       height = '250px',
       value  = formatStringBR(ionsBRMask()[['StringBR']])  
+    ),
+    fluidRow(
+      column(
+        6,
+        shiny::textInput(
+          "ionsReacREF_BR",
+          "Refs BR",
+          value = ionsBRMask()[['REF_BR']]
+        )
       ),
-    shiny::textInput(
-      "ionsReacREF_BR",
-      "Refs BR",
-      width = '400px',
-      value = ionsBRMask()[['REF_BR']]
+      column(
+        6,
+        shiny::textInput(
+          "ionsReacNBR",
+          "Nb Channels",
+          value = ionsBRMask()[['nBR']]
+        )
+      )
     )
   )
 })
@@ -154,9 +239,8 @@ outputOptions(output, "ionsBRMask", suspendWhenHidden = FALSE)
 observeEvent(
   input$ionsParseSave,
   {
-    req(ionsRateMask)
-    req(ionsBRMask)
-   
+    req(ionsDB())
+
     # Rate parameters
     rateParDistStrings = rep(NA,length(ionsRateParKwdList))
     names(rateParDistStrings) = ionsRateParKwdList
@@ -169,6 +253,21 @@ observeEvent(
     stringDist = gsub('\n','',stringDist)
     stringDist = gsub('\t','',stringDist)
     tags = getTagsFromTaggedDist(stringDist)
+    
+    if(length(tags) != input$ionsReacNBR)
+      id = shiny::showNotification(
+        h4(paste0('>>> Pb. with tags:',
+                  paste0(tags,collapse = ';'))),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+    
+    # Sanity checks !!!!!
+    # TBD...
+    # * Mass consistency
+    # * Correct distributions for Pars (Delta, Logu, Logn, Unif...)
+    # * Correct distributions for BRs (Diri, Diun, Dirg, Mlgn...)
     
     # Biblio
     bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
@@ -184,21 +283,22 @@ observeEvent(
       length(tags),
       trimws(stringDist),
       refBib,
-      input$ionsReacRQ
+      input$ionsReacRQ,
+      paste0(Sys.time())
     )
-    
-    data = read.table(header = TRUE, text = ionsEditText(), sep=';')
+
+    # Update editor's content
+    data = ionsDB()
     iReac = which(data$REACTANTS == input$ionsReacReactants)
     if(iReac != 0)
       data[iReac,] = line
     else
       data = rbind(data,line)
-    # Change Editor's content
-    ionsEditText(
+    ionsEditDBText(
       capture.output(
         write.table(data,sep=";",row.names = FALSE)
-        )
-      ) 
+      )
+    ) 
   }
 )
 
@@ -207,10 +307,16 @@ observeEvent(
 observeEvent(
   input$ionsSimulateBtn,
   {
-    req(ionsRateMask)
-    req(ionsBRMask)
+    req(ionsRateMask())
+    req(ionsBRMask())
     
     nMC = as.numeric(input$ionsSimulateSize)
+    
+    # Sanity checks !!!!!
+    # TBD...
+    # * Mass consistency
+    # * Correct distributions for Pars (Delta, Logu, Logn, Unif...)
+    # * Correct distributions for BRs (Diri, Diun, Dirg, Mlgn...)
     
     # Rate parameters
     sampleRateParams = matrix(
@@ -236,6 +342,15 @@ observeEvent(
     stringDist = gsub('\t','',stringDist)
     tags = getTagsFromTaggedDist(stringDist)
     
+    if(length(tags) != input$ionsReacNBR)
+      id = shiny::showNotification(
+        h4(paste0('>>> Pb. with tags:',
+                  paste0(tags,collapse = ';'))),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+    
     if(length(tags) > 1) {
       
       # Generate BR sample #
@@ -246,13 +361,10 @@ observeEvent(
       newickBR = getNewickFromTaggedDist(stringDist)
       mytree <- ape::read.tree(text = newickBR)
 
-      # tags = getTagsFromTaggedDist(stringDist)
-      
       nodeTags = getNodesFromTaggedDist(stringDist)
-      edgeTags = NULL
+      edgeTags = NULL # TBD
       treeDepth= max(ape::node.depth(mytree))
       
-    
     } else {
       # Single pathway with BR=1
       sampleBR = matrix(1,ncol=1,nrow=nMC)

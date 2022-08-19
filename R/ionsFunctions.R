@@ -516,6 +516,7 @@ getNewickFromTaggedDist = function(str) {
   }
   newick = paste0(newick,gsub('[[:alnum:]*.;+>,[:blank:]]{1}?','',str))
   newick = paste0(newick,';')
+  newick = gsub(',*)',')',newick) # remove spurious commas
   return(gsub('-','',newick))
 }
 getDistFromTaggedDist = function(str) {

@@ -4,9 +4,10 @@ tabPanel(
     sidebarPanel(
       width = sideWidth,
       h4("Ions - Parse",.noWS = "outside"),
+      uiOutput("selIonsReac"),
       actionButton(
         "ionsParseSave",
-        "Save",
+        "Save to DB",
         icon = icon('save',verify_fa = FALSE)
       ),
       hr(),
@@ -66,11 +67,11 @@ tabPanel(
             'BRs',
             fluidRow(
               column(
-                6,
+                4,
                 uiOutput("ionsBRMask")
               ),
               column(
-                6,
+                8,
                 plotOutput("plotIonsBRSample",height = plotHeight)
               )
             )

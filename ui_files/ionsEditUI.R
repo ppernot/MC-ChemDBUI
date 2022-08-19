@@ -19,7 +19,7 @@ tabPanel(
           )
         )
       ),
-      uiOutput("selIonsEditFile"),
+      # uiOutput("selIonsEditFile"),
       actionButton(
         "ionsEditSave",
         "Save",
@@ -28,15 +28,35 @@ tabPanel(
     ),
     mainPanel(
       width = mainWidth,
-      uiOutput("ionsHeader"),
-      aceEditor(
-        outputId = "aceIons",
-        cursorId = "cursor",
-        selectionId = "selection",
-        height = "600px",
-        fontSize = 16,
-        showPrintMargin = FALSE,
-        placeholder = "Please select a DB version and a DB file..."
+      wellPanel(
+        tabsetPanel(
+          tabPanel(
+            "Database",
+            uiOutput("ionsHeaderDB"),
+            aceEditor(
+              outputId = "aceIonsDB",
+              cursorId = "cursor",
+              selectionId = "selection",
+              height = "600px",
+              fontSize = 16,
+              showPrintMargin = FALSE,
+              placeholder = "Please select a DB version..."
+            )
+          ),
+          tabPanel(
+            "ReleaseNotes",
+            uiOutput("ionsHeaderRN"),
+            aceEditor(
+              outputId = "aceIonsRN",
+              cursorId = "cursor",
+              selectionId = "selection",
+              height = "600px",
+              fontSize = 16,
+              showPrintMargin = FALSE,
+              placeholder = "Please select a DB version..."
+            )
+          )
+        )
       )
     )
   )

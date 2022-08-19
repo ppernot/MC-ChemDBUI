@@ -4,7 +4,7 @@ tabPanel(
     sidebarPanel(
       width = sideWidth,
       h4("Ions - Sample",.noWS = "outside"),
-      uiOutput("selIonsVersionSample"),
+      br(),
       fluidRow(
         column(
           6,

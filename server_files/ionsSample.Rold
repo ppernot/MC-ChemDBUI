@@ -1,53 +1,56 @@
 collateDone = shiny::reactiveVal(NULL)
 
-
+output$selIonsVersionSample = shiny::renderUI({
+  list(
+    shiny::selectInput(
+      "ionsVersionSample",
+      "Source DB Version:",
+      rev(
+        list.dirs(
+          path=ionsSource, 
+          full.names = FALSE, 
+          recursive  = FALSE)
+      )
+    )
+  )
+})
 # Sampling ####
 observeEvent(
   input$ionsSampleBtn,
   {
-    req(ionsDB())
     
     sampleSize = 1 + as.numeric(input$ionsSampleSize) # Account for nominal
+    tagged = FALSE 
     
-    # Temp files
-    tmpDir = file.path(ionsTmp,ionsEditOrigVersion())
-    if(!file.exists(tmpDir))
-      dir.create(tmpDir)
-    fpTmp  = file.path(tmpDir,'Reactions')
-    if(!file.exists(fpTmp))
-      dir.create(fpTmp)
-      
+    # List of reacs in DB
+    fp        = file.path(ionsSource,input$ionsVersionSample,'Data')
+    listDirs  = list.files(path = fp, full.names = FALSE, recursive = FALSE)
+    tmpDir    = file.path(ionsTmp,input$ionsVersionSample)
+    fpTmp     = file.path(tmpDir,'Reactions')
+    
     ## Sampling loop ####
-    
-    reacs = ionsDB()$REACTANTS
-    
     shiny::withProgress(
       message = 'Sampling ', 
       {
         sampled = c()
-        for (iReac in seq_along(reacs)) {
-          reac = reacs[iReac]
-
-          needSample = TRUE
-          targetDir  = file.path(fpTmp,reac)
-          samplesDir = file.path(targetDir, 'Samples')
+        for (reac in listDirs) {
           
           # Check if sampling is necessary
+          needSample = FALSE
           if(input$ionsSampleUpdate) {
-            needSample = FALSE
-            
             # Filter by modification date and sample size
-            # dataFile  = file.path(ionsSource,ionsEditOrigVersion(),'ionsDB.csv')
-            # finf1     = file.info(dataFile, extra_cols = FALSE) # Data mod times
-            mtime1 = ionsDB()$TIMESTAMP[iReac]
+            dataFile  = file.path(fp,reac,'data.csv') 
+            finf1     = file.info(dataFile, extra_cols = FALSE) # Data mod times
             
+            targetDir = file.path(fpTmp,reac)
             if(!file.exists(targetDir)) {
               dir.create(targetDir)
               needSample = TRUE
             }
             
+            samplesDir = file.path(targetDir, 'Samples')
             if (!file.exists(samplesDir)){
-              dir.create(samplesDir)
+              dir.create(sampleDir)
               needSample = TRUE
             }
             
@@ -57,15 +60,15 @@ observeEvent(
             
             runFile = file.path(samplesDir,'run_0000.csv')
             if(file.exists(runFile)) {
-              finf2 = file.info(runFile, extra_cols = FALSE) # Samples mod times
-              if(difftime(mtime1,finf2[,"mtime"]) > 0 )
+              finf2     = file.info(runFile, extra_cols = FALSE) # Samples mod times
+              if(difftime(finf1[,"mtime"],finf2[,"mtime"]) > 0 )
                 needSample = TRUE
             } else{
               needSample = TRUE
             }
           }
           
-          incProgress(1/length(reacs), detail = reac)
+          incProgress(1/length(listDirs), detail = reac)
           
           if(!needSample) next()
           
@@ -77,6 +80,40 @@ observeEvent(
           allSpecies = c(allSpecies,reactants)
           massReactants = getMassList(reactants, excludeList = dummySpecies)
           
+          # Get data for this reaction #
+          X = as.matrix(
+            read.csv(
+              file.path(fp,reac,'data.csv'),
+              header=FALSE, sep='\t', fill=TRUE, na.strings=""
+            )
+          )
+          
+          X = trimws(X) # remove unwanted spaces
+          reacName = X[1,1]
+          if(reacName != reac) 
+            id = shiny::showNotification(
+              h4(paste0('Pb reac identity: ',reacName)),
+              closeButton = TRUE,
+              duration = NULL,
+              type = 'error'
+            )
+          
+          # Locate Rate Info in X by keywords #
+          topLeft = which(X=='TYPE',arr.ind=TRUE)
+          if(length(topLeft)==0) {
+            reacType = 'kooij' # default
+            if('E' %in% reactants) reacType ='dr'
+          } else {  
+            reacType = X[topLeft[1],topLeft[2]+1]
+            if(! reacType %in% ionsReacTypes) 
+              id = shiny::showNotification(
+                h4(paste0('Improper rate type:',reacType)),
+                closeButton = TRUE,
+                duration = NULL,
+                type = 'error'
+              )
+          }
+          
           # Rate parameters 
           sampleRateParams = matrix(NA,
                                     nrow = sampleSize,
@@ -85,25 +122,16 @@ observeEvent(
           rateParDistStrings = rep(NA, length(ionsRateParKwdList))
           names(rateParDistStrings) = ionsRateParKwdList
           for (kwd in ionsRateParKwdList) {
-            stringDist = ionsDB()[[kwd]][iReac]
+            stringDist = getDistString(X, kwd)
             rateParDistStrings[kwd] = stringDist
             sampleDist = sampleDistString(stringDist, sampleSize)
             sampleRateParams[1:sampleSize, kwd] = sampleDist
           }
           
-          # Branching ratios
-          stringDist = ionsDB()$STRINGBR[iReac]
-          stringDist = gsub('\n','',stringDist)
-          stringDist = gsub('\t','',stringDist)
-          tags = getTagsFromTaggedDist(stringDist)
-          if(length(tags) != ionsDB()$NBR[iReac])
-            id = shiny::showNotification(
-              h4(paste0('Reac:',reac,'>>> Pb. with tags:',
-                        paste0(tags,collapse = ';'))),
-              closeButton = TRUE,
-              duration = NULL,
-              type = 'error'
-            )
+          # Locate BR Info #
+          topLeft =  which(X == 'BR', arr.ind = TRUE)
+          XBR = X[topLeft[1]:nrow(X), topLeft[2]:ncol(X)]
+          tags = XBR[2:nrow(XBR), 1] # List of channels
           
           # Check mass compatibility
           allProds = c()
@@ -121,14 +149,77 @@ observeEvent(
           
           if (input$ionsSampleCheck) next
           
-          # Generate BR sample #
-          if(length(tags) > 1) {
-            stringBR = getDistFromTaggedDist(stringDist)
-            sampleBR = nds(sampleSize,stringBR)
+          ### Generate BR samples ####
+          if(length(tags) >=2) {
+            # Build tree
+            dist=XBR[1,2:ncol(XBR)] # List of distributions in tree
+            dist=dist[!is.na(dist)]
+            XT=XBR[-1,-1]          # Matrix of parameters
+            nc=1
+            nl=nrow(XT)
+            X1=matrix(XT[1:nl,1:nc],nrow=nl,ncol=nc)
+            for (ic in 2:ncol(XT)) 
+              if(sum(is.na(XT[,ic]))!=nl) {
+                nc=nc+1
+                X1=cbind(X1,XT[,ic])
+              }
+            
+            d=list()
+            dSub=list()
+            for(ic in 1:nc){
+              dSub$elem = which(X1[,ic] !='')
+              dSub$dist = dist[ic]
+              pars = as.vector(X1[dSub$elem,ic])
+              dSub$mu = dSub$sig = c()
+              for (ip in 1:length(pars)) {
+                if( grepl("/",pars[ip]) ) {      
+                  loc  = gregexpr("(?<mu>.*)/(?<sig>.*)",pars,perl=TRUE)      
+                  start = attr(loc[[ip]],'capture.start')[1]
+                  stop  = start + attr(loc[[ip]],'capture.length')[1] -1
+                  dSub$mu[ip] = substr(pars[ip],start,stop)
+                  start = attr(loc[[ip]],'capture.start')[2]
+                  stop  = start + attr(loc[[ip]],'capture.length')[2] -1
+                  dSub$sig[ip] = substr(pars[ip],start,stop)  
+                } else {
+                  dSub$mu[ip]  = pars[ip]
+                  dSub$sig[ip] = NA
+                }    
+              }
+              dSub$link = rep(0,length(dSub$elem))
+              if(ic!=1) {
+                for (iel in 1:length(dSub$elem)) {
+                  ip = dSub$elem[iel]
+                  for (ic1 in 1:(ic-1)) {
+                    links = ip %in% d[[ic1]]$elem
+                    if(sum(links)!=0) dSub$link[iel] = ic1  
+                  }
+                }
+              }
+              d[[ic]] = dSub
+            }
+            
+            # Build probabilistic tree string for sampler #
+            stringBR = oneDist(nc, d, tags, tagged)
+            while (grepl("LINK/", stringBR)) {
+              poc = regmatches(stringBR, gregexpr('LINK/[0-9]+/', stringBR))
+              po = sapply(poc[[1]],
+                          function(x)
+                            as.numeric(sub('LINK', '', gsub('/', '', x))))
+              for (ip in 1:length(po)) {
+                str = oneDist(po[ip], d, tags, tagged)
+                stringBR = sub(poc[[1]][ip], str, stringBR)
+              }
+            }    
+            # Generate BR sample #
+            sampleBR = nds(sampleSize,stringBR)  
+            
           } else {
             # Single pathway with BR=1
             sampleBR = matrix(1,ncol=1,nrow=sampleSize)
+            
           }
+          
+          # Generate output for kinetics code #
           
           # Nominal/mean/median values from samples
           meanPars = rep(NA, ncol(sampleRateParams))
@@ -137,7 +228,7 @@ observeEvent(
           names(sigPars) = colnames(sampleRateParams)
           for (kwd in ionsRateParKwdList) {
             sample = sampleRateParams[, kwd]
-            if (substr(rateParDistStrings[kwd], 1, 5) != 'Delta') {
+            if(substr(rateParDistStrings[kwd],1,5)!='Delta') {
               meanPars[kwd] = exp(mean(log(sample)))
               sigPars[kwd]  = exp(sd(log(sample)))
             } else {
@@ -152,8 +243,8 @@ observeEvent(
           sigBR     = apply(sampleBR, 2, sd)
           
           
+          ## Write samples ####
           # Write sample to tmp file
-          reacType = ionsDB()$TYPE[iReac] 
           writeSample(0, samplesDir, reac, tags, meanPars, meanBR, reacType)
           for (i in 1:sampleSize) 
             writeSample(i, samplesDir, reac, tags, 
@@ -167,9 +258,7 @@ observeEvent(
           
           bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
           for (kwd in bibKwd) {
-            refs = ionsDB()[[kwd]][iReac]
-            if(refs != "NA" & refs != "" & !is.na(refs))
-               refs = unlist(str_split(refs,';'))
+            refs = getParams(X,kwd)
             allBibKeys = c(allBibKeys,refs) 
           }
           allBibKeys=sort(unique(allBibKeys[!is.na(allBibKeys)]))
@@ -221,7 +310,7 @@ observeEvent(
       )
     } else if(input$ionsSampleUpdate) {
       id = shiny::showNotification(
-        h4(paste0('Updated ',paste0(sampled, collapse = ', '))),
+        h4(paste0('Updated ',paste0(sampled,collapse = ', '))),
         closeButton = TRUE,
         duration = NULL,
         type = 'warning'
@@ -233,16 +322,16 @@ observeEvent(
     if (!input$ionsSampleCheck) {
       
       # List of reacs in Tmp DB
-      tmpDir    = file.path(ionsTmp,ionsEditOrigVersion(),'Reactions')
+      tmpDir    = file.path(ionsTmp,input$ionsVersionSample,'Reactions')
       listReacs = list.files(path = tmpDir, full.names = FALSE, recursive = FALSE)
       
       # Target directory
-      ionsSampleDir = paste0(ionsPublic, '_', ionsEditOrigVersion())
+      ionsSampleDir = paste0(ionsPublic, '_', input$ionsVersionSample)
       if (!dir.exists(ionsSampleDir)) {
         dir.create(ionsSampleDir)
       } else {
         # Clean
-        fileList = list.files(path = ionsSampleDir, full.names = TRUE)
+        fileList = list.files(path = ionsSampleDir, full.name = TRUE)
         file.remove(fileList)
       }
       
@@ -300,7 +389,6 @@ observeEvent(
       targetHtml = file.path(ionsSampleDir,'bibliography.html')
       sink(file=targetHtml, append=FALSE)
       allBibKeys=sort(unique(allBibKeys))
-      allBibKeys = allBibKeys[allBibKeys != ""]
       printBib(allBibKeys,bib)
       sink(file = NULL)
       
@@ -327,8 +415,7 @@ output$ionsStats = renderPrint({
   )
   
   fileName = file.path(
-    paste0(ionsPublic,'_',ionsEditOrigVersion()),
-    'run_0000.csv')
+    paste0(ionsPublic,'_',input$ionsVersionSample),'run_0000.csv')
   scheme   = as.data.frame(
     data.table::fread(file = fileName, header = FALSE, sep = ';')
   )
@@ -427,10 +514,10 @@ observeEvent(
   {
     
     # List of reacs in DB
-    fp        = file.path(ionsSource,ionsEditOrigVersion(),'Data')
+    fp        = file.path(ionsSource,input$ionsVersionSample,'Data')
     listDirs  = list.files(path = fp, full.names = FALSE, recursive = FALSE)
     
-    ionsSampleDir = paste0(ionsPublic, '_', ionsEditOrigVersion())
+    ionsSampleDir = paste0(ionsPublic, '_', input$ionsVersionSample)
     outFile = file.path(ionsSampleDir,'ionsDB.csv')
     if(file.exists(outFile))
       file.remove(outFile)
@@ -438,18 +525,17 @@ observeEvent(
     bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
     sink(file = outFile, append = TRUE)
     cat(
-      'REACTANTS;TYPE;',
+      'REACTANTS;',
+      'TYPE;',
       paste0(ionsRateParKwdList,collapse=';'),';',
-      'NBR;STRINGBR;',
+      'NBR;',
+      'STRINGBR;',
       paste0(bibKwd,collapse=';'),';',
-      'COMMENTS;TIMESTAMP\n'
+      'COMMENTS\n'
     )
     sink(file = NULL)
 
-    timeStamp = Sys.time() # Uniform time stamp for initial DB
-
     ## Reactions loop ####
-    
     shiny::withProgress(
       message = 'Converting ', 
       {
@@ -608,8 +694,7 @@ observeEvent(
               length(tags),';',
               '"',trimws(stringBR),'";',
               paste0(refBib,collapse=';'),';',
-              '"',comments,'";',
-              timeStamp,'\n'
+              '"',comments,'"\n'
             )
           )
           sink(file = NULL)
