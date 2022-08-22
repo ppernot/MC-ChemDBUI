@@ -1,14 +1,15 @@
-ionsDB          = shiny::reactiveVal()
-ionsReacs       = shiny::reactiveVal()
-ionsRateMask    = shiny::reactiveVal()
-ionsBRMask      = shiny::reactiveVal()
-ionsSimulSamples= shiny::reactiveVal()
+ionsDB            = shiny::reactiveVal()
+ionsReacs         = shiny::reactiveVal()
+ionsRateMask      = shiny::reactiveVal()
+ionsBRMask        = shiny::reactiveVal()
+ionsSimulSamples  = shiny::reactiveVal()
+ionsReacsFiltered = shiny::reactiveVal()
 
-
+# Manage reacs list ####
 shiny::observe({
-  req(ionsEditDBText())
+  req(input$aceIonsDB)
   ionsDB(
-    read.table(header = TRUE, text = ionsEditDBText(), sep=';')
+    read.table(header = TRUE, text = input$aceIonsDB, sep=';')
   )
 })
 
@@ -16,37 +17,54 @@ observeEvent(
   input$ionsReacSelInit,
   {
     shiny::updateTextInput(inputId = "ionsReacSel", value = "")
+    shiny::updateRadioButtons(inputId = "ionsReacSelKind", selected = "Both")
   })
 
 output$selIonsReac = shiny::renderUI({
   req(ionsDB())
   reacs = ionsDB()$REACTANTS
+  prods = ionsDB()$STRINGBR
 
   if(input$ionsReacSel != ""){
-    sel = grepl(input$ionsReacSel,reacs)
-    if(length(sel) == 0) {
+    if(input$ionsReacSelKind == "Reactant") {
+      sel = grepl(input$ionsReacSel,reacs) 
+    } else if(input$ionsReacSelKind == "Product"){
+      sel = grepl(input$ionsReacSel,prods)
+    } else if(input$ionsReacSelKind == "Both"){
+      sel = grepl(input$ionsReacSel,reacs) |
+            grepl(input$ionsReacSel,prods)
+    }
+    if(sum(sel) == 0) {
       id = shiny::showNotification(
-        h4(paste0('>>> Non-existant reactant:',input$ionsReacSel)),
+        strong(
+          paste0(
+            'Unknown species: ',input$ionsReacSel,
+            ' in context: ',input$ionsReacSelKind)
+        ),
         closeButton = TRUE,
         duration = NULL,
         type = 'error'
       )
+      reacs = NULL
     } else {
       reacs = reacs[sel]
     }
   }
+  req(reacs)
   
-  nums  = 0:length(reacs)  
-  names(nums) = c("Choose a reaction...",reacs)
+  nums = 1:length(reacs)  
+  names(nums) = reacs
+  ionsReacsFiltered(nums) # Partial list used by other parts
+  
   list(
     fluidRow(
       column(
         8,
         shiny::selectInput(
           "ionsReaction",
-          " Reactions",
+          "Reactions",
           choices = nums,
-          selected = 0
+          selected = 1
         )
       ),
       column(
@@ -90,7 +108,7 @@ observeEvent(
     iReac = as.numeric(input$ionsReaction)
     if(iReac > 1) {
       iReac = iReac - 1
-      updateSelectInput(
+      shiny::updateSelectInput(
         session=session,
         "ionsReaction",
         selected = iReac
@@ -101,12 +119,13 @@ observeEvent(
 observeEvent(
   input$ionsPlus,
   {
-    req(ionsDB())
-    reacs = ionsDB()$REACTANTS
+    req(ionsReacsFiltered())
+    
+    reacs = ionsReacsFiltered()
     iReac = as.numeric(input$ionsReaction)
     if(iReac < length(reacs)) {
       iReac = iReac + 1
-      updateSelectInput(
+      shiny::updateSelectInput(
         session=session,
         "ionsReaction",
         selected = iReac
@@ -120,18 +139,11 @@ shiny::observe({
   req(input$ionsReaction != "0")
   
   # Entry in table
-  reacs = ionsDB()$REACTANTS
   isel  = as.numeric(input$ionsReaction)
   if(input$ionsReacSel != ""){
-    sel = grepl(input$ionsReacSel,reacs)
-    if(length(sel) == 0) {
-      reac = NULL
-    } else {
-      reacs = reacs[sel]
-      reac  = reacs[isel]
-    }
+    reac = names(ionsReacsFiltered())[isel]
   } else {
-    reac = reacs[isel]
+    reac = ionsDB()$REACTANTS[isel]
   }
   req(reac)
   
@@ -292,7 +304,7 @@ observeEvent(
     
     if(length(tags) != input$ionsReacNBR)
       id = shiny::showNotification(
-        h4(paste0('>>> Pb. with tags:',
+        h4(paste0('>>> Pb. with channels number:',
                   paste0(tags,collapse = ';'))),
         closeButton = TRUE,
         duration = NULL,
@@ -324,12 +336,14 @@ observeEvent(
     )
 
     # Update editor's content
-    data = ionsDB()
+    data  = ionsDB()
     iReac = which(data$REACTANTS == input$ionsReacReactants)
-    if(iReac != 0)
+    
+    if(length(iReac) != 0)
       data[iReac,] = line
     else
       data = rbind(data,line)
+    
     ionsEditDBText(
       capture.output(
         write.table(data,sep=";",row.names = FALSE)

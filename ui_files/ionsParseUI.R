@@ -10,7 +10,7 @@ tabPanel(
           8,
           shiny::textInput(
             "ionsReacSel",
-            "Search:"
+            "Species filter"
           )
         ),
         column(
@@ -25,6 +25,18 @@ tabPanel(
           )
         )
       ),
+      radioButtons(
+        "ionsReacSelKind",
+        label = "",
+        choices = c(
+          "Reactant" = "Reactant",
+          "Product" = "Product",
+          "Both" = "Both"
+        ),
+        selected = "Both",
+        inline = TRUE
+      ),
+      br(),
       uiOutput("selIonsReac"),
       hr(),
       h4('Simulation'),
