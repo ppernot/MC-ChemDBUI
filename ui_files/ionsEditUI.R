@@ -19,12 +19,24 @@ tabPanel(
           )
         )
       ),
-      # uiOutput("selIonsEditFile"),
-      actionButton(
-        "ionsEditSave",
-        "Save",
-        icon = icon('save',verify_fa = FALSE)
-      )  
+      fluidRow(
+        column(
+          6,
+          actionButton(
+            "ionsEditSave",
+            "Save",
+            icon = icon('save',verify_fa = FALSE)
+          )
+        ),
+        column(
+          6,
+          actionButton(
+            "ionsEditRestore",
+            "Restore",
+            icon = icon('trash-undo',verify_fa = FALSE)
+          )
+        )
+      )
     ),
     mainPanel(
       width = mainWidth,

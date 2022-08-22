@@ -12,10 +12,31 @@ shiny::observe({
   )
 })
 
+observeEvent(
+  input$ionsReacSelInit,
+  {
+    shiny::updateTextInput(inputId = "ionsReacSel", value = "")
+  })
+
 output$selIonsReac = shiny::renderUI({
   req(ionsDB())
   reacs = ionsDB()$REACTANTS
-  nums  = 0:length(reacs)
+
+  if(input$ionsReacSel != ""){
+    sel = grepl(input$ionsReacSel,reacs)
+    if(length(sel) == 0) {
+      id = shiny::showNotification(
+        h4(paste0('>>> Non-existant reactant:',input$ionsReacSel)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+    } else {
+      reacs = reacs[sel]
+    }
+  }
+  
+  nums  = 0:length(reacs)  
   names(nums) = c("Choose a reaction...",reacs)
   list(
     fluidRow(
@@ -23,7 +44,7 @@ output$selIonsReac = shiny::renderUI({
         8,
         shiny::selectInput(
           "ionsReaction",
-          "Ions Reaction:",
+          " Reactions",
           choices = nums,
           selected = 0
         )
@@ -67,7 +88,7 @@ observeEvent(
   input$ionsMinus,
   {
     iReac = as.numeric(input$ionsReaction)
-    if(iReac > 2) {
+    if(iReac > 1) {
       iReac = iReac - 1
       updateSelectInput(
         session=session,
@@ -83,7 +104,7 @@ observeEvent(
     req(ionsDB())
     reacs = ionsDB()$REACTANTS
     iReac = as.numeric(input$ionsReaction)
-    if(iReac <= length(reacs)) {
+    if(iReac < length(reacs)) {
       iReac = iReac + 1
       updateSelectInput(
         session=session,
@@ -99,8 +120,23 @@ shiny::observe({
   req(input$ionsReaction != "0")
   
   # Entry in table
-  iReac = as.numeric(input$ionsReaction)
-  reac = ionsDB()$REACTANTS[iReac]
+  reacs = ionsDB()$REACTANTS
+  isel  = as.numeric(input$ionsReaction)
+  if(input$ionsReacSel != ""){
+    sel = grepl(input$ionsReacSel,reacs)
+    if(length(sel) == 0) {
+      reac = NULL
+    } else {
+      reacs = reacs[sel]
+      reac  = reacs[isel]
+    }
+  } else {
+    reac = reacs[isel]
+  }
+  req(reac)
+  
+  # Absolute index of selected reac
+  iReac = which(ionsDB()$REACTANTS == reac)
   
   # (Re-)Init samples for plots
   ionsSimulSamples(NULL)
@@ -686,7 +722,7 @@ output$ionsBiblio = shiny::renderUI({
   bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
   for (elt in bibKwd) {
     k = ionsRateMask()[[elt]]
-    if(k != "NA" & !is.na(k))
+    if(k != "NA" & !is.na(k) & k!="")
       keys = c(keys,unlist(str_split(k,';')))
   }
   keys = sort(unique(keys))

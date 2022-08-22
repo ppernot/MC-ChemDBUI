@@ -4,12 +4,28 @@ tabPanel(
     sidebarPanel(
       width = sideWidth,
       h4("Ions - Parse",.noWS = "outside"),
-      uiOutput("selIonsReac"),
-      actionButton(
-        "ionsParseSave",
-        "Save to DB",
-        icon = icon('save',verify_fa = FALSE)
+      br(),
+      fluidRow(
+        column(
+          8,
+          shiny::textInput(
+            "ionsReacSel",
+            "Search:"
+          )
+        ),
+        column(
+          4,
+          actionButton(
+            "ionsReacSelInit",
+            "Reset"
+          ),
+          tags$style(
+            type='text/css',
+            "#ionsReacSelInit { width:100%; margin-top: 30px;}"
+          )
+        )
       ),
+      uiOutput("selIonsReac"),
       hr(),
       h4('Simulation'),
       fluidRow(
@@ -44,7 +60,13 @@ tabPanel(
         value = c(100,500),
         step  =  50,
         round = TRUE
-      )  
+      ),
+      hr(),
+      actionButton(
+        "ionsParseSave",
+        "Apply changes",
+        icon = icon('save',verify_fa = FALSE)
+      )
     ),
     mainPanel(
       width = mainWidth,
@@ -90,10 +112,22 @@ tabPanel(
               column(
                 6,
                 HTML(
-                  "<h4>Parse</h4> Choose a DB version and a reaction.
+                  "<h4>Ions-Parse</h4> Visualize and edit data for individual
+                  reactions.
+                  <ul>
+                    <li> <strong>Search</strong>: enter a species name to 
+                  filter reactions. Reinitialize with Reset button.
+                    <li> <strong>Reactions</strong>: list of reactions in DB, 
+                  possibly filtered. The up and down arrows enable to go through
+                  the list step by step.
+                  </ul>
+                  <h4>Simulation</h4> Generate random samples to
+                  build graphs for rate constants and branching ratios.
                   <br>
-                  <h4>Simulation</h4> Random samples are generated to
-                  build graphs for rate constants and branching ratios."
+                  <h4>Apply changes</h4> click to apply the 
+                  changes made to the reaction's data. To save to disk, go to 
+                  the Edit page. 
+                  "
                 )
               )
             )

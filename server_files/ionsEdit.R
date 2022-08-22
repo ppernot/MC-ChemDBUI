@@ -1,8 +1,10 @@
 ionsEditOrigVersion = shiny::reactiveVal()
 ionsEditCopyVersion = shiny::reactiveVal()
 ionsEditDBFile      = shiny::reactiveVal('ionsDB.csv')
+ionsEditDBFileBack  = shiny::reactiveVal('ionsDB.bck')
 ionsEditDBText      = shiny::reactiveVal()
 ionsEditRNFile      = shiny::reactiveVal('ReleaseNotes.txt')
+ionsEditRNFileBack  = shiny::reactiveVal('ReleaseNotes.bck')
 ionsEditRNText      = shiny::reactiveVal()
 
 output$selIonsEditOrigVersion = shiny::renderUI({
@@ -19,22 +21,6 @@ output$selIonsEditOrigVersion = shiny::renderUI({
     )
   )
 })
-
-# output$selIonsEditFile = shiny::renderUI({
-#   req(ionsEditOrigVersion())
-#   list(
-#     shiny::selectInput(
-#       "ionsEditFile",
-#       "File to edit:",
-#       c("Choose a file..." = "",
-#         list.files(
-#           path=file.path(ionsSource,ionsEditOrigVersion()), 
-#           full.names = FALSE, 
-#           recursive = FALSE)
-#       )
-#     )
-#   )
-# })
 
 shiny::observe({
   ionsEditOrigVersion(input$ionsEditOrigVersion)
@@ -104,19 +90,11 @@ shiny::observeEvent(
   input$ionsEditSave,
   {
     req(ionsEditCopyVersion())
-    req(ionsEditFile())
 
-    # Make copy of source directory
     ionsOrigDir = file.path(ionsSource,ionsEditOrigVersion())
     ionsCopyDir = file.path(ionsSource,ionsEditCopyVersion())
     if(!dir.exists(ionsCopyDir)) {
       dir.create(ionsCopyDir)
-      # files = list.files(path = ionsOrigDir)
-      # for(file in files)
-      #   file.copy(
-      #     from = file.path(ionsOrigDir,file),
-      #     to   = file.path(ionsCopyDir,file)
-      #   )
       id = shiny::showNotification(
         h4(paste0('Created new version: ', ionsEditCopyVersion())),
         closeButton = FALSE,
@@ -124,6 +102,18 @@ shiny::observeEvent(
       )
     }
 
+    if(ionsOrigDir == ionsCopyDir) {
+      # Create backup files
+      file.copy(
+        from = file.path(ionsOrigDir,ionsEditDBFile()),
+        to   = file.path(ionsOrigDir,ionsEditDBFileBack())
+      )
+      file.copy(
+        from = file.path(ionsOrigDir,ionsEditRNFile()),
+        to   = file.path(ionsOrigDir,ionsEditRNFileBack())
+      )
+    }
+    
     # Save DB and RN files to target version
     data = isolate(input$aceIonsDB)
     writeLines(
@@ -147,5 +137,49 @@ shiny::observeEvent(
       duration = 5
     )
     
+  }
+)
+
+shiny::observeEvent(
+  input$ionsEditRestore,
+  {
+    req(ionsEditCopyVersion())
+    req(ionsEditOrigVersion() == ionsEditCopyVersion())
+    ionsOrigDir = file.path(ionsSource,ionsEditOrigVersion())
+    req(file.exists(file.path(ionsOrigDir,ionsEditDBFileBack())))
+    req(file.exists(file.path(ionsOrigDir,ionsEditRNFileBack())))
+    
+    shiny::showModal(shiny::modalDialog(
+      title = "This will erase all changes since last Save.",
+      easyClose = FALSE,
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("ionsEditRestoreOK", "OK")
+      )
+    ))
+  }
+)
+
+shiny::observeEvent(
+  input$ionsEditRestoreOK,
+  {
+    req(ionsEditCopyVersion())
+    req(ionsEditOrigVersion() == ionsEditCopyVersion())
+    
+    ionsOrigDir = file.path(ionsSource,ionsEditOrigVersion())
+    
+    ionsEditDBText(
+      readLines(
+        con <- file(file.path(ionsOrigDir,ionsEditDBFileBack()))
+      )
+    )
+    close(con)
+    ionsEditRNText(
+      readLines(
+        con <- file(file.path(ionsOrigDir,ionsEditRNFileBack()))
+      )
+    )
+    close(con)
+    removeModal()
   }
 )
