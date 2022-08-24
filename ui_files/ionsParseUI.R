@@ -106,13 +106,18 @@ tabPanel(
               ),
               column(
                 8,
-                plotOutput("plotIonsBRSample",height = plotHeight)
+                tabsetPanel(
+                  tabPanel(
+                    'Parallel',
+                    plotOutput("plotIonsBRSample",height = plotHeight)
+                  ),
+                  tabPanel(
+                    'Tree',
+                    plotOutput("plotIonsBRTree",height = plotHeight)
+                  )
+                )
               )
             )
-          ),
-          tabPanel(
-            'BR-Tree',
-            plotOutput("plotIonsBRTree",height = plotHeight)
           ),
           tabPanel(
             'Biblio',

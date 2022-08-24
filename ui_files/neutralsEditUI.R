@@ -12,33 +12,66 @@ tabPanel(
         column(
           6,
           textInput(
-            "neuCopyVersion",
+            "neutralsCopyVersion",
             "Target DB Version:",
             value = NULL,
             placeholder = "v_X.X"
           )
         )
       ),
-      uiOutput("selNeuFile"),
-      actionButton(
-        "neuSave",
-        "Save",
-        icon = icon('save',verify_fa = FALSE)
+      # uiOutput("selNeuFile"),
+      fluidRow(
+        column(
+          6,
+          actionButton(
+            "neutralsEditSave",
+            "Save",
+            icon = icon('save',verify_fa = FALSE)
+          )
+        ),
+        column(
+          6,
+          actionButton(
+            "neutralsEditRestore",
+            "Restore",
+            icon = icon('trash-undo',verify_fa = FALSE)
+          )
+        )
       ),
       h5("Check Species Mass"),
       verbatimTextOutput("checkSpecies", placeholder = TRUE)
     ),
     mainPanel(
       width = mainWidth,
-      uiOutput("neuHeader"),
-      aceEditor(
-        outputId = "ace",
-        cursorId = "cursor",
-        selectionId = "selection",
-        height = "600px",
-        fontSize = 16,
-        showPrintMargin = FALSE,
-        placeholder = "Please select a DB version and a DB file..."
+      wellPanel(
+        tabsetPanel(
+          tabPanel(
+            "Database",
+            uiOutput("neutralsHeaderDB"),
+            aceEditor(
+              outputId = "aceNeutralsDB",
+              cursorId = "cursor",
+              selectionId = "selection",
+              height = "600px",
+              fontSize = 16,
+              showPrintMargin = FALSE,
+              placeholder = "Please select a DB version..."
+            )
+          ),
+          tabPanel(
+            "Release Notes",
+            uiOutput("neutralsHeaderRN"),
+            aceEditor(
+              outputId = "aceNeutralsRN",
+              cursorId = "cursor",
+              selectionId = "selection",
+              height = "600px",
+              fontSize = 16,
+              showPrintMargin = FALSE,
+              placeholder = "Please select a DB version..."
+            )
+          )
+        )
       )
     )
   )

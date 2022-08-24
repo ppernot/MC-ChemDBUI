@@ -53,8 +53,13 @@ massElem      = CHNOSZ::mass(elements)
 dummySpecies  = unlist(read.csv(file.path('data','dummySpecies.csv'), header = FALSE))
 stoechFilters = read.csv(file.path('data','stoechFilters.csv'), header = FALSE, 
                          allowEscapes = TRUE)
-tabNeuFiles   = read.csv(file.path('data','neutralsDBFiles.csv'),header = FALSE)
+# tabNeuFiles   = read.csv(file.path('data','neutralsDBFiles.csv'),header = FALSE)
 
+neutralsRateParKwdList = c('A1','B1','C1','F1','G1',
+                           'A2','B2','C2','F2','G2',
+                           'A3','B3','C3','F3','G3',
+                           'FC') 
+neutralsReacTypes  = c('kooij','assocMD','assocVV')
 source('R/rateFormulas.R')
 
 ionsRateParKwdList = c('ALPHA','BETA','GAMMA') 

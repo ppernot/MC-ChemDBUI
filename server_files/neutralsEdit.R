@@ -1,12 +1,16 @@
-neutralsOrigVersion = shiny::reactiveVal()
-neutralsCopyVersion = shiny::reactiveVal()
-neutralsFile        = shiny::reactiveVal()
-neutralsReacs       = shiny::reactiveVal()
+neutralsEditOrigVersion = shiny::reactiveVal()
+neutralsEditCopyVersion = shiny::reactiveVal()
+neutralsEditDBFile      = shiny::reactiveVal('neutralsDB.csv')
+neutralsEditDBFileBack  = shiny::reactiveVal('neutralsDB.bck')
+neutralsEditDBText      = shiny::reactiveVal()
+neutralsEditRNFile      = shiny::reactiveVal('ReleaseNotes.txt')
+neutralsEditRNFileBack  = shiny::reactiveVal('ReleaseNotes.bck')
+neutralsEditRNText      = shiny::reactiveVal()
 
 output$selNeuOrigVersion = shiny::renderUI({
   list(
     shiny::selectInput(
-      "neuOrigVersion",
+      "neutralsOrigVersion",
       "Source DB Version:",
       rev(
         list.dirs(
@@ -18,109 +22,170 @@ output$selNeuOrigVersion = shiny::renderUI({
   )
 })
 
-output$selNeuFile = shiny::renderUI({
-  req(neutralsOrigVersion())
-  list(
-    shiny::selectInput(
-      "neuFile",
-      "Neutrals DB File:",
-      c("Choose a file..." = "",
-        list.files(
-          path=file.path(neutralsSource,neutralsOrigVersion()), 
-          full.names = FALSE, 
-          recursive = FALSE)
-      )
-    )
+shiny::observe({
+  neutralsEditOrigVersion(input$neutralsOrigVersion)
+})
+
+shiny::observe({
+  neutralsEditCopyVersion(input$neutralsCopyVersion)
+})
+
+shiny::observe({
+  req(neutralsEditOrigVersion())
+  req(neutralsEditDBFile())
+  
+  data = readLines(
+    con <- file(file.path(
+      neutralsSource,
+      neutralsEditOrigVersion(),
+      neutralsEditDBFile()
+    ))
   )
+  close(con)
+  
+  # Add a unique id to each line for editing
+  data[1] = paste0('ID;',data[1])
+  for (i in 2:length(data))
+    data[i] = paste0(i-1,';',data[i])
+
+  neutralsEditDBText(data)
 })
 
 shiny::observe({
-  neutralsOrigVersion(input$neuOrigVersion)
-})
-
-shiny::observe({
-  neutralsCopyVersion(input$neuCopyVersion)
-})
-
-shiny::observe({
-  neutralsFile(input$neuFile)
-})
-
-shiny::observe({
-  req(neutralsOrigVersion())
-  req(neutralsFile())
-  neutralsReacs(
+  req(neutralsEditOrigVersion())
+  req(neutralsEditRNFile())
+  neutralsEditRNText(
     readLines(
       con <- file(file.path(
         neutralsSource,
-        neutralsOrigVersion(),
-        neutralsFile()
+        neutralsEditOrigVersion(),
+        neutralsEditRNFile()
       ))
     )
   )
   close(con)
 })
 
-output$neuHeader = shiny::renderUI({
+output$neutralsHeaderDB = shiny::renderUI({
   list(
-    h4(file.path(neutralsOrigVersion(),neutralsFile()))
-  )
-})
-  
-shiny::observe({
-  shinyAce::updateAceEditor(
-    session, "ace", 
-    value = paste(neutralsReacs(),collapse = '\n')
+    strong(file.path(neutralsEditOrigVersion(),neutralsEditDBFile()))
   )
 })
 
-output$checkSpecies <- renderText({ 
-  req(input$ace_cursor)
-  sp = input$ace_selection
-  compo = get.atoms(sp)
-  names(compo) = elements
-  mass  = massFormula(compo)
-  paste0(
-    "Selection: \"", sp, "\"\n",
-    "Mass= ", mass
+output$neutralsHeaderRN = shiny::renderUI({
+  list(
+    strong(file.path(neutralsEditOrigVersion(),neutralsEditRNFile()))
+  )
+})
+
+shiny::observe({
+  shinyAce::updateAceEditor(
+    session, "aceNeutralsDB", 
+    value = paste(neutralsEditDBText(),collapse = '\n')
+  )
+})
+
+shiny::observe({
+  shinyAce::updateAceEditor(
+    session, "aceNeutralsRN", 
+    value = paste(neutralsEditRNText(),collapse = '\n')
   )
 })
 
 shiny::observeEvent(
-  input$neuSave,
+  input$neutralsEditSave,
   {
-    req(neutralsCopyVersion())
-    req(neutralsFile())
-   
-    # Make copy of source directory
-    neutralsOrigDir = file.path(neutralsSource,neutralsOrigVersion())
-    neutralsCopyDir = file.path(neutralsSource,neutralsCopyVersion())
+    req(neutralsEditCopyVersion())
+    
+    neutralsOrigDir = file.path(neutralsSource,neutralsEditOrigVersion())
+    neutralsCopyDir = file.path(neutralsSource,neutralsEditCopyVersion())
     if(!dir.exists(neutralsCopyDir)) {
       dir.create(neutralsCopyDir)
-      files = list.files(path = neutralsOrigDir)
-      for(file in files)
-        file.copy(
-          from = file.path(neutralsOrigDir,file),
-          to   = file.path(neutralsCopyDir,file)
-        )
       id = shiny::showNotification(
-        h4(paste0('Created new version: ', neutralsCopyVersion())),
+        h4(paste0('Created new version: ', neutralsEditCopyVersion())),
         closeButton = FALSE,
         duration = 5
       )
     }
     
-    # Save modified file to target version
-    data = isolate(input$ace)
+    if(neutralsOrigDir == neutralsCopyDir) {
+      # Create backup files
+      file.copy(
+        from = file.path(neutralsOrigDir,neutralsEditDBFile()),
+        to   = file.path(neutralsOrigDir,neutralsEditDBFileBack())
+      )
+      file.copy(
+        from = file.path(neutralsOrigDir,neutralsEditRNFile()),
+        to   = file.path(neutralsOrigDir,neutralsEditRNFileBack())
+      )
+    }
+    
+    # Save DB and RN files to target version
+    data = isolate(input$aceNeutralsDB)
     writeLines(
       data,
-      con = file.path(neutralsCopyDir,neutralsFile())
+      con = file.path(neutralsCopyDir,neutralsEditDBFile())
     )
     id = shiny::showNotification(
-      h4(paste0('Saved file: ', neutralsFile())),
+      h4(paste0('Saved file: ', neutralsEditDBFile())),
       closeButton = FALSE,
       duration = 5
     )
     
+    data = isolate(input$aceNeutralsRN)
+    writeLines(
+      data,
+      con = file.path(neutralsCopyDir,neutralsEditRNFile())
+    )
+    id = shiny::showNotification(
+      h4(paste0('Saved file: ', neutralsEditRNFile())),
+      closeButton = FALSE,
+      duration = 5
+    )
+    
+  }
+)
+
+shiny::observeEvent(
+  input$neutralsEditRestore,
+  {
+    req(neutralsEditCopyVersion())
+    req(neutralsEditOrigVersion() == neutralsEditCopyVersion())
+    neutralsOrigDir = file.path(neutralsSource,neutralsEditOrigVersion())
+    req(file.exists(file.path(neutralsOrigDir,neutralsEditDBFileBack())))
+    req(file.exists(file.path(neutralsOrigDir,neutralsEditRNFileBack())))
+    
+    shiny::showModal(shiny::modalDialog(
+      title = "This will erase all changes since last Save.",
+      easyClose = FALSE,
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("neutralsEditRestoreOK", "OK")
+      )
+    ))
+  }
+)
+
+shiny::observeEvent(
+  input$neutralsEditRestoreOK,
+  {
+    req(neutralsEditCopyVersion())
+    req(neutralsEditOrigVersion() == neutralsEditCopyVersion())
+    
+    neutralsOrigDir = file.path(neutralsSource,neutralsEditOrigVersion())
+    
+    neutralsEditDBText(
+      readLines(
+        con <- file(file.path(neutralsOrigDir,neutralsEditDBFileBack()))
+      )
+    )
+    close(con)
+    neutralsEditRNText(
+      readLines(
+        con <- file(file.path(neutralsOrigDir,neutralsEditRNFileBack()))
+      )
+    )
+    close(con)
+    removeModal()
   }
 )

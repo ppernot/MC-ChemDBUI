@@ -721,11 +721,11 @@ output$plotIonsBRTree = renderPlot({
       main = ''
     )
     mynodelabels(nodeTags, bg = 'gold')
-    myedgelabels(edgeTags)
+    # myedgelabels(edgeTags) # Not defined yet...
     
   }
 },
-height = plotHeight, width = 2*plotWidth)
+height = plotHeight, width = 1.5*plotWidth)
 
 # Biblio ####
 output$ionsBiblio = shiny::renderUI({

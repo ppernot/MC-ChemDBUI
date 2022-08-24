@@ -1,80 +1,127 @@
 tabPanel(
-  title = "Parse",
+  title = "Edit",
   sidebarLayout(
     sidebarPanel(
       width = sideWidth,
-      h4("Neutrals - Parse"),
+      h4("Neutrals - Parse",.noWS = "outside"),
       br(),
       fluidRow(
         column(
           8,
-          uiOutput("selNeuVersion"),
+          shiny::textInput(
+            "neutralsReacSel",
+            "Species filter"
+          )
         ),
         column(
           4,
           actionButton(
-            "neutralsParseBtn",
-            label = "Parse !",
+            "neutralsReacSelInit",
+            "Reset"
+          ),
+          tags$style(
+            type='text/css',
+            "#neutralsReacSelInit { width:100%; margin-top: 30px;}"
+          )
+        )
+      ),
+      radioButtons(
+        "neutralsReacSelKind",
+        label = "",
+        choices = c(
+          "Reactant" = "Reactant",
+          "Product" = "Product",
+          "Both" = "Both"
+        ),
+        selected = "Both",
+        inline = TRUE
+      ),
+      br(),
+      uiOutput("selNeutralsReac"),
+      hr(),
+      h4('Simulation'),
+      fluidRow(
+        column(
+          8,
+          selectInput(
+            'neutralsSimulateSize',
+            label    = '# MC samples',
+            choices  = seq(100,1000,by = 100),
+            selected = 500
+          )
+        ),
+        column(
+          4,
+          actionButton(
+            "neutralsSimulateBtn",
+            label = "Go !",
             icon  = icon('gear',verify_fa = FALSE),
             class = "btn-primary"
           ),
           tags$style(
             type='text/css',
-            "#neutralsParseBtn { width:100%; margin-top: 20px;}"
+            "#neutralsSimulateBtn { width:100%; margin-top: 30px;}"
           )
         )
       ),
-      br(),
-      wellPanel(
-        h4("About",.noWS = "before"),
-        HTML("Parse the data files to extract and check information
-             (reactants, products, rate law type, parameters...).
-             The reactions are checked for mass balance.<br>
-             The reaction list might be filtered by species,
-             either as reactant, product or both.<br>
-             A complementary check is provided as a list of species
-             sorted by mass. All isomers or states of a species should 
-             fall at the same mass.
-             ")
-      )  
+      sliderInput(
+        "neutralsTempRangePlot",
+        label = "Temp. range [K]",
+        min   = 10, 
+        max   = 600,
+        value = c(100,500),
+        step  =  50,
+        round = TRUE
+      ),
+      hr(),
+      actionButton(
+        "neutralsParseSave",
+        "Apply changes",
+        icon = icon('save',verify_fa = FALSE)
+      )
     ),
     mainPanel(
       width = mainWidth,
-      tabsetPanel(
-        tabPanel(
-          "Reactions",
-          br(),
-          fluidRow(
-            column(
-              2,
-              textInput(
-                "targetSpecies",
-                label = NULL,
-                value = NA,
-                placeholder = "Filter by species"
-              )
-            ),
-            column(
-              8,
-              radioButtons(
-                "targetSpeciesKind",
-                label = "",
-                choices = c(
-                  "Reactant" = "Reactant",
-                  "Product" = "Product",
-                  "Both" = "Both"
-                ),
-                selected = "Both",
-                inline = TRUE
+      wellPanel(
+        tabsetPanel(
+          tabPanel(
+            'Rate params',
+            uiOutput("neutralsRateMask")
+          ),
+          tabPanel(
+            'Plots',
+            plotOutput("plotNeutralsParsSample",height = plotHeight)
+          ),
+          # tabPanel(
+          #   'Biblio',
+          #   uiOutput("neutralsBiblio")
+          # ),
+          tabPanel(
+            'Help',
+            fluidRow(
+              column(
+                6,
+                HTML(
+                  "<h4>Neutrals-Parse</h4> Visualize and edit data for individual
+                  reactions.
+                  <ul>
+                    <li> <strong>Search</strong>: enter a species name to 
+                  filter reactions. Reinitialize with Reset button.
+                    <li> <strong>Reactions</strong>: list of reactions in DB, 
+                  possibly filtered. The up and down arrows enable to go through
+                  the list step by step.
+                  </ul>
+                  <h4>Simulation</h4> Generate random samples to
+                  build graphs for rate constants and branching ratios.
+                  <br>
+                  <h4>Apply changes</h4> click to apply the 
+                  changes made to the reaction's data. To save to disk, go to 
+                  the Edit page. 
+                  "
+                )
               )
             )
-          ),
-          DT::DTOutput("tabScheme")
-        ),
-        tabPanel(
-          title = "Checks",
-          h4("Species vs. mass"),
-          DT::DTOutput("massScheme")
+          )
         )
       )
     )
