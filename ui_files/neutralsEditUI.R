@@ -37,9 +37,7 @@ tabPanel(
             icon = icon('trash-undo',verify_fa = FALSE)
           )
         )
-      ),
-      h5("Check Species Mass"),
-      verbatimTextOutput("checkSpecies", placeholder = TRUE)
+      )
     ),
     mainPanel(
       width = mainWidth,

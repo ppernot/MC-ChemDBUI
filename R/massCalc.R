@@ -48,7 +48,9 @@ getMassList = function (species, excludeList = 'Products') {
 }
 checkBalance = function(reactants, products) {
   reac = unlist(reactants)
+  reac = reac[!is.na(reac)]
   prod = unlist(products)
+  prod = prod[!is.na(prod)]
   massReacs = getMassList(reac, excludeList = dummySpecies)
   massFrags = getMassList(prod, excludeList = dummySpecies)
   reacTags = paste0(

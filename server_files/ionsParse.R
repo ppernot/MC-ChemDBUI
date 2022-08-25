@@ -354,9 +354,7 @@ observeEvent(
 
 
 # Sampling ####
-observeEvent(
-  input$ionsSimulateBtn,
-  {
+ionsSimulate = reactive({
     req(ionsRateMask())
     req(ionsBRMask())
     
@@ -426,7 +424,7 @@ observeEvent(
       
     }
     
-    ionsSimulSamples(
+    return(
       list(
         sampleSize       = nMC,
         sampleRateParams = sampleRateParams,
@@ -445,16 +443,18 @@ observeEvent(
 
 # Plot rates ####
 output$plotIonsParsSample = renderPlot({
-  req(ionsSimulSamples())
+  # req(ionsSimulSamples())
   req(ionsRateMask())
   
   mask = isolate(ionsRateMask())
   reacType  = mask$TYPE
   reactants = mask$REACTANTS
   
-  sampleSize         = ionsSimulSamples()$sampleSize
-  sampleRateParams   = ionsSimulSamples()$sampleRateParams
-  rateParDistStrings = ionsSimulSamples()$rateParDistStrings
+  ionsSimulSamples = ionsSimulate()
+  
+  sampleSize         = ionsSimulSamples$sampleSize
+  sampleRateParams   = ionsSimulSamples$sampleRateParams
+  rateParDistStrings = ionsSimulSamples$rateParDistStrings
   
   meanPars = rep(NA, ncol(sampleRateParams))
   names(meanPars) = colnames(sampleRateParams)
@@ -598,12 +598,14 @@ height = plotHeight, width = 1.2*plotWidth)
 # Plot BRs ####
 ## Sample ####
 output$plotIonsBRSample = renderPlot({
-  req(ionsSimulSamples())
-  req(!is.null(ionsSimulSamples()$mytree))
+  # req(ionsSimulSamples())
+  ionsSimulSamples = ionsSimulate()
   
-  sampleSize       = ionsSimulSamples()$sampleSize
-  sampleBR         = ionsSimulSamples()$sampleBR
-  tags             = ionsSimulSamples()$tags
+  req(!is.null(ionsSimulSamples$mytree))
+  
+  sampleSize       = ionsSimulSamples$sampleSize
+  sampleBR         = ionsSimulSamples$sampleBR
+  tags             = ionsSimulSamples$tags
   
   meanBR    = colMeans(sampleBR)
   meanBR    = meanBR / sum(meanBR)
@@ -675,16 +677,17 @@ output$plotIonsBRSample = renderPlot({
 height = plotHeight, width = plotWidth)
 ## Tree ####
 output$plotIonsBRTree = renderPlot({
-  req(ionsSimulSamples())
-  req(!is.null(ionsSimulSamples()$mytree))
   
-  sampleSize       = ionsSimulSamples()$sampleSize
-  sampleBR         = ionsSimulSamples()$sampleBR
-  nodeTags         = ionsSimulSamples()$nodeTags
-  edgeTags         = ionsSimulSamples()$edgeTags
-  mytree           = ionsSimulSamples()$mytree
-  tags             = ionsSimulSamples()$tags
-  depth            = ionsSimulSamples()$treeDepth
+  ionsSimulSamples = ionsSimulate()
+  req(!is.null(ionsSimulSamples$mytree))
+  
+  sampleSize       = ionsSimulSamples$sampleSize
+  sampleBR         = ionsSimulSamples$sampleBR
+  nodeTags         = ionsSimulSamples$nodeTags
+  edgeTags         = ionsSimulSamples$edgeTags
+  mytree           = ionsSimulSamples$mytree
+  tags             = ionsSimulSamples$tags
+  depth            = ionsSimulSamples$treeDepth
   
   meanBR    = colMeans(sampleBR)
   meanBR    = meanBR / sum(meanBR)

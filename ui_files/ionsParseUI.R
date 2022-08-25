@@ -4,80 +4,69 @@ tabPanel(
     sidebarPanel(
       width = sideWidth,
       h4("Ions - Parse",.noWS = "outside"),
-      br(),
-      fluidRow(
-        column(
-          8,
-          shiny::textInput(
-            "ionsReacSel",
-            "Species filter"
-          )
-        ),
-        column(
-          4,
-          actionButton(
-            "ionsReacSelInit",
-            "Reset"
+      tabsetPanel(
+        tabPanel(
+          'Select',
+          br(),
+          fluidRow(
+            column(
+              8,
+              shiny::textInput(
+                "ionsReacSel",
+                "Species filter"
+              )
+            ),
+            column(
+              4,
+              actionButton(
+                "ionsReacSelInit",
+                "Reset"
+              ),
+              tags$style(
+                type='text/css',
+                "#ionsReacSelInit { width:100%; margin-top: 30px;}"
+              )
+            )
           ),
-          tags$style(
-            type='text/css',
-            "#ionsReacSelInit { width:100%; margin-top: 30px;}"
+          radioButtons(
+            "ionsReacSelKind",
+            label = "",
+            choices = c(
+              "Reactant" = "Reactant",
+              "Product" = "Product",
+              "Both" = "Both"
+            ),
+            selected = "Both",
+            inline = TRUE
+          ),
+          br(),
+          uiOutput("selIonsReac"),
+          hr(),
+          actionButton(
+            "ionsParseSave",
+            "Apply changes",
+            icon = icon('save',verify_fa = FALSE)
           )
-        )
-      ),
-      radioButtons(
-        "ionsReacSelKind",
-        label = "",
-        choices = c(
-          "Reactant" = "Reactant",
-          "Product" = "Product",
-          "Both" = "Both"
         ),
-        selected = "Both",
-        inline = TRUE
-      ),
-      br(),
-      uiOutput("selIonsReac"),
-      hr(),
-      h4('Simulation'),
-      fluidRow(
-        column(
-          8,
+        tabPanel(
+          'Plot',
           selectInput(
             'ionsSimulateSize',
             label    = '# MC samples',
             choices  = seq(100,1000,by = 100),
-            selected = 500
-          )
-        ),
-        column(
-          4,
-          actionButton(
-            "ionsSimulateBtn",
-            label = "Go !",
-            icon  = icon('gear',verify_fa = FALSE),
-            class = "btn-primary"
+            selected = 500,
+            width = '200px'
           ),
-          tags$style(
-            type='text/css',
-            "#ionsSimulateBtn { width:100%; margin-top: 30px;}"
+          sliderInput(
+            "ionsTempRangePlot",
+            label = "Temp. range [K]",
+            min   = 10, 
+            max   = 600,
+            value = c(100,500),
+            step  =  50,
+            round = TRUE
           )
         )
-      ),
-      sliderInput(
-        "ionsTempRangePlot",
-        label = "Temp. range [K]",
-        min   = 10, 
-        max   = 600,
-        value = c(100,500),
-        step  =  50,
-        round = TRUE
-      ),
-      hr(),
-      actionButton(
-        "ionsParseSave",
-        "Apply changes",
-        icon = icon('save',verify_fa = FALSE)
       )
     ),
     mainPanel(

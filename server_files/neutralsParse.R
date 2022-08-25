@@ -13,11 +13,23 @@ shiny::observe({
   req(input$aceNeutralsDB)
 
   # Get all data in (do not use comment.char here because it mixes up with id.)
-  data = read.table(
-    header = TRUE, 
-    text = input$aceNeutralsDB, 
-    sep=';',
-    comment.char = "")
+  data = try(
+    read.table(
+      header = TRUE, 
+      text = input$aceNeutralsDB, 
+      sep=';',
+      comment.char = ""),
+    silent = TRUE
+  )
+  if(class(data)=="try-error") {
+    id = shiny::showNotification(
+      strong(paste0('Cannot pase DB: incorrect format! Msg:',data)),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'error'
+    )
+    return(NULL)
+  }
   
   # Filter out comment lines
   sel = substr(data$R1,1,1) != '#'
@@ -32,6 +44,21 @@ shiny::observe({
   # Build unique tag
   data[['TAG']]       = apply(data[,c("ID","REACTANTS","PRODUCTS")], 1, 
                               makeTag)
+  
+  # Check that reactions are mass balanced
+  for(i in seq_along(data$REACTANTS)) {
+    reactants = getSpecies(data$REACTANTS[i])
+    products  = getSpecies(data$PRODUCTS[i])
+    msg = checkBalance(reactants,products)
+    if(!is.null(msg))
+      id = shiny::showNotification(
+        strong(paste0(msg,', at line ',data$ID[i])),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+    req(is.null(msg))
+  }
   
   neutralsDB(data)
 })
@@ -180,12 +207,14 @@ shiny::observe({
   mask = list()
   reactants = getSpecies(neutralsDB()$REACTANTS[iReac])
   mask[['REACTANTS']] = reactants
-  massReactants = getMassList(reactants, excludeList = dummySpecies)
+  # massReactants = getMassList(reactants, excludeList = dummySpecies)
   
   products = getSpecies(neutralsDB()$PRODUCTS[iReac])
   mask[['PRODUCTS']] = products
-  massProducts = getMassList(products, excludeList = dummySpecies)
+  # massProducts = getMassList(products, excludeList = dummySpecies)
   
+
+
   mask[['TYPE']] = neutralsDB()$TYPE[iReac]
   
   for (kwd in neutralsRateParKwdList)
@@ -205,6 +234,7 @@ output$neutralsRateMask = shiny::renderUI({
   list(
     br(),
     fluidRow(
+      # All built on width 11 instead of 12...
       column(
         4,
         shiny::textInput(
@@ -311,7 +341,7 @@ output$neutralsRateMask = shiny::renderUI({
     ),
     fluidRow(
       column(
-        7,
+        8,
         shiny::textAreaInput(
           "neutralsReacRQ",
           "Comments",
@@ -353,11 +383,24 @@ observeEvent(
     reactants = rep(NA, 3)
     elts = trimws(unlist(strsplit(input$neutralsReacReactants,'+',fixed = TRUE)))
     reactants[1:length(elts)] = elts
-    
+   
     products = rep(NA, 5)
     elts = trimws(unlist(strsplit(input$neutralsReacProducts,'+',fixed = TRUE)))
     products[1:length(elts)] = elts
 
+    msg = checkBalance(reactants,products)
+    if(!is.null(msg))
+      id = shiny::showNotification(
+        strong(msg),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+    req(is.null(msg))
+    
+    if(input$neutralsParseComment)
+      reactants[1] = paste0('#',reactants[1])
+    
     ratePars = rep(NA,length(neutralsRateParKwdList))
     names(ratePars) = neutralsRateParKwdList
     for (kwd in neutralsRateParKwdList) 
@@ -369,14 +412,13 @@ observeEvent(
       id,
       reactants,
       products,
-      trimws(input$neutralsReacTYPE),
+      paste0(trimws(input$neutralsReacTYPE)),
       ratePars,
-      gsub(';',',',input$neutralsReacREFS),
-      input$neutralsReacRQ,
+      paste0(gsub(';',',',input$neutralsReacREFS)),
+      paste0(input$neutralsReacRQ),
       paste0(Sys.time())
     )
     line = paste0(line,collapse = ";")
-
     
     data = neutralsDB()
     tag  = makeTag(
@@ -404,6 +446,9 @@ observeEvent(
   }
 )
 
+
+
+# Sampling ####
 topow = function(x,p) {
   if(x==0)
     return(0.0)
@@ -429,10 +474,9 @@ sampleNeutralsPars = function(nMC, pars, type) {
   }
   return(tab)
 }
-
-# Sampling ####
 neutralsParsSampling = reactive({
     req(neutralsRateMask())
+    req(input$neutralsReacTIMESTAMP) # Ensure that dynamic interface is built
 
     nMC = as.numeric(input$neutralsSimulateSize)
 
@@ -497,7 +541,7 @@ output$plotNeutralsRate = renderPlot({
     tcl = gPars$tcl,
     lwd = gPars$lwd,
     pty = 'm',
-    cex = 1.25
+    cex = 1
   )
   
   tempRange = tRange
@@ -507,7 +551,7 @@ output$plotNeutralsRate = renderPlot({
       krateT,
       type = 'l',
       lty = 1,
-      col = gPars$cols_tr2[6],
+      col = gPars$cols_tr[6],
       lwd = 1.5*gPars$lwd,
       log = 'y',
       xlab = 'T [K]',
@@ -516,7 +560,7 @@ output$plotNeutralsRate = renderPlot({
     )
     grid()
     lines(tempRange, krateT[, 1], col = gPars$cols[2],lwd = 1.5*gPars$lwd)
-    legend('top',title = paste0('M = ',M0,'cm^-3'), legend = NA, bty='n')
+    legend('bottomright',title = paste0('M = ',M0,'cm^-3'), legend = NA, bty='n')
     box()
   }
   
@@ -527,7 +571,7 @@ output$plotNeutralsRate = renderPlot({
       krateM,
       type = 'l',
       lty = 1,
-      col = gPars$cols_tr2[6],
+      col = gPars$cols_tr[6],
       lwd = 1.5*gPars$lwd,
       log = 'xy',
       xlab = 'M [cm^-3]',
@@ -536,7 +580,7 @@ output$plotNeutralsRate = renderPlot({
     )
     lines(mRange, krateM[, 1], col = gPars$cols[2], lwd = 1.5*gPars$lwd)
     grid()
-    legend('top',title = paste0('T = ',T0,' K'), legend = NA, bty='n')
+    legend('bottomright',title = paste0('T = ',T0,' K'), legend = NA, bty='n')
     box()
   }  
   
@@ -547,13 +591,11 @@ height = plotHeight)
 output$neutralsBiblio = shiny::renderUI({
   req(neutralsRateMask())
 
-  keys = c()
-  bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
-  for (elt in bibKwd) {
-    k = ionsRateMask()[[elt]]
-    if(k != "NA" & !is.na(k) & k!="")
-      keys = c(keys,unlist(str_split(k,';')))
-  }
+  keys = unlist(
+    str_split(
+      gsub(';',',',input$neutralsReacREFS),
+      ',')
+  )
   keys = sort(unique(keys))
   
   refs = '<H4>References</H4><DL>'

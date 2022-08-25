@@ -7,6 +7,7 @@ tabPanel(
       tabsetPanel(
         tabPanel(
           title = 'Select',
+          br(),
           fluidRow(
             column(
               8,
@@ -41,38 +42,36 @@ tabPanel(
           br(),
           uiOutput("selNeutralsReac"),
           hr(),
-          actionButton(
-            "neutralsParseSave",
-            "Apply changes",
-            icon = icon('save',verify_fa = FALSE)
+          fluidRow(
+            column(
+              6,
+              checkboxInput(
+                "neutralsParseComment",
+                "Comment reaction",
+                value = FALSE
+              )
+            ),
+            column(
+              6,
+              actionButton(
+                "neutralsParseSave",
+                "Apply changes",
+                icon = icon('save',verify_fa = FALSE)
+              )
+            )
           )
         ),
         tabPanel(
           title = 'Plot',
-          fluidRow(
-            column(
-              8,
-              selectInput(
-                'neutralsSimulateSize',
-                label    = '# MC samples',
-                choices  = seq(100,1000,by = 100),
-                selected = 500
-              )
-            ),
-            column(
-              4,
-              actionButton(
-                "neutralsSimulateBtn",
-                label = "Go !",
-                icon  = icon('gear',verify_fa = FALSE),
-                class = "btn-primary"
-              ),
-              tags$style(
-                type='text/css',
-                "#neutralsSimulateBtn { width:100%; margin-top: 30px;}"
-              )
-            )
+          br(),
+          selectInput(
+            'neutralsSimulateSize',
+            label    = '# MC samples',
+            choices  = seq(100,1000,by = 100),
+            selected = 500,
+            width = '200px'
           ),
+          hr(),
           sliderInput(
             "neutralsTempRangePlot",
             label = "Temp. range [K]",
@@ -126,10 +125,10 @@ tabPanel(
               )
             )
           ),
-          # tabPanel(
-          #   'Biblio',
-          #   uiOutput("neutralsBiblio")
-          # ),
+          tabPanel(
+            'Biblio',
+            uiOutput("neutralsBiblio")
+          ),
           tabPanel(
             'Help',
             fluidRow(
