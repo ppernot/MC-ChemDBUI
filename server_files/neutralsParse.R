@@ -206,7 +206,7 @@ output$neutralsRateMask = shiny::renderUI({
     br(),
     fluidRow(
       column(
-        2,
+        4,
         shiny::textInput(
           "neutralsReacReactants",
           "Reactants",
@@ -214,7 +214,7 @@ output$neutralsRateMask = shiny::renderUI({
         )
       ),
       column(
-        2,
+        4,
         shiny::textInput(
           "neutralsReacProducts",
           "Products",
@@ -222,7 +222,7 @@ output$neutralsRateMask = shiny::renderUI({
         )
       ),
       column(
-        2,
+        3,
         shiny::selectInput(
           "neutralsReacTYPE",
           "Reaction type",
@@ -241,19 +241,19 @@ output$neutralsRateMask = shiny::renderUI({
         shiny::textInput("neutralsReacA1", "A1", value = mask[['A1']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacB1", "B1", value = mask[['B1']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacC1", "C1", value = mask[['C1']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacF1", "F1", value = mask[['F1']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacG1", "G1", value = mask[['G1']])
       )
     ),
@@ -267,24 +267,20 @@ output$neutralsRateMask = shiny::renderUI({
         shiny::textInput("neutralsReacA2", "A2", value = mask[['A2']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacB2", "B2", value = mask[['B2']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacC2", "C2", value = mask[['C2']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacF2", "F2", value = mask[['F2']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacG2", "G2", value = mask[['G2']])
-      ),
-      column(
-        1,
-        shiny::textInput("neutralsReacFC", "Fc", value = mask[['FC']])
       )
     ),
     fluidRow(
@@ -297,25 +293,25 @@ output$neutralsRateMask = shiny::renderUI({
         shiny::textInput("neutralsReacA3", "A3", value = mask[['A3']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacB3", "B3", value = mask[['B3']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacC3", "C3", value = mask[['C3']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacF3", "F3", value = mask[['F3']])
       ),
       column(
-        1,
+        2,
         shiny::textInput("neutralsReacG3", "G3", value = mask[['G3']])
       )
     ),
     fluidRow(
       column(
-        5,
+        7,
         shiny::textAreaInput(
           "neutralsReacRQ",
           "Comments",
@@ -325,6 +321,11 @@ output$neutralsRateMask = shiny::renderUI({
       ),
       column(
         3,
+        shiny::textInput(
+          "neutralsReacFC", 
+          "Fc", 
+          value = mask[['FC']]
+        ),
         shiny::textInput(
           "neutralsReacREFS",
           "References",
@@ -338,6 +339,7 @@ output$neutralsRateMask = shiny::renderUI({
       )
     )
   )
+  
 })
 outputOptions(output, "neutralsRateMask", suspendWhenHidden = FALSE)
 
@@ -402,175 +404,100 @@ observeEvent(
   }
 )
 
+topow = function(x,p) {
+  if(x==0)
+    return(0.0)
+  else
+    return(x^p)
+}
+sampleNeutralsPars = function(nMC, pars, type) {
+  tab = matrix(NA, nrow = nMC+1, ncol = length(pars))
+  p = pars = as.numeric(pars)
+  rmax = ifelse(type == 'kooij',1,3)
+  for (i in 0:nMC) {
+    for (r in 1:rmax) {
+      rnd = ifelse(i==0, 0, rnorm(1))
+      i0 = (r-1)*5
+      # p[i0+1] = pars[i0+1]
+      # p[i0+2] = pars[i0+2]
+      # p[i0+3] = pars[i0+3]
+      p[i0+4] = topow(pars[i0+4], rnd)
+      p[i0+5] = pars[i0+5] * rnd
+    }
+    # p[16] = pars[16]
+    tab[i+1, ] = p
+  }
+  return(tab)
+}
 
 # Sampling ####
-observeEvent(
-  input$neutralsSimulateBtn,
-  {
+neutralsParsSampling = reactive({
     req(neutralsRateMask())
-    
+
     nMC = as.numeric(input$neutralsSimulateSize)
-    
-    # Sanity checks !!!!!
-    # TBD...
-    # * Mass consistency
-    
+
     # Rate parameters
-    sampleRateParams = matrix(
-      NA, 
-      nrow = nMC,
-      ncol = length(neutralsRateParKwdList))
+    pars = rep(0,length(neutralsRateParKwdList))
+    names(pars) = neutralsRateParKwdList
+    for (kwd in neutralsRateParKwdList)
+      pars[kwd] = as.numeric(input[[paste0('neutralsReac',kwd)]])
+
+    type = input$neutralsReacTYPE
+
+    sampleRateParams = sampleNeutralsPars(nMC, pars, type)
     colnames(sampleRateParams) = neutralsRateParKwdList
-    rateParDistStrings = rep(NA,length(neutralsRateParKwdList))
-    names(rateParDistStrings) = neutralsRateParKwdList
-    for (kwd in neutralsRateParKwdList) {
-      # stringDist = neutralsRateMask()[[kwd]]
-      stringDist = input[[paste0('neutralsReac',kwd)]] # Enable user mod
-      rateParDistStrings[kwd]=stringDist
-      sampleDist = sampleDistString(stringDist, nMC)
-      sampleRateParams[1:nMC, kwd] = sampleDist
-    }
-    
-   
-    
-    neutralsSimulSamples(
-      list(
-        sampleSize       = nMC,
-        sampleRateParams = sampleRateParams,
-        rateParDistStrings = rateParDistStrings
-      )
-    )
-    
+
+    return(sampleRateParams)
+
   }
 )
 
 # Plot rates ####
-output$plotRate = renderPlot({
-  req(input$reacNbPlot)
-  iReac = as.numeric(input$reacNbPlot)
+output$plotNeutralsRate = renderPlot({
+  req(neutralsRateMask())
   
-  req(reacScheme())
-  reac0   = reacScheme()$reactants[[iReac]]
-  prod0   = reacScheme()$products[[iReac]]
-  params0 = reacScheme()$params[[iReac]]
-  typ0    = reacScheme()$type[[iReac]]
-  note    = reacScheme()$notes[[iReac]]
+  sample = neutralsParsSampling()
   
-  tag  = paste0(
-    'Reac. ',iReac, ': ',
-    paste0(reac0, collapse = ' + '),' --> ',
-    paste0(prod0, collapse = ' + ')
-  )
-  legText = paste0(tag, '\n', 'Rate law: ', typ0)
-  legText = switch(
-    typ0,
-    kooij    = paste0(
-      legText,
-      '\n',
-      'Parameters: ',
-      paste0(params0[1:5],
-             collapse = ' / '),
-      '\n'
-    ),
-    assocMD  = paste0(
-      legText,
-      '\n',
-      'Parameters Fc : ', params0[16],'\n',
-      'Parameters k0 : ',
-      paste0(params0[1:5], collapse = ' / '),
-      '\n',
-      'Parameters kInf : ',
-      paste0(params0[6:10], collapse = ' / '),
-      '\n',
-      'Parameters kr : ',
-      paste0(params0[11:15], collapse = ' / '),
-      '\n'
-    ),
-    assocVV  = paste0(
-      legText,
-      '\n',
-      'Parameters Fc : ', params0[16],'\n',
-      'Parameters kInf : ',
-      paste0(params0[1:5], collapse = ' / '),
-      '\n',
-      'Parameters k0 : ',
-      paste0(params0[6:10], collapse = ' / '),
-      '\n',
-      'Parameters kR : ',
-      paste0(params0[11:15], collapse = ' / '),
-      '\n'
-    ),
-    legText
-  )
-  legText = paste0(legText,note)
-  
-  # Samples directory
-  neutralsSampleDir = paste0(neutralsPublic,'_',neutralsVersion())
-  req(dir.exists(neutralsSampleDir))
-  samplesList = list.files(
-    path = neutralsSampleDir,
-    pattern = 'run_',
-    full.names = TRUE
-  )
-  
-  # Generate curves
   T0 = as.numeric(input$T0Plot)
-  tRange = seq(input$tempRangePlot[1],input$tempRangePlot[2],5)
+  tRange = seq(input$neutralsTempRangePlot[1],
+               input$neutralsTempRangePlot[2],5)
   M0  = 10^as.numeric(input$M0Plot)
   mRange = 10^seq(input$densRangePlot[1],input$densRangePlot[2],0.5)
+
+  type = input$neutralsReacTYPE
   
-  irun = 0
-  krateT = matrix(NA,ncol = length(samplesList),nrow= length(tRange))
-  krateM = matrix(NA,ncol = length(samplesList),nrow= length(mRange))
-  for (file in samplesList) {
-    irun = irun + 1
-    
-    # Get params and generate tags
-    scheme  = read.csv(
-      file = file,
-      skip = iReac-1,
-      nrows = 1,
-      header = FALSE,
-      sep = ';'
-    )
-    scheme  = gsub(" ", "", scheme)
-    params = scheme[8:23]
-    pars   = as.numeric(params)
-    type   = scheme[ 24]
-    
-    krateT[,irun] = switch(
+  krateT = matrix(NA, ncol = nrow(sample),nrow= length(tRange))
+  krateM = matrix(NA, ncol = nrow(sample),nrow= length(mRange))
+  
+  for (i in 1:nrow(sample)) {
+    pars = sample[i,]
+    #fixed M, T varies
+    krateT[,i] = switch(
       type,
       kooij    = kooij(pars,tRange,M0),
       assocMD  = k3body(pars,tRange,M0),
       assocVV  = kEq18VV(pars,tRange,M0),
       rep(0,length(tRange))
     )
-    
     # fixed T, M varies
-    krateM[,irun] = switch(
+    krateM[,i] = switch(
       type,
       kooij    = kooij(pars,T0,mRange),
       assocMD  = k3body(pars,T0,mRange),
       assocVV  = kEq18VV(pars,T0,mRange),
       rep(0,length(mRange))
     )
-    
-    # if (sum(k <= 0) != 0)
-    #   alerts = c(alerts, paste0('Null RC: ', tag[[i]], '\n'))
   }
   
   # Plot 
-  
-  trBlue = col2tr('blue', 60)
-  
   par(
-    mfrow = c(1, 2),
-    mar = c(3,3,9,2),
+    mfrow = c(2, 1),
+    mar = c(3,3,1,1),
     mgp = gPars$mgp,
     tcl = gPars$tcl,
     lwd = gPars$lwd,
-    pty = 's',
-    cex = 1.5
+    pty = 'm',
+    cex = 1.25
   )
   
   tempRange = tRange
@@ -590,15 +517,6 @@ output$plotRate = renderPlot({
     grid()
     lines(tempRange, krateT[, 1], col = gPars$cols[2],lwd = 1.5*gPars$lwd)
     legend('top',title = paste0('M = ',M0,'cm^-3'), legend = NA, bty='n')
-    mtext(
-      legText,
-      side = 3,
-      cex = 1.5,
-      adj = 0,
-      line = 8,
-      padj = 1,
-      col = gPars$cols[1]
-    )
     box()
   }
   
@@ -617,19 +535,18 @@ output$plotRate = renderPlot({
       main = ''
     )
     lines(mRange, krateM[, 1], col = gPars$cols[2], lwd = 1.5*gPars$lwd)
-    grid(col = 'darkgray')
+    grid()
     legend('top',title = paste0('T = ',T0,' K'), legend = NA, bty='n')
-    box(lwd = 4)
+    box()
   }  
   
 },
 height = plotHeight)
 
 # Biblio ####
-output$ionsBiblio = shiny::renderUI({
-  req(ionsRateMask())
-  req(ionsBRMask())
-  
+output$neutralsBiblio = shiny::renderUI({
+  req(neutralsRateMask())
+
   keys = c()
   bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
   for (elt in bibKwd) {

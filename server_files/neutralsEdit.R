@@ -121,7 +121,15 @@ shiny::observeEvent(
     }
     
     # Save DB and RN files to target version
-    data = isolate(input$aceNeutralsDB)
+    # For DB, need to remove ID before saving
+    dataEditor = neutralsEditDBText()
+    data = sapply(
+      dataEditor, 
+      function(x) {
+        i = regexpr(";",x)
+        substr(x,i+1,nchar(x))
+      }
+    )
     writeLines(
       data,
       con = file.path(neutralsCopyDir,neutralsEditDBFile())
