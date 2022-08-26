@@ -8,12 +8,12 @@ function(request) {
     navbarMenu(
       "Neutrals",
       tabPanel(
-        title = "Edit",
-        source_ui("neutralsEditUI.R")
+        title = "Load",
+        source_ui("neutralsLoadUI.R")
       ),
       tabPanel(
-        title = "Parse",
-        source_ui("neutralsParseUI.R")
+        title = "Edit",
+        source_ui("neutralsEditUI.R")
       ),
       tabPanel(
         title = "Sample",
@@ -27,12 +27,12 @@ function(request) {
     navbarMenu(
       "Ions",
       tabPanel(
-        title = "Edit",
-        source_ui("ionsEditUI.R")
+        title = "Load",
+        source_ui("ionsLoadUI.R")
       ),
       tabPanel(
-        title = "Parse",
-        source_ui("ionsParseUI.R")
+        title = "Edit",
+        source_ui("ionsEditUI.R")
       ),
       tabPanel(
         title = "Sample",

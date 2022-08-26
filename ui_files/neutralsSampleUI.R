@@ -43,17 +43,11 @@ tabPanel(
         tabPanel(
           "Plot",
           br(),
-          textInput(
-            "reacNbPlot",
-            label = "Reaction id",
-            value = NULL,
-            placeholder = "Enter reac. number",
-            width = '150px'
-          ),
+          uiOutput("selNeutralsReacSample"),
           sliderInput(
             "tempRangePlot",
             label = "Temp. range [K]",
-            min   = 10, 
+            min   = 10,
             max   = 600,
             value = c(50,350),
             step  = 50,
@@ -70,7 +64,7 @@ tabPanel(
           sliderInput(
             "densRangePlot",
             label = "Log10(density [cm^-3]) range",
-            min   = 5, 
+            min   = 5,
             max   = 22,
             value = c(8,20),
             step  = 1,
@@ -87,12 +81,12 @@ tabPanel(
             h4("About",.noWS = "before"),
             HTML("
                  Plot T-dependent and density-dependent realizations
-                 of the generated samples. Controls define the range 
+                 of the generated samples. Controls define the range
                  of plots and the reference density and temperature
                  used for the cuts in the (T,density) plane.<br>
-                 <i>Rq</i>: need to <b>Parse</b> first... 
+                 <i>Rq</i>: need to <b>Parse</b> first...
                  ")
-          )  
+          )
         )
       )
     ),

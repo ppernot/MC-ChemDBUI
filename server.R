@@ -2,11 +2,11 @@ function(input, output, session) {
 
   # Load Server files ####
   files <- c(
+    "neutralsLoad.R" ,
     "neutralsEdit.R" ,
-    "neutralsParse.R" ,
     "neutralsSample.R",
+    "ionsLoad.R",
     "ionsEdit.R",
-    "ionsParse.R",
     "ionsSample.R",
     "photo.R"
   )
