@@ -20,10 +20,14 @@ source_ui <- function(...) {
 source("R/packages.R")
 
 # Proportions of Side/Main Panels ####
-sideWidth  <- 3
-mainWidth  <- 12 - sideWidth
-plotHeight <- 600
-plotWidth  <- 550
+sideWidth  = 3
+mainWidth  = 12 - sideWidth
+plotHeight = 600
+plotWidth  = 550
+
+# Max. nb. of options in drop-down menus 
+# (upper limit to nb. of reactions)
+maxOptions = 10000 
 
 # Graphical parameters ####
 gPars = ErrViewLib::setgPars('shiny')
@@ -53,7 +57,6 @@ massElem      = CHNOSZ::mass(elements)
 dummySpecies  = unlist(read.csv(file.path('data','dummySpecies.csv'), header = FALSE))
 stoechFilters = read.csv(file.path('data','stoechFilters.csv'), header = FALSE, 
                          allowEscapes = TRUE)
-# tabNeuFiles   = read.csv(file.path('data','neutralsDBFiles.csv'),header = FALSE)
 
 neutralsRateParKwdList = c('A1','B1','C1','F1','G1',
                            'A2','B2','C2','F2','G2',
@@ -66,9 +69,9 @@ ionsRateParKwdList = c('ALPHA','BETA','GAMMA')
 ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
 source('R/ionsFunctions.R')
 
-# Biblio for ions
+# Bibliography
 bibFile = file.path('..','MC-ChemDB','Doc','refsDR.bib')
-bibProc = file.path('data','bib.Rdata')
+bibProc = file.path('..','ChemDBPublic','bib.Rdata')
 if(!file.exists(bibProc)) {
   cat('*** Processing .bib file\n')
   bib = bibtex::read.bib(file=bibFile)

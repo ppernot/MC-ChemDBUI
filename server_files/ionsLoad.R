@@ -30,19 +30,27 @@ shiny::observe({
   ionsEditCopyVersion(input$ionsEditCopyVersion)
 })
 
+# Load ####
 shiny::observe({
   req(ionsEditOrigVersion())
   req(ionsEditDBFile())
-  ionsEditDBText(
-    readLines(
-      con <- file(file.path(
-        ionsSource,
-        ionsEditOrigVersion(),
-        ionsEditDBFile()
-      ))
-    )
+    
+  data = readLines(
+    con <- file(file.path(
+      ionsSource,
+      ionsEditOrigVersion(),
+      ionsEditDBFile()
+    ))
   )
   close(con)
+  
+  # Add a unique id to each line for editing
+  data[1] = paste0('ID;',data[1])
+  for (i in 2:length(data))
+    data[i] = paste0(i-1,';',data[i])
+  
+  ionsEditDBText(data)
+  
 })
 
 shiny::observe({
@@ -86,6 +94,47 @@ shiny::observe({
   )
 })
 
+# Parse ####
+shiny::observe({
+  req(input$aceIonsDB)
+  
+  # Get all data in (do not use comment.char here because it mixes up with id.)
+  data = try(
+    read.table(
+      header = TRUE, 
+      text = input$aceIonsDB, 
+      sep=';',
+      quote = "\"",
+      comment.char = ""),
+    silent = TRUE
+  )
+  
+  if(class(data)=="try-error") {
+    id = shiny::showNotification(
+      strong(paste0('Cannot parse DB: incorrect format! Msg:',data)),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'error'
+    )
+    return(NULL)
+  }
+  
+  # Filter out comment lines
+  sel = substr(data$REACTANTS,1,1) != '#'
+  data = data[sel,]
+  
+  # Build unique tag
+  data[['TAG']] = 
+    apply(
+      data[,c("ID","REACTANTS")], 
+      1, 
+      function(x) trimws(paste0(x[1],": ",x[2]))
+    )
+  
+  ionsDB(data)
+})
+
+# Save ####
 shiny::observeEvent(
   input$ionsEditSave,
   {
@@ -115,7 +164,15 @@ shiny::observeEvent(
     }
     
     # Save DB and RN files to target version
-    data = isolate(input$aceIonsDB)
+    # - for DB, need to remove ID before saving
+    dataEditor = ionsEditDBText()
+    data = sapply(
+      dataEditor, 
+      function(x) {
+        i = regexpr(";",x)
+        substr(x,i+1,nchar(x))
+      }
+    )
     writeLines(
       data,
       con = file.path(ionsCopyDir,ionsEditDBFile())
@@ -140,6 +197,7 @@ shiny::observeEvent(
   }
 )
 
+# Restore ####
 shiny::observeEvent(
   input$ionsEditRestore,
   {

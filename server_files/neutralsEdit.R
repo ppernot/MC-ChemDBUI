@@ -12,7 +12,7 @@ observeEvent(
     shiny::updateRadioButtons(inputId = "neutralsReacSelKind", selected = "Both")
   })
 
-output$selNeutralsReac = shiny::renderUI({
+observe({
   req(neutralsDB())
   reacs = neutralsDB()$REACTANTS
   prods = neutralsDB()$PRODUCTS
@@ -43,53 +43,34 @@ output$selNeutralsReac = shiny::renderUI({
     }
   }
   req(tag)
-  print(rev(tag)[1])
+  
   nums = 1:length(tag)  
-  names(nums) = tag
-  neutralsReacsFiltered(nums) # Partial list used by other parts
-
-  list(
-    fluidRow(
-      column(
-        8,
-        shiny::selectInput(
-          "neutralsReaction",
-          "Reactions",
-          choices  = nums,
-          selected = 1
+  
+  if(max(nums) > maxOptions)
+    id = shiny::showNotification(
+      strong(
+        paste0(
+          'Nb. of reactions (',max(nums),') exceeds limit ',
+          'of drop-down menu (',maxOptions,'). Increase variable ',
+          'maxOptions in MC-ChemDBUI/global.R.'
         )
       ),
-      column(
-        4,
-        fluidRow(
-          column(
-            6,
-            actionButton(
-              "neutralsMinus",
-              "",
-              icon = icon('angle-down',verify_fa = FALSE)
-            ),
-            tags$style(
-              type='text/css',
-              "#neutralsMinus { width:100%; margin-top: 30px;}"
-            )
-          ),
-          column(
-            6,
-            actionButton(
-              "neutralsPlus",
-              "",
-              icon = icon('angle-up',verify_fa = FALSE)
-            ),
-            tags$style(
-              type='text/css',
-              "#neutralsPlus { width:100%; margin-top: 30px;}"
-            )
-          )
-        )
-      )
+      closeButton = TRUE,
+      duration = 5,
+      type = 'warning'
     )
+
+  # Update selector
+  names(nums) = tag
+  shiny::updateSelectizeInput(
+    session  = session,
+    inputId  = "neutralsReaction", 
+    choices  = nums,
+    selected = 1,
+    server   = TRUE
   )
+  
+  neutralsReacsFiltered(nums) # Partial list used by other parts
 })
 
 observeEvent(
@@ -98,8 +79,8 @@ observeEvent(
     iReac = as.numeric(input$neutralsReaction)
     if(iReac > 1) {
       iReac = iReac - 1
-      shiny::updateSelectInput(
-        session=session,
+      shiny::updateSelectizeInput(
+        session = session,
         "neutralsReaction",
         selected = iReac
       )      
@@ -115,8 +96,8 @@ observeEvent(
     iReac = as.numeric(input$neutralsReaction)
     if(iReac < length(reacs)) {
       iReac = iReac + 1
-      shiny::updateSelectInput(
-        session=session,
+      shiny::updateSelectizeInput(
+        session = session,
         "neutralsReaction",
         selected = iReac
       )      
@@ -155,8 +136,6 @@ shiny::observe({
   mask[['PRODUCTS']] = products
   # massProducts = getMassList(products, excludeList = dummySpecies)
   
-
-
   mask[['TYPE']] = neutralsDB()$TYPE[iReac]
   
   for (kwd in neutralsRateParKwdList)
@@ -368,7 +347,7 @@ observeEvent(
         input$neutralsReacReactants,
         input$neutralsReacProducts)
     )
-    iReac = which(neutralsDB()$TAG == tag)
+    iReac = which(data$TAG == tag)
     
     # Update editor's content
     dataEditor = neutralsEditDBText()

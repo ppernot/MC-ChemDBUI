@@ -43,7 +43,13 @@ tabPanel(
         tabPanel(
           "Plot",
           br(),
-          uiOutput("selNeutralsReacSample"),
+          shiny::selectizeInput(
+            "reacNbPlot",
+            "Select reaction",
+            choices  = NULL,
+            options = list(maxOptions = maxOptions)
+          ),
+          br(),
           sliderInput(
             "tempRangePlot",
             label = "Temp. range [K]",

@@ -40,12 +40,62 @@ tabPanel(
             inline = TRUE
           ),
           br(),
-          uiOutput("selIonsReac"),
+          fluidRow(
+            column(
+              8,
+              shiny::selectizeInput(
+                "ionsReaction",
+                "Reactions",
+                choices = NULL,
+                options = list(maxOptions = maxOptions)
+              )
+            ),
+            column(
+              4,
+              fluidRow(
+                column(
+                  6,
+                  actionButton(
+                    "ionsMinus", "",
+                    icon = icon('angle-down',verify_fa = FALSE)
+                  ),
+                  tags$style(
+                    type='text/css',
+                    "#ionsMinus { width:100%; margin-top: 30px;}"
+                  )
+                ),
+                column(
+                  6,
+                  actionButton(
+                    "ionsPlus", "",
+                    icon = icon('angle-up',verify_fa = FALSE)
+                  ),
+                  tags$style(
+                    type='text/css',
+                    "#ionsPlus { width:100%; margin-top: 30px;}"
+                  )
+                )
+              )
+            )
+          ),
           hr(),
-          actionButton(
-            "ionsParseSave",
-            "Apply changes",
-            icon = icon('save',verify_fa = FALSE)
+          fluidRow(
+            column(
+              6,
+              checkboxInput(
+                "ionsParseComment",
+                "Comment reaction",
+                value = FALSE
+              )
+            ),
+            column(
+              6,
+              actionButton(
+                "ionsParseSave",
+                "Apply changes",
+                icon = icon('save',verify_fa = FALSE)
+              )
+            )
           )
         ),
         tabPanel(

@@ -102,6 +102,7 @@ makeTag = function(x)
 
 shiny::observe({
   req(input$aceNeutralsDB)
+  neutralsDBStats(NULL) # Reset stats while processing
   
   # Get all data in (do not use comment.char here because it mixes up with id.)
   data = try(
@@ -115,7 +116,7 @@ shiny::observe({
   )
   if(class(data)=="try-error") {
     id = shiny::showNotification(
-      strong(paste0('Cannot pase DB: incorrect format! Msg:',data)),
+      strong(paste0('Cannot parse DB: incorrect format! Msg:',data)),
       closeButton = TRUE,
       duration = NULL,
       type = 'error'
@@ -141,9 +142,9 @@ shiny::observe({
   reacList = prodList = c()
   for(i in seq_along(data$REACTANTS)) {
     reactants = getSpecies(data$REACTANTS[i])
-    reacList = c(reacList, reactants)
+    reacList  = c(reacList, reactants)
     products  = getSpecies(data$PRODUCTS[i])
-    prodList = c(prodList, products)
+    prodList  = c(prodList, products)
     msg = checkBalance(reactants,products)
     if(!is.null(msg))
       id = shiny::showNotification(
@@ -154,6 +155,7 @@ shiny::observe({
       )
     req(is.null(msg))
   }
+  
   stats = list(
     nbReac = nrow(data),
     nbReactants = length(unique(reacList)),
@@ -161,6 +163,7 @@ shiny::observe({
     nbSpecies = length(unique(c(reacList,prodList)))
   )
   neutralsDBStats(stats)
+  
   neutralsDB(data)
 })
 output$neuDBStats = shiny::renderText({

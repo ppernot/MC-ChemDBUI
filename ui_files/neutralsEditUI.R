@@ -39,8 +39,46 @@ tabPanel(
             selected = "Both",
             inline = TRUE
           ),
-          br(),
-          uiOutput("selNeutralsReac"),
+          fluidRow(
+            column(
+              8,
+              shiny::selectizeInput(
+                "neutralsReaction",
+                "Reactions",
+                choices  = NULL,
+                options = list(maxOptions = maxOptions)
+              )
+            ),
+            column(
+              4,
+              fluidRow(
+                column(
+                  6,
+                  actionButton(
+                    "neutralsMinus",
+                    "",
+                    icon = icon('angle-down',verify_fa = FALSE)
+                  ),
+                  tags$style(
+                    type='text/css',
+                    "#neutralsMinus { width:100%; margin-top: 30px;}"
+                  )
+                ),
+                column(
+                  6,
+                  actionButton(
+                    "neutralsPlus",
+                    "",
+                    icon = icon('angle-up',verify_fa = FALSE)
+                  ),
+                  tags$style(
+                    type='text/css',
+                    "#neutralsPlus { width:100%; margin-top: 30px;}"
+                  )
+                )
+              )
+            )
+          ),
           hr(),
           fluidRow(
             column(

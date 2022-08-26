@@ -69,20 +69,20 @@ observeEvent(
   })
 
 # Plot ####
-output$selNeutralsReacSample = shiny::renderUI({
+observe({
   req(neutralsDB())
-  tag   = neutralsDB()$TAG
+  tag = neutralsDB()$TAG
   nums = 1:length(tag)  
   names(nums) = tag
-  list(
-    shiny::selectInput(
-      "reacNbPlot",
-      "Reactions",
-      choices  = nums,
-      selected = 1
-    )
+  shiny::updateSelectizeInput(
+    session  = session,
+    inputId  = "reacNbPlot", 
+    choices  = nums,
+    selected = "0",
+    server   = TRUE
   )
 })
+
 output$plotRate = renderPlot({
   req(input$reacNbPlot)
   iReac = as.numeric(input$reacNbPlot)
