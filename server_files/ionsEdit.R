@@ -669,20 +669,19 @@ output$plotIonsBRTree = renderPlot({
   meanBR    = meanBR / sum(meanBR)
   sigBR     = apply(sampleBR, 2, sd)
   
-  np = min(sampleSize, 500) # nb of plotted samples
   # Branching ratios
   nt = length(tags)
   if (nt >= 2) {
     tagStat = tags
     for (ip in 1:nt) {
-      tagStat[ip] = paste0(tags[ip], ' (',
+      tagStat[ip] = paste0(' ',tags[ip], ' (',
                            signif(meanBR[ip], 2), ' +/- ',
                            signif(sigBR[ip], 1), ')')
     }
     m0 = max(1,40-3*nt)
     m1 = max(1,40-3*depth)
     par(
-      mar = c(m0, 0, 1, m1), 
+      mar = c(m0, 1, 1, m1), 
       cex = 1)
     mytree$tip.label = tagStat
     mytree$edge.length = rep(1, dim(mytree$edge)[1])

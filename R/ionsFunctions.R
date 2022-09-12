@@ -533,6 +533,8 @@ getNodesFromTaggedDist = function(str) {
   # The extracted list is in correct order for tree plotting
   str = getDistFromTaggedDist(str) # Remove Tags
   str = gsub('\n','',str)   
+  str = gsub('E+','',str) # Floating point notations, maybe a bad idea...
+  str = gsub('E-','',str)
   str = gsub('[[:punct:]]',' ',str)
   str = gsub('[[:digit:]]',' ',str)
   str = gsub('[[:space:]]+',' ',str)

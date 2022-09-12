@@ -40,10 +40,10 @@ gPars$cex = 1.5
 gPars$mar[3] = 2
 
 # Data paths ####
-neutralsSource = file.path('..','MC-ChemDB','Neutrals','Source')
+neutralsSource = file.path('..','MC-ChemDB','Neutrals')
 neutralsPublic = file.path('..','ChemDBPublic','Neutrals')
-ionsSource     = file.path('..','MC-ChemDB','Ions','Source')
-ionsTmp        = file.path('..','MC-ChemDB','Ions','Tmp')
+ionsSource     = file.path('..','MC-ChemDB','Ions')
+ionsTmp        = file.path('..','MC-ChemDB','Tmp')
 ionsPublic     = file.path('..','ChemDBPublic','Ions')
 
 # Load data and functions ####

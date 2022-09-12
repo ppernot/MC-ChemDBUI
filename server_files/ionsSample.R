@@ -220,11 +220,14 @@ observeEvent(
         type = 'warning'
       )
     } else if(input$ionsSampleUpdate) {
+      msg = paste0('Updated ',paste0(sampled, collapse = ', '))
+      if(length(sampled) == length(reacs))
+        msg = 'Updated all rections'
       id = shiny::showNotification(
-        h4(paste0('Updated ',paste0(sampled, collapse = ', '))),
+        h4(msg),
         closeButton = TRUE,
-        duration = NULL,
-        type = 'warning'
+        duration = 10,
+        type = 'message'
       )
     }
     

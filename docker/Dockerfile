@@ -13,15 +13,14 @@ COPY .Rprofile .
 #ADD renv.tar.gz . # Pb unresolved shared libs...
 COPY renv/activate.R ./renv/activate.R
 COPY renv.lock ./renv.lock
-#WORKDIR /MC-ChemDBUI
 RUN R -e 'renv::consent(TRUE)' \
  && R -e 'renv::restore()'
 
 ## database files
 WORKDIR /
 RUN mkdir ChemDBPublic
-ADD ChemDB.tar.gz /
-
+RUN mkdir MC-ChemDB
+#ADD ChemDB.tar.gz /  ### Now linked to user's disk
 
 ## Sampler files
 WORKDIR /MC-ChemDBUI
