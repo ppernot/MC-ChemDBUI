@@ -8,7 +8,7 @@ function(request) {
     navbarMenu(
       "Neutrals",
       tabPanel(
-        title = "Load",
+        title = "Files",
         source_ui("neutralsLoadUI.R")
       ),
       tabPanel(
@@ -27,7 +27,7 @@ function(request) {
     navbarMenu(
       "Ions",
       tabPanel(
-        title = "Load",
+        title = "Files",
         source_ui("ionsLoadUI.R")
       ),
       tabPanel(

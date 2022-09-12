@@ -1,9 +1,9 @@
 tabPanel(
-  title = "Load",
+  title = "Files",
   sidebarLayout(
     sidebarPanel(
       width = sideWidth,
-      h4("Neutrals - Load",.noWS = "outside"),
+      h4("Neutrals - Files",.noWS = "outside"),
       fluidRow(
         column(
           6,
