@@ -56,7 +56,7 @@ tabPanel(
             )
           ),
           tabPanel(
-            "ReleaseNotes",
+            "Release Notes",
             uiOutput("ionsHeaderRN"),
             aceEditor(
               outputId = "aceIonsRN",

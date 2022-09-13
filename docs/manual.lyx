@@ -1,0 +1,1108 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass report
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package none
+\inputencoding utf8
+\fontencoding T1
+\font_roman "lmodern" "default"
+\font_sans "default" "default"
+\font_typewriter "lmodern" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 12
+\spacing single
+\use_hyperref true
+\pdf_bookmarks false
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks true
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref section
+\pdf_pdfusetitle false
+\pdf_quoted_options "citecolor = blue, linkcolor = blue,  urlcolor  = blue"
+\papersize default
+\use_geometry true
+\use_package amsmath 2
+\use_package amssymb 2
+\use_package cancel 0
+\use_package esint 1
+\use_package mathdots 0
+\use_package mathtools 0
+\use_package mhchem 0
+\use_package stackrel 0
+\use_package stmaryrd 0
+\use_package undertilde 0
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 2cm
+\topmargin 2cm
+\rightmargin 2cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+MC-ChemDBUI User's Manual
+\end_layout
+
+\begin_layout Author
+P.
+ Pernot
+\begin_inset Newline newline
+\end_inset
+
+pascal.pernot@cnrs.fr
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Chapter
+Introduction
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+mc-chemdbui
+\family default
+ graphical interface enables to edit the 
+\family typewriter
+MC-ChemDB
+\family default
+ database and to generate random samples in 
+\family typewriter
+ChemDBPublic
+\family default
+ for use in 
+\family typewriter
+reactor
+\family default
+ (see Fig
+\begin_inset space \thinspace{}
+\end_inset
+
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Principle-scheme"
+
+\end_inset
+
+).
+ 
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename figs/principle.png
+	lyxscale 50
+	width 100text%
+	BoundingBox 0bp 100bp 1000bp 595bp
+	clip
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Principle-scheme"
+
+\end_inset
+
+Principle scheme of MC-ChemDB.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A good introduction to the data and methods used for uncertainty propagation
+ in the simulation of chemical plasmas can be found in the article
+\end_layout
+
+\begin_layout Itemize
+Z.
+ Peng, N.
+ Carrasco and P.
+ Pernot (2014) 
+\begin_inset Quotes eld
+\end_inset
+
+Modeling of synchrotron-based laboratory simulations of Titan's ionospheric
+ photochemistry
+\begin_inset Quotes erd
+\end_inset
+
+, 
+\emph on
+GeoResJ
+\emph default
+ 
+\series bold
+1-2
+\series default
+:33–53.
+ 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+http://dx.doi.org/10.1016/j.grj.2014.03.002
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Section
+Installation
+\end_layout
+
+\begin_layout Enumerate
+Load the latest release of 
+\family typewriter
+MC-ChemDB
+\family default
+ from the GitHub repository 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+https://github.com/ppernot/MC-ChemDB
+\end_layout
+
+\end_inset
+
+ and unpack it 
+\end_layout
+
+\begin_layout Enumerate
+If it does not exist, create a 
+\family typewriter
+ChemDBPublic
+\family default
+ directory 
+\end_layout
+
+\begin_layout Enumerate
+Download the latest docker container for 
+\family typewriter
+mc-chemdbui
+\family default
+ from DockerHub 
+\family typewriter
+
+\begin_inset listings
+lstparams "basicstyle={\footnotesize\ttfamily},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+docker pull ppernot1/mc-chemdbui
+\end_layout
+
+\end_inset
+
+
+\family default
+ 
+\end_layout
+
+\begin_layout Enumerate
+Run the docker container with source links for 
+\family typewriter
+MC-ChemDB
+\family default
+ and 
+\family typewriter
+ChemDBPublic
+\family default
+ pointing to 
+\emph on
+your
+\emph default
+ directories 
+\family typewriter
+
+\begin_inset listings
+lstparams "basicstyle={\footnotesize\ttfamily},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+docker run -d -p 3820:3820
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	--mount type=bind,source=path_to_my_ChemDBPublic,target=/ChemDBPublic
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	--mount type=bind,source=path_to_my_MC-ChemDB,target=/MC-ChemDB
+\backslash
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	--name mc-chemdbui ppernot1/mc-chemdbui 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Access 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+http://localhost:3820
+\end_layout
+
+\end_inset
+
+ in a browser
+\end_layout
+
+\begin_layout Section
+Usage
+\end_layout
+
+\begin_layout Standard
+The interface is organized in three modules related to the main 
+\family typewriter
+MC-ChemDB
+\family default
+ databases:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset ref
+LatexCommand nameref
+reference "chap:Neutrals-module"
+
+\end_inset
+
+: manage reactions between neutral species 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset ref
+LatexCommand nameref
+reference "chap:Ions-module"
+
+\end_inset
+
+: manage reactions involving ions 
+\end_layout
+
+\begin_layout Itemize
+Photoprocesses: TBD 
+\end_layout
+
+\begin_layout Standard
+Their functionalities are uniformly accessed through a menu with the 'Files',
+ 'Edit', 'Sample', and 'Report' items.
+\end_layout
+
+\begin_layout Section
+Curation of 
+\family typewriter
+MC-ChemDB
+\end_layout
+
+\begin_layout Standard
+If you make changes to the source databases, they will affect your 
+\emph on
+local
+\emph default
+ copy only.
+ When these changes are of interest to the community, you have to save them
+ also on GitHub, for instance by creating a fork of the main branch of 
+\family typewriter
+MC-ChemDB
+\family default
+ (see 
+\begin_inset Flex URL
+status collapsed
+
+\begin_layout Plain Layout
+
+https://github.com/ppernot/MC-ChemDB
+\end_layout
+
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Chapter
+
+\series bold
+Neutrals
+\series default
+ module
+\begin_inset CommandInset label
+LatexCommand label
+name "chap:Neutrals-module"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+
+\family typewriter
+Files
+\family default
+ tab
+\end_layout
+
+\begin_layout Subsection
+Left Panel
+\end_layout
+
+\begin_layout Standard
+This is where one chooses the 
+\emph on
+version
+\emph default
+ of the database to load on the 
+\family typewriter
+Source
+\begin_inset space \space{}
+\end_inset
+
+DB
+\begin_inset space \space{}
+\end_inset
+
+version
+\family default
+ selector.
+ The most recent one is selected by default.
+\end_layout
+
+\begin_layout Standard
+If you want to save changes, you need to type a version tag in the 
+\family typewriter
+Target
+\begin_inset space \space{}
+\end_inset
+
+DB
+\begin_inset space \space{}
+\end_inset
+
+version
+\family default
+ textbox.
+ The tag might be the same as the source tag, in which case it will be overwritt
+en.
+ Then, press Save.
+\end_layout
+
+\begin_layout Standard
+To erase all changes, press on 
+\family typewriter
+Restore
+\family default
+.
+\end_layout
+
+\begin_layout Subsection
+Right Panel
+\end_layout
+
+\begin_layout Standard
+This panel contains two text editors:
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+\series bold
+Database
+\family default
+\series default
+ It contains the text file (.csv format) in which the database is stored,
+ augmented by an 
+\family typewriter
+ID
+\family default
+ column.
+ You can edit the database directly here, but it is not recommended, as
+ the time-stamps will not be managed properly.
+\begin_inset Newline newline
+\end_inset
+
+Note: If you have important changes to do to the database (such as adding
+ many reactions), it might be simpler to make them directly in the .csv file,
+ before loading it in 
+\family typewriter
+mc-chemdbui
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+\series bold
+Release
+\begin_inset space ~
+\end_inset
+
+Notes
+\family default
+\series default
+ contains the history of the database.
+ You should mention your modifications here.
+ The format is free.
+ 
+\end_layout
+
+\begin_layout Section
+
+\family typewriter
+Edit
+\family default
+ tab
+\end_layout
+
+\begin_layout Standard
+This panel enables to select individual reactions and display/edit their
+ parameters and rate laws.
+\end_layout
+
+\begin_layout Subsection
+Left Panel
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+Edit
+\family default
+ tab contains two panels: 
+\family typewriter
+Select
+\family default
+ and 
+\family typewriter
+Plot
+\family default
+.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Select
+\family default
+ Here, you can filter the reactions by species (as reactant and/or product).
+ The 
+\family typewriter
+Reactions
+\family default
+ list of filtered or unfiltered reactions can be accessed by a drop-down
+ selector, or navigated using the up and down arrows.
+ If you make changes to the values in the Right panel, you can apply them
+ to the database with the 
+\family typewriter
+Apply
+\begin_inset space \space{}
+\end_inset
+
+changes
+\family default
+ button.
+ The 
+\family typewriter
+Comment
+\begin_inset space \space{}
+\end_inset
+
+reaction
+\family default
+ checkbox enables to change the line corresponding to the reaction to a
+ comments line, so it is preserved in the database but not parsed or used
+ to generate samples.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Plot
+\family default
+ The sliders enable to control the temperature and density ranges for the
+ plots of the reaction rates.
+\end_layout
+
+\begin_layout Subsection
+Right Panel
+\end_layout
+
+\begin_layout Standard
+This panel contains the information for the reaction selected in the left
+ panel.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Rate
+\begin_inset space ~
+\end_inset
+
+Params
+\family default
+ All parameters describing the rate law are displayed.
+ You can change them and see the effect on the temperature- and density-dependen
+t plots on the right.
+ Changing the 
+\family typewriter
+Reactants
+\family default
+ or 
+\family typewriter
+Products
+\family default
+ fields will create a new reaction.
+ 
+\emph on
+Warning
+\emph default
+: there is no check for double reactions with different parameters.
+ To preserve a change, click on 
+\family typewriter
+Apply
+\begin_inset space \space{}
+\end_inset
+
+changes
+\family default
+.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Biblio
+\family default
+ Presents the list of references mentioned in the reaction's 
+\family typewriter
+References
+\family default
+ field.
+ The bibtex key links to a notice in the 
+\family typewriter
+refDR.bib
+\family default
+ file.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Help
+\family default
+ A short help to the main controls in the page.
+\end_layout
+
+\begin_layout Section
+
+\family typewriter
+Sample
+\family default
+ tab
+\end_layout
+
+\begin_layout Standard
+This is where samples of the uncertain reaction rates are generated to be
+ stored in 
+\family typewriter
+ChemDBPublic
+\family default
+.
+\end_layout
+
+\begin_layout Description
+Generate Select the number of samples to generate (typically 500 for production)
+ and 
+\family typewriter
+Go!
+\family default
+.
+ This may take some time...
+\end_layout
+
+\begin_layout Description
+Plot
+\emph on
+ Mostly used for development control
+\emph default
+.
+ Plots of the temperature- and density-dependent reaction rates are generated
+ from the 
+\family typewriter
+ChemDBPublic
+\family default
+ samples.
+ If everything is OK, they should be similar to the plots in the 
+\family typewriter
+Edit
+\family default
+ panel.
+\end_layout
+
+\begin_layout Section
+
+\family typewriter
+Report
+\family default
+ tab
+\end_layout
+
+\begin_layout Standard
+TBD
+\end_layout
+
+\begin_layout Chapter
+
+\series bold
+Ions
+\series default
+ module
+\begin_inset CommandInset label
+LatexCommand label
+name "chap:Ions-module"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+
+\family typewriter
+Files
+\family default
+ tab
+\end_layout
+
+\begin_layout Subsection
+Left Panel
+\end_layout
+
+\begin_layout Standard
+This is where one chooses the version of the database to load on the 
+\family typewriter
+Source
+\begin_inset space \space{}
+\end_inset
+
+DB
+\begin_inset space \space{}
+\end_inset
+
+version
+\family default
+ selector.
+ The most recent one is selected by default.
+\end_layout
+
+\begin_layout Standard
+If you want to save changes, you need to type a version tag in the 
+\family typewriter
+Target
+\begin_inset space \space{}
+\end_inset
+
+DB
+\begin_inset space \space{}
+\end_inset
+
+version
+\family default
+ textbox.
+ The tag might be the same as the source tag.
+ Then, press 
+\family typewriter
+Save
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+To erase all changes, press on 
+\family typewriter
+Restore
+\family default
+.
+\end_layout
+
+\begin_layout Subsection
+Right Panel
+\end_layout
+
+\begin_layout Standard
+This panel contains two text editors:
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Database
+\series default
+.
+ It contains the text file (.csv format) in which the database is stored,
+ augmented by an 
+\family typewriter
+ID
+\family default
+ column.
+ You can edit the database directly here, but it is not recommended, as
+ the time-stamps will not be managed properly.
+ 
+\begin_inset Newline newline
+\end_inset
+
+If you have important changes to do to the database, it might be better
+ to make them directly in the .csv file before loading it in 
+\family typewriter
+mc-chemdbui
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Release Notes
+\series default
+ contains the history of the database.
+ You should mention your modifications here.
+ The format is free.
+ 
+\end_layout
+
+\begin_layout Section
+Edit
+\end_layout
+
+\begin_layout Standard
+This panel enables to select and display the parameters and rate laws of
+ individual reactions.
+\end_layout
+
+\begin_layout Subsection
+Left Panel
+\end_layout
+
+\begin_layout Standard
+The Edit panel contains two subpanels 
+\family typewriter
+Select
+\family default
+ and 
+\family typewriter
+Plot
+\family default
+.
+\end_layout
+
+\begin_layout Paragraph
+Select
+\end_layout
+
+\begin_layout Standard
+Here, you can filter the reactions by species (as reactant and/or product).
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+Reactions
+\family default
+ list of filtered or unfiltered reactions can be accessed by a drop-down
+ selector, or navigated using the up and down arrows.
+\end_layout
+
+\begin_layout Standard
+If you make changes to the values in the Right panel, you can apply them
+ to the database with the 
+\family typewriter
+Apply
+\begin_inset space \space{}
+\end_inset
+
+changes
+\family default
+ button.
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+Comment
+\begin_inset space \space{}
+\end_inset
+
+reaction
+\family default
+ checkbox enables to change the line corresponding to the reaction to a
+ comment line, so it is preserved in the database but not parsed or used
+ to generate samples.
+\end_layout
+
+\begin_layout Paragraph
+Plot
+\end_layout
+
+\begin_layout Standard
+The sliders enable to control the temperature range for the plots of the
+ reaction rate.
+\end_layout
+
+\begin_layout Subsection
+Right Panel
+\end_layout
+
+\begin_layout Standard
+This panel contains the information for the reaction selected in the left
+ panel.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Rate
+\family default
+ All parameters describing the rate law are displayed.
+ You can change them and see the effect on the temperature- and density-dependen
+t plots on the right.
+ Changing the 
+\family typewriter
+Reactants
+\family default
+ fields will create a new reaction.
+ 
+\emph on
+Warning
+\emph default
+: there is no check for double reactions with different parameters.
+ To preserve a change, click on 
+\family typewriter
+Apply
+\begin_inset space \space{}
+\end_inset
+
+changes
+\family default
+.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+BRs
+\family default
+ The branching ratios for multi-channel reactions are displayed here, either
+ as a string (
+\family typewriter
+StringBR
+\family default
+) or as plots.
+ The number of channels in 
+\family typewriter
+Nb
+\begin_inset space ~
+\end_inset
+
+Channels
+\family default
+ has to be consistent with 
+\family typewriter
+StringBR
+\family default
+.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Biblio
+\family default
+ Presents the list of references mentioned 
+\family typewriter
+Refs_XXX
+\family default
+ fields.
+ The bibtex keys link to a notice in the 
+\family typewriter
+refDR.bib
+\family default
+ file.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Help
+\family default
+ A short help to the main controls in the page.
+\end_layout
+
+\begin_layout Section
+Sample
+\end_layout
+
+\begin_layout Standard
+This is where samples of the uncertain reaction rates are generated to be
+ stored in 
+\family typewriter
+ChemDBPublic
+\family default
+.
+\end_layout
+
+\begin_layout Subsection
+Generate
+\end_layout
+
+\begin_layout Standard
+Select the number of samples to generate (typically 500 for production)
+ and 
+\family typewriter
+Go!
+\family default
+.
+ This may take some time.
+\end_layout
+
+\begin_layout Subsection
+Plot
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Mostly used for development control
+\emph default
+.
+ Plots of the temperature- and density-dependent reaction rates are generated
+ from the 
+\family typewriter
+ChemDBPublic
+\family default
+ samples.
+ If everything is OK, they should be similar to the plots in the 
+\family typewriter
+Edit
+\family default
+ panel.
+\end_layout
+
+\begin_layout Section
+Report
+\end_layout
+
+\begin_layout Standard
+TBD
+\end_layout
+
+\end_body
+\end_document
