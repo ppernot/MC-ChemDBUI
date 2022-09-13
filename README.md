@@ -31,7 +31,7 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 
 ## Documentation
 
-See ./docs/manual.pdf
+See https://github.com/ppernot/MC-ChemDBUI/blob/main/docs/manual.pdf
 
 ## Docker container
 
@@ -47,9 +47,11 @@ To run the container:
 2. If it does not exist, create a `ChemDBPublic` directory 
 
 3. Download the latest docker container for `mc-chemdbui` from DockerHub 
-```docker pull ppernot1/mc-chemdbui``` 
+```
+docker pull ppernot1/mc-chemdbui
+``` 
 
-4. Run the docker container with source links for MC-ChemDB and ChemDBPublic pointing to your directories 
+4. Run the docker container with source links for MC-ChemDB and ChemDBPublic pointing to *your* directories 
 ```
 docker run -d -p 3820:3820\
 	--mount type=bind,source=path_to_my_ChemDBPublic,target=/ChemDBPublic\
