@@ -21,7 +21,7 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 
 * `2022/09/13` v0.3
 
-    1. Neutrals and Ions are functional, with similar interfaces
+    1. Neutrals and Ions are now functional, with similar interfaces enabling to edit and save `MC-ChemDB` database and to generate samples in `ChemDBPublic`.
     
     2. Uses a new version of [MC-ChemDB](https://github.com/ppernot/MC-ChemDB) with a single .csv file for neutrals and another one for ions. This enables an easier management of [MC-ChemDB](https://github.com/ppernot/MC-ChemDB) with GitHub.
     
@@ -31,7 +31,7 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 
 ## Documentation
 
-See https://github.com/ppernot/MC-ChemDBUI/blob/main/docs/manual.pdf
+See the [User's Manual](https://github.com/ppernot/MC-ChemDBUI/blob/main/docs/manual.pdf)
 
 ## Docker container
 
@@ -65,13 +65,6 @@ docker run -d -p 3820:3820\
 ```
 docker kill mc-chemdbui
 ```
-__Warning__: all modifs to the database will be lost. To keep them,
-you need to create a new image of the modified container...
-```
-docker commit mc-chemdbui mc-chemdbui:vX.X
-```
-where `X.X` is the new tag. 
-You should then refer to this specific version... 
 
 7. For further sessions
 ```
