@@ -18,32 +18,48 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 * `2022/07/29` v0.2
 
     1. Add ion/molecule reactions (edit/parse, sample). No `Save` feature yet...
+
+* `2022/09/13` v0.3
+
+    1. Neutrals and Ions are functional, with similar interfaces
+    
+    2. Uses a new version of [MC-ChemDB](https://github.com/ppernot/MC-ChemDB) with a single .csv file for neutrals and another one for ions. This enables an easier management of [MC-ChemDB](https://github.com/ppernot/MC-ChemDB) with GitHub.
     
 ## To Be Done...
 
-* Add possibility to Import/Export MC-ChemDB (to and from github ?)
-
 * Manage photo-processes
 
+## Documentation
+
+See ./docs/manual.pdf
 
 ## Docker container
 
 The [mc-chemdbui](https://hub.docker.com/repository/docker/ppernot1/mc-chemdbui)
-Docker container has all elements pre-installed, including [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
+Docker container has all elements pre-installed.
 
 To run the container:
 
 0. Install [Docker](https://www.docker.com/products/docker-desktop)
 
-1. Type the following command in a terminal
-```
-docker run -d -p 3820:3820 --mount type=bind,source="$(pwd)"/../ChemDBPublic,target=/ChemDBPublic --name mc-chemdbui ppernot1/mc-chemdbui
-```
-where `ChemDBPublic` is a local directory containing the processed MC samples
+1. Load the latest release of `MC-ChemDB` from the GitHub repository https://github.com/ppernot/MC-ChemDB and unpack it 
 
-2. Access MC-ChemDBUI at `http://localhost:3820` in your favorite browser
+2. If it does not exist, create a `ChemDBPublic` directory 
 
-3. When finished
+3. Download the latest docker container for `mc-chemdbui` from DockerHub 
+```docker pull ppernot1/mc-chemdbui``` 
+
+4. Run the docker container with source links for MC-ChemDB and ChemDBPublic pointing to your directories 
+```
+docker run -d -p 3820:3820\
+	--mount type=bind,source=path_to_my_ChemDBPublic,target=/ChemDBPublic\
+	--mount type=bind,source=path_to_my_MC-ChemDB,target=/MC-ChemDB\
+	--name mc-chemdbui ppernot1/mc-chemdbui 
+```
+
+5. Access http://localhost:3820 in your favorite browser
+
+6. When finished
 ```
 docker kill mc-chemdbui
 ```
@@ -55,12 +71,12 @@ docker commit mc-chemdbui mc-chemdbui:vX.X
 where `X.X` is the new tag. 
 You should then refer to this specific version... 
 
-4. For further sessions
+7. For further sessions
 ```
 docker restart mc-chemdbui
 ```
 
-4. To cleanup
+8. To cleanup
 ```
 docker remove -v mc-chemdbui
 ```
