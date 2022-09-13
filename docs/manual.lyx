@@ -87,6 +87,10 @@
 
 \begin_layout Title
 MC-ChemDBUI User's Manual
+\begin_inset Newline newline
+\end_inset
+
+v0.3
 \end_layout
 
 \begin_layout Author
@@ -1047,7 +1051,11 @@ Help
 \end_layout
 
 \begin_layout Section
+
+\family typewriter
 Sample
+\family default
+ tab
 \end_layout
 
 \begin_layout Standard
@@ -1057,47 +1065,50 @@ This is where samples of the uncertain reaction rates are generated to be
 ChemDBPublic
 \family default
 .
-\end_layout
-
-\begin_layout Subsection
-Generate
-\end_layout
-
-\begin_layout Standard
-Select the number of samples to generate (typically 500 for production)
- and 
+ Select 
 \family typewriter
-Go!
+#
+\begin_inset space ~
+\end_inset
+
+MC
+\begin_inset space ~
+\end_inset
+
+samples,
+\family default
+ the number of samples to generate (typically 500 for production) and click
+ on 
+\family typewriter
+Sample!
 \family default
 .
- This may take some time.
+ Options: 
 \end_layout
 
-\begin_layout Subsection
-Plot
+\begin_layout Description
+Update If this is checked, only those reactions that are newer or have been
+ modified since the last production of samples will be treated.
+ This enables to gain a huge amount of time when slightly modifying an existing
+ version.
 \end_layout
 
-\begin_layout Standard
+\begin_layout Description
+Check
+\begin_inset space ~
+\end_inset
 
-\emph on
-Mostly used for development control
-\emph default
-.
- Plots of the temperature- and density-dependent reaction rates are generated
- from the 
-\family typewriter
-ChemDBPublic
-\family default
- samples.
- If everything is OK, they should be similar to the plots in the 
-\family typewriter
-Edit
-\family default
- panel.
+only No sample is generated.
+ The database is processed and checked for problems in mass balance or species
+ names...
 \end_layout
 
 \begin_layout Section
+
+\family typewriter
 Report
+\family default
+ tab
 \end_layout
 
 \begin_layout Standard
