@@ -491,7 +491,7 @@ output$plotIonsParsSample = renderPlot({
              input$ionsTempRangePlot[2],
              10)
   nt = length(temp)
-  if (reacType == 'kooij') {
+  if (reacType == 'kooij' | reacType == 'dr') {
     if ('E' %in% reactants) {
       rateFun = function(t, pars)
         pars['ALPHA'] * (300 / t) ^ pars['BETA']

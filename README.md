@@ -31,7 +31,7 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 
 ## Documentation
 
-See the [User's Manual](https://github.com/ppernot/MC-ChemDBUI/blob/main/docs/manual.pdf)
+See the [User's Manual](https://raw.githubusercontent.com/ppernot/MC-ChemDBUI/main/docs/manual.pdf)
 
 ## Docker container
 

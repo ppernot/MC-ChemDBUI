@@ -152,6 +152,8 @@ output$neutralsRateMask = shiny::renderUI({
   req(neutralsRateMask())
   
   mask = neutralsRateMask()
+  type = mask[['TYPE']]
+  
   list(
     br(),
     fluidRow(
@@ -178,14 +180,14 @@ output$neutralsRateMask = shiny::renderUI({
           "neutralsReacTYPE",
           "Reaction type",
           neutralsReacTypes,
-          selected = mask[['TYPE']]
+          selected = type
         )
       )
     ),
     fluidRow(
       column(
         1,
-        strong('k0')
+        strong(ifelse(type == 'assocVV','kInf','k0'))
       ),
       column(
         2,
@@ -211,7 +213,7 @@ output$neutralsRateMask = shiny::renderUI({
     fluidRow(
       column(
         1,
-        strong('kInf')
+        strong(ifelse(type == 'assocVV','k0','kInf'))
       ),
       column(
         2,
@@ -380,7 +382,8 @@ oneSampleNeutralsPars = function(i, pars, type) {
   p = pars = as.numeric(pars)
   rmax = ifelse(type == 'kooij', 1, 3)
   for (r in 1:rmax) {
-    rnd = ifelse(i==0, 0, rnorm(1))
+    # rnd = ifelse(i==0, 0, rnorm(1))
+    rnd = ifelse(i==0, 0, truncnorm::rtruncnorm(1,-3,3,0,1)) # Avoid outliers
     i0 = (r-1)*5
     # p[i0+1] = pars[i0+1]
     # p[i0+2] = pars[i0+2]
@@ -441,17 +444,17 @@ output$plotNeutralsRate = renderPlot({
     #fixed M, T varies
     krateT[,i] = switch(
       type,
-      kooij    = kooij(pars,tRange,M0),
-      assocMD  = k3body(pars,tRange,M0),
-      assocVV  = kEq18VV(pars,tRange,M0),
+      kooij    = kooij(pars, tempRange = tRange),
+      assocMD  = k_assocMD(pars, tempRange = tRange, M0),
+      assocVV  = k_assocVV(pars, tempRange = tRange, M0),
       rep(0,length(tRange))
     )
     # fixed T, M varies
     krateM[,i] = switch(
       type,
-      kooij    = kooij(pars,T0,mRange),
-      assocMD  = k3body(pars,T0,mRange),
-      assocVV  = kEq18VV(pars,T0,mRange),
+      kooij    = kooij(pars, tempRange = T0),
+      assocMD  = k_assocMD(pars, tempRange = T0, mRange),
+      assocVV  = k_assocVV(pars, tempRange = T0, mRange),
       rep(0,length(mRange))
     )
   }

@@ -1,26 +1,28 @@
-kooij = function(p, tempRange, M, T0=300, T1=300) {
+kooij = function(p, tempRange, T0=300, T1=300) {
   p[1] * (tempRange / T0)^p[2] * exp(-p[3]/tempRange) *
     p[4] * exp(p[5] * abs(1/tempRange -1/ T1))
 }
-k3body = function(p, tempRange, M, T0 = 300) {
+k_assocMD = function(p, tempRange, M, T0 = 300) {
   # kAss from Dobrijevic2016
-  k0   = kooij(p[1:5], tempRange, M, T0)
-  kInf = kooij(p[6:10], tempRange, M, T0)
-  kr   = kooij(p[11:15], tempRange, M, T0)
+  k0M  = kooij(p[1:5],   tempRange, T0) * M
+  kInf = kooij(p[6:10],  tempRange, T0)
+  kR   = kooij(p[11:15], tempRange, T0)
   Fc   = p[16]
-  Ni   = 1
   
-  F1 = exp(log(Fc) / (1 + (log(k0 * M + kInf) / Ni) ^ 2))
-  k  = kInf * (k0 * M * F1 + kr) / (k0 * M + kInf)
+  N   = 0.75 - 1.27 * log10(Fc)
+  lPr = log10(k0M / kInf)
+  fExp = 1 + (lPr / N)^2
+  lF1  = log10(Fc) / fExp
+  k  = kInf * (kR + k0M * 10^lF1) / (kInf + k0M)
   
   return(k)
 }
-kEq18VV = function(p, tempRange, M, T0 = 1) {
+k_assocVV = function(p, tempRange, M, T0 = 1) {
   # kAss from Vuitton2019
-  # Note: kInf and k0 in reverse order from k3body
-  kInf = kooij(p[1:5], tempRange, M, T0)
-  k0   = kooij(p[6:10], tempRange, M, T0)
-  kR   = kooij(p[11:15], tempRange, M, T0)
+  # Note: kInf and k0 in reverse order from k_assocMD and T0 = 1
+  kInf = kooij(p[1:5],   tempRange, T0)
+  k0M  = kooij(p[6:10],  tempRange, T0) * M
+  kR   = kooij(p[11:15], tempRange, T0)
   Fc   = p[16]
   
   if (max(kR) > min(0.99 * kInf) ) {
@@ -28,11 +30,11 @@ kEq18VV = function(p, tempRange, M, T0 = 1) {
   } else {
     C = -0.4 - 0.67 * log10(Fc)
     N = 0.75 - 1.27 * log10(Fc)
-    lPr = log10(k0 * M / kInf)
-    fExp = 1 + ((lPr + C) / (N - 0.14 * (lPr + C))) ^ 2
+    lPr = log10(k0M / kInf)
+    fExp = 1 + ((lPr + C) / (N - 0.14 * (lPr + C)))^2
     lF1 = log10(Fc) / fExp
     kInf1 = kInf - kR
-    k = kR + 10 ^ lF1 * kInf1 * k0 * M / (kInf1 + k0 * M)
+    k = kR + (kInf1 * k0M * 10^lF1) / (kInf1 + k0M)
   }
   
   return(k)
