@@ -43,9 +43,24 @@ function(request) {
         source_ui("ionsReportUI.R")
       )
     ),
-    tabPanel(
-      title = "Photo-processes",
-      source_ui("photoUI.R")
+    navbarMenu(
+      title = "PhotoProcs",
+      tabPanel(
+        title = "Files",
+        source_ui("photoLoadUI.R")
+      ),
+      tabPanel(
+        title = "Edit",
+        source_ui("photoEditUI.R")
+      ),
+      tabPanel(
+        title = "Sample",
+        source_ui("photoSampleUI.R")
+      ),
+      tabPanel(
+        title = "Report",
+        source_ui("photoReportUI.R")
+      )
     ),
     tabPanel(
       title = "About",

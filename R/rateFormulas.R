@@ -3,7 +3,7 @@ kooij = function(p, tempRange, T0=300, T1=300) {
     p[4] * exp(p[5] * abs(1/tempRange -1/ T1))
 }
 k_assocMD = function(p, tempRange, M, T0 = 300) {
-  # kAss from Dobrijevic2016
+  # kAss from Dobrijevic2016, corrected...
   k0M  = kooij(p[1:5],   tempRange, T0) * M
   kInf = kooij(p[6:10],  tempRange, T0)
   kR   = kooij(p[11:15], tempRange, T0)

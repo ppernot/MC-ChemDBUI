@@ -45,6 +45,8 @@ neutralsPublic = file.path('..','ChemDBPublic','Neutrals')
 ionsSource     = file.path('..','MC-ChemDB','Ions')
 ionsTmp        = file.path('..','MC-ChemDB','Tmp')
 ionsPublic     = file.path('..','ChemDBPublic','Ions')
+photoSource    = file.path('..','MC-ChemDB','PhotoProcs')
+photoPublic    = file.path('..','ChemDBPublic','PhotoProcs')
 
 # Load data and functions ####
 source('R/massCalc.R')

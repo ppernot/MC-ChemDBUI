@@ -116,6 +116,78 @@ Introduction
 \end_layout
 
 \begin_layout Standard
+Simulation of chemical plasmas has to face the important uncertainty of
+ many chemistry parameters, notably on the reaction rates at non-standard
+ temperatures and pressures.
+\begin_inset CommandInset citation
+LatexCommand cite
+key "Peng2014"
+
+\end_inset
+
+ Uncertainty quantification (UQ) for the predictions of chemical plasmas
+ models is typically done by Monte Carlo uncertainty propagation (MCUP)
+ where the simulator is run repeatedly for randomly perturbated values of
+ the chemical parameters.
+\end_layout
+
+\begin_layout Standard
+Monte Carlo Uncertainty Propagation is an optimally parallel problem, where
+ an 
+\emph on
+uncertainty unaware
+\emph default
+ code of a chemistry model is run repeatedly for different realizations
+ of its uncertain input data.
+ To benefit from this feature and from increasingly available cloud-like
+ computing infrastructures, it is best to keep the uncertainty management
+ separate from the physical model.
+ In the following, one assumes that the uncertain chemistry inputs/databases
+ are provided by a server.
+ This separation has additional advantages for the final user:
+\end_layout
+
+\begin_layout Itemize
+no change to the chemistry code, or minor ones, depending on the uncertainty
+ representation used on the server side;
+\end_layout
+
+\begin_layout Itemize
+no change to the standard format of chemistry files;
+\end_layout
+
+\begin_layout Itemize
+the complex aspects of uncertainty models (
+\emph on
+e.g.
+
+\emph default
+ for branching ratios) are implemented on the server side.
+\end_layout
+
+\begin_layout Section
+The MC-ChemDB system
+\end_layout
+
+\begin_layout Standard
+In this server-client framework, the chemistry server database (
+\family typewriter
+mc-chemdbui
+\family default
+) generates and stores a large number (say 1000) Monte Carlo samples of
+ chemistry files in a public repository (
+\family typewriter
+ChemDBPublic
+\family default
+).
+ Users download a number of these samples according to their needs.
+ The user has then only to run her/his code on each of the sample to get
+ a sample of model predictions, to be used for uncertainty estimation and
+ sensitivity analysis.
+ 
+\end_layout
+
+\begin_layout Standard
 The 
 \family typewriter
 mc-chemdbui
@@ -124,15 +196,19 @@ mc-chemdbui
 \family typewriter
 MC-ChemDB
 \family default
- database and to generate random samples in 
+ database and to generate random samples in the 
 \family typewriter
 ChemDBPublic
 \family default
- for use in 
+ repertory for use in 
 \family typewriter
 reactor
 \family default
- (see Fig
+ through the 
+\family typewriter
+reactorui
+\family default
+ interface (see Fig
 \begin_inset space \thinspace{}
 \end_inset
 
@@ -149,7 +225,7 @@ reference "fig:Principle-scheme"
 placement H
 wide false
 sideways false
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \noindent
@@ -158,7 +234,7 @@ status open
 	filename figs/principle.png
 	lyxscale 50
 	width 100text%
-	BoundingBox 0bp 100bp 1000bp 595bp
+	BoundingBox 0bp 120bp 1058bp 595bp
 	clip
 
 \end_inset
@@ -176,7 +252,7 @@ name "fig:Principle-scheme"
 
 \end_inset
 
-Principle scheme of MC-ChemDB.
+Principle scheme of MC-ChemDB ant its articulation with Reactor.
 \end_layout
 
 \end_inset
@@ -194,44 +270,25 @@ Principle scheme of MC-ChemDB.
 \end_layout
 
 \begin_layout Standard
-A good introduction to the data and methods used for uncertainty propagation
- in the simulation of chemical plasmas can be found in the article
-\end_layout
 
-\begin_layout Itemize
-Z.
- Peng, N.
- Carrasco and P.
- Pernot (2014) 
-\begin_inset Quotes eld
-\end_inset
-
-Modeling of synchrotron-based laboratory simulations of Titan's ionospheric
- photochemistry
-\begin_inset Quotes erd
-\end_inset
-
-, 
-\emph on
-GeoResJ
-\emph default
- 
-\series bold
-1-2
-\series default
-:33–53.
- 
-\begin_inset Flex URL
-status collapsed
-
-\begin_layout Plain Layout
-
-http://dx.doi.org/10.1016/j.grj.2014.03.002
-\end_layout
-
-\end_inset
-
- 
+\family typewriter
+ChemDBPublic
+\family default
+ contains all the chemical reactions encoded in the 
+\family typewriter
+MC-ChemDB
+\family default
+.
+ The chemical system under study is specified in 
+\family typewriter
+reactorui
+\family default
+ which assembles a consistent subset of reactions and extract the relevant
+ data from 
+\family typewriter
+ChemDBPublic
+\family default
+.
 \end_layout
 
 \begin_layout Section
@@ -1113,6 +1170,18 @@ Report
 
 \begin_layout Standard
 TBD
+\end_layout
+
+\begin_layout Standard
+\noindent
+\begin_inset CommandInset bibtex
+LatexCommand bibtex
+bibfiles "/home/pernot/Bureau/Titan-APSIS/MC-ChemDB/Doc/refsDR"
+options "bibtotoc,/home/pernot/Bureau/Titan-APSIS/MC-ChemDB/Doc/unsrturlPP"
+
+\end_inset
+
+
 \end_layout
 
 \end_body
