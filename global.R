@@ -56,8 +56,10 @@ elTable       = read.csv(file.path('data','elements.csv'), header = FALSE)
 elements      = unlist(elTable[1,])
 numElecElem   = as.numeric(unlist(elTable[2,]))
 massElem      = CHNOSZ::mass(elements)
-dummySpecies  = unlist(read.csv(file.path('data','dummySpecies.csv'), header = FALSE))
-stoechFilters = read.csv(file.path('data','stoechFilters.csv'), header = FALSE, 
+dummySpecies  = unlist(read.csv(file.path('data','dummySpecies.csv'), 
+                                header = FALSE))
+stoechFilters = read.csv(file.path('data','stoechFilters.csv'), 
+                         header = FALSE, 
                          allowEscapes = TRUE)
 
 neutralsRateParKwdList = c('A1','B1','C1','F1','G1',
@@ -70,6 +72,12 @@ source('R/rateFormulas.R')
 ionsRateParKwdList = c('ALPHA','BETA','GAMMA') 
 ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
 source('R/ionsFunctions.R')
+
+photoKwdList = c('CHANNEL','XS_SOURCE','XS_F','BR_SOURCE','OUTPUT')
+photoXSSources = c('Leiden','SWRI','Hebrard','Plessis')
+photoXSResolutions = c(1,0.1) # nm
+photoDefaultuF = 1.2
+source('R/photoFunctions.R')
 
 # Bibliography
 bibFile = file.path('..','MC-ChemDB','Doc','refsDR.bib')

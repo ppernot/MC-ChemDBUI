@@ -8,7 +8,9 @@ function(input, output, session) {
     "ionsLoad.R",
     "ionsEdit.R",
     "ionsSample.R",
-    "photoLoad.R"
+    "photoLoad.R",
+    # "photoSample",
+    "photoEdit.R"
   )
 
   for (f in files)
