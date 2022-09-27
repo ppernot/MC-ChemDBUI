@@ -74,7 +74,8 @@ ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
 source('R/ionsFunctions.R')
 
 photoKwdList = c('CHANNEL','XS_SOURCE','XS_F','BR_SOURCE','OUTPUT')
-photoXSSources = c('Leiden','SWRI','Hebrard','Plessis')
+photoXSSources = c('Leiden','SWRI','Hebrard')
+photoBRSources = c('SWRI','Plessis')
 photoXSResolutions = c(1,0.1) # nm
 photoDefaultuF = 1.2
 source('R/photoFunctions.R')

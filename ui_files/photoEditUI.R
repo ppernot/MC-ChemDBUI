@@ -122,11 +122,11 @@ tabPanel(
             'Cross-section',
             fluidRow(
               column(
-                4,
+                5,
                 uiOutput("photoXSMask")
               ),
               column(
-                8,
+                7,
                 plotOutput("plotPhotoXSSample",height = plotHeight)
               )
             )
@@ -135,17 +135,12 @@ tabPanel(
             'BRs',
             fluidRow(
               column(
-                4,
+                5,
                 uiOutput("photoBRMask")
               ),
               column(
-                8,
-                tabsetPanel(
-                  tabPanel(
-                    'Parallel',
-                    plotOutput("plotPhotoBRSample",height = plotHeight)
-                  )
-                )
+                7,
+                plotOutput("plotPhotoBRSample",height = plotHeight)
               )
             )
           ),

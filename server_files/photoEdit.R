@@ -121,14 +121,17 @@ shiny::observe({
 
   photoXSMask(mask)
   
-  # # BRs
-  # photoBRMask(
-  #   list(
-  #     nBR      = ionsDB()$NBR[iReac],
-  #     StringBR = ionsDB()$STRINGBR[iReac],
-  #     REF_BR   = mask[['REF_BR']]
-  #   )
-  # )
+  # BRs
+  chans = which(photoDB()$REACTANTS == tag)
+  nBR = length(chans)
+  
+  photoBRMask(
+    list(
+      nBR      = nBR,
+      channels = chans
+    )
+  )
+  
 })
 
 output$photoXSMask = shiny::renderUI({
@@ -194,39 +197,57 @@ output$photoXSMask = shiny::renderUI({
 })
 outputOptions(output, "photoXSMask", suspendWhenHidden = FALSE)
 
-# output$ionsBRMask = shiny::renderUI({
-#   req(ionsBRMask())
-#   
-#   list(
-#     br(),
-#     shiny::textAreaInput(
-#       "ionsStringDist",
-#       "StringBR",
-#       width  = '400px',
-#       height = '250px',
-#       value  = formatStringBR(ionsBRMask()[['StringBR']])  
-#     ),
-#     fluidRow(
-#       column(
-#         6,
-#         shiny::textInput(
-#           "ionsReacREF_BR",
-#           "Refs BR",
-#           value = ionsBRMask()[['REF_BR']]
-#         )
-#       ),
-#       column(
-#         6,
-#         shiny::textInput(
-#           "ionsReacNBR",
-#           "Nb Channels",
-#           value = ionsBRMask()[['nBR']]
-#         )
-#       )
-#     )
-#   )
-# })
-# outputOptions(output, "ionsBRMask", suspendWhenHidden = FALSE)
+output$photoBRMask = shiny::renderUI({
+  req(photoBRMask())
+  req(photoDB())
+
+  mask = photoBRMask()
+  
+  out = list()
+  out[[1]] = br() 
+  for( i in 1:mask$nBR) {
+    iReac = mask$channels[i]
+    out[[i+1]] = fluidRow(
+      column(
+        2,
+        shiny::textInput(
+          paste0("photoBRChan_",i),
+          label = NULL,
+          value = i
+        )
+      ),
+      column(
+        1,
+        shiny::checkboxInput(
+          paste0("photoBROut_",i),
+          label = NULL,
+          value = photoDB()[['OUTPUT']][iReac]
+        )
+      ),
+      column(
+        6,
+        shiny::textInput(
+          paste0("photoBRProds_",i), 
+          label = NULL,
+          value = photoDB()[['PRODUCTS']][iReac]
+        )
+      ),
+      if (i==1)
+        column(
+          3,
+          shiny::selectInput(
+            paste0("photoBRSource"), 
+            label = NULL,
+            photoBRSources,
+            selected = photoDB()[['BR_SOURCE']][iReac]
+          )
+        )
+    )
+  }
+  
+  return(out)
+})
+outputOptions(output, "photoBRMask", suspendWhenHidden = FALSE)
 
 # Save ####
 # observeEvent(
@@ -418,6 +439,164 @@ photoXSSimulate = reactive({
   
 })
 
+photoBRSimulate = reactive({
+  req(photoBRMask())
+  
+  nMC  = as.numeric(input$photoSimulateSize)
+  reso = as.numeric(input$photoXSReso)
+  type = input$photoBRSource
+  
+  sp   = photoXSMask()[['REACTANTS']][1]
+  
+  # Get data
+  source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
+  
+ if (type == 'SWRI') {
+    file = file.path(source,paste0(sp, '.dat'))
+    if (!file.exists(file)) {
+      id = shiny::showNotification(
+        strong(paste0('No BR data for:', sp,' in ',type)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+      return(NULL)
+    }
+    S = read.table(file = file,
+                   header = TRUE,
+                   check.names = FALSE)
+    wl  = S[, 1] / 10 # Convert A to nm# Absorption cross-section
+    xs  = S[, 2]
+    xsl = downSample(wl, xs, reso = reso)
+    wl1  = xsl$wl
+    xs1  = xsl$xs
+    # Remove tailing zeroes
+    first = which(xs1 != 0)[1]
+    last  = length(xs1)-which(rev(xs1) !=0)[1] + 1
+    wl1    = wl1[first:last]
+    
+    # Quantum yields
+    np = ncol(S) - 2
+    if (np == 0) {
+      # Single channel: compute qy from total xs => qy=1
+      np = 1
+      i0 = 1
+    } else {
+      # Normal case: several channels
+      i0 = 2
+    }
+    qy = matrix(0, nrow = np, ncol = length(wl1))
+    for (i in 1:np) {
+      br = downSample(wl, S[, i+i0]/xs, reso = reso)$xs
+      qy[i,] = br[first:last] 
+    }
+    wl = wl1
+    
+  #   if(!is.null(input$photoXS_F))
+  #     uF = as.numeric(input$photoXS_F)
+  #   else
+  #     uF = photoDefaultuF
+  #   
+  } else if (type == 'Plessis') {
+    
+    pattern = paste0('qy', sp)
+    files = list.files(source, pattern)
+    if (length(files) == 0) {
+      id = shiny::showNotification(
+        strong(paste0('No BR data for:', sp,' in ',type)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+      return(NULL)
+    }
+    
+    S = read.table(file = file.path(source,files[1]),
+                   header = TRUE,
+                   check.names = FALSE)
+    wl  = S[, 1]
+    xs  = S[, 2]
+    xsl = downSample(wl, xs, reso = reso)
+    wl  = xsl$wl
+    qy = matrix(0, nrow = length(files), ncol = length(wl))
+    
+    for (i in seq_along(files)) {
+      S = read.table(file = file.path(source,files[i]),
+                     header = TRUE,
+                     check.names = FALSE)
+        wl  = S[, 1]
+        xs  = S[, 2]
+        xsl = downSample(wl, xs, reso = reso)
+        wl  = xsl$wl
+        xs  = xsl$xs
+        qy[i,] = xs
+    }
+    
+    # if(!is.null(input$photoXS_F))
+    #   uF = as.numeric(input$photoXS_F)
+    # else
+    #   uF = photoDefaultuF
+
+  }
+  
+#   if(nc == 1) {
+#     # A single channel: no uncertainty in BR
+#     qySample = array(
+#       data = 1,
+#       dim = c(nMC, nw, nc)
+#     )
+#     
+#   } else {
+#     
+#     qy = qy / rowSums(qy)
+#     
+#     # Generate ordered Diri-based samples at each wavelength
+#     
+#     if (sum(ionic) * sum(!ionic) == 0) {
+#       # Diri sampling
+#       qySample = diriSample(qy,
+#                             ru = ifelse(
+#                               sum(ionic)==0,
+#                               ruBRN,
+#                               ruBRI),
+#                             nMC,
+#                             eps)
+#     } else {
+#       # Nested sampling
+#       qySample = hierSample(qy, ionic,
+#                             ru = c(ruBRNI, ruBRN, ruBRI),
+#                             nMC,
+#                             eps)
+#     }
+#   }
+#   
+#   
+#   # Save sets in random order
+#   shuffle = sample.int(n=nMC,size=nMC)
+#   for(iMC in 1:nMC) {
+#     for(i in 1:nc) {
+#       # Randomize global sample through file prefix
+#       prefix = paste0(sprintf('%04i',shuffle[iMC]),'_')
+#       fileOut = paste0(targetMCDir1,prefix,'qy',sp,'_',i,'.dat')
+#       write.table(
+#         cbind(wavl,qySample[iMC,,i]),
+#         sep=' ', row.names=FALSE, col.names=FALSE,
+#         file = gzfile(paste0(fileOut, '.gz'))
+#       )
+#     }
+#   }
+# }
+
+return(list(
+    sampleSize  = nMC,
+    sampleBR    = qy,
+    sampleWl    = wl,
+    sampleTitle = paste0(sp,' / ',type,' / ',reso) 
+  ))
+  
+})
+
+
 # Plot XS ####
 output$plotPhotoXSSample = renderPlot({
   req(photoXSMask())
@@ -455,139 +634,50 @@ output$plotPhotoXSSample = renderPlot({
 },
 height = plotHeight, width = plotWidth)
 # Plot BRs ####
-## Sample ####
-output$plotIonsBRSample = renderPlot({
-  # req(ionsSimulSamples())
-  ionsSimulSamples = ionsSimulate()
+output$plotPhotoBRSample = renderPlot({
+  req(photoBRMask())
   
-  req(!is.null(ionsSimulSamples$mytree))
+  photoSimulSamples = photoBRSimulate()
   
-  sampleSize       = ionsSimulSamples$sampleSize
-  sampleBR         = ionsSimulSamples$sampleBR
-  tags             = ionsSimulSamples$tags
+  sampleBR    = photoSimulSamples$sampleBR
+  nBR         = nrow(sampleBR)
+  sampleWl    = photoSimulSamples$sampleWl
+  sampleTitle = photoSimulSamples$sampleTitle
   
-  meanBR    = colMeans(sampleBR)
-  meanBR    = meanBR / sum(meanBR)
-  sigBR     = apply(sampleBR, 2, sd)
+  par(mar = c(4, 4, 2, 1),
+      mgp = gPars$mgp,
+      tcl = gPars$tcl,
+      lwd = gPars$lwd,
+      pty = 'm',
+      cex = 1.5)
+  matplot(
+    sampleWl, t(sampleBR),
+    type = 'l', 
+    lwd  = 3,
+    lty  = 1,
+    xaxs = 'i',
+    xlab = 'Wavelength [nm]',
+    xlim = input$photoWLPlotRange,
+    yaxs = 'i',
+    ylim = c(-0.01, 1.01),
+    ylab = paste('Branching ratios'),
+    col  = gPars$cols,
+    main = sampleTitle
+  )
+  grid()
+  # lines(sampleWl, sampleXS[1,], lwd = 2, col= gPars$cols[2])
+  legend(
+    'right',
+    legend = 1:nBR,
+    lty = 1,
+    col = gPars$cols,
+    pch = NULL
+  )
+  box()
   
-  np = min(sampleSize, 500) # nb of plotted samples
-  nt = length(tags)
-  if (nt >= 2) {
-    m0= max(1,40-3*nt)
-    par(
-      mar = c(m0, 15, 4, 1), 
-      cex.main = 1)
-    matplot(
-      t(sampleBR)[nt:1, 1:np],
-      1:nt,
-      type = 'l',
-      lty = 1,
-      col = gPars$cols_tr[5],
-      lwd = 5,
-      yaxt = 'n',
-      ylab = '',
-      yaxs = 'i',
-      xlim = c(0, 1),
-      xlab = '',
-      xaxt = 'n',
-      xaxs = 'i',
-      main = 'Branching Ratios'
-    )
-    lines(meanBR, nt:1, lwd = 3, col = gPars$cols[2])
-    lines(cumsum(meanBR), nt:1, lwd = 3, lty = 2, col = gPars$cols[2])
-    text(
-      x = seq(0, 1, by = 0.1),
-      y = nt,
-      labels = seq(0, 1, by = 0.1),
-      xpd = TRUE,
-      cex = 1,
-      pos = 3
-    )
-    text(
-      x = -0.02,
-      y = nt:1,
-      labels = tags,
-      srt = 0,
-      adj = 1,
-      xpd = TRUE,
-      cex = 1
-    )
-    # grid()
-    abline(
-      h = 1:length(tags),
-      col = 'darkgray',
-      lwd = 1,
-      lty = 3
-    )
-    abline(
-      v = seq(0.1,1,by=0.1),
-      col = 'darkgray',
-      lwd = 1,
-      lty = 3
-    )
-    legend('topright', bty = 'n',
-           legend = c('Sample', 'Mean', 'Cumul.'),
-           lty = c(1,1,2), 
-           lwd = 3, pch = NA,
-           col = gPars$cols[c(5,2,2)])
-    box()
-  }
 },
 height = plotHeight, width = plotWidth)
-## Tree ####
-output$plotIonsBRTree = renderPlot({
-  
-  ionsSimulSamples = ionsSimulate()
-  req(!is.null(ionsSimulSamples$mytree))
-  
-  sampleSize       = ionsSimulSamples$sampleSize
-  sampleBR         = ionsSimulSamples$sampleBR
-  nodeTags         = ionsSimulSamples$nodeTags
-  edgeTags         = ionsSimulSamples$edgeTags
-  mytree           = ionsSimulSamples$mytree
-  tags             = ionsSimulSamples$tags
-  depth            = ionsSimulSamples$treeDepth
-  
-  meanBR    = colMeans(sampleBR)
-  meanBR    = meanBR / sum(meanBR)
-  sigBR     = apply(sampleBR, 2, sd)
-  
-  # Branching ratios
-  nt = length(tags)
-  if (nt >= 2) {
-    tagStat = tags
-    for (ip in 1:nt) {
-      tagStat[ip] = paste0(' ',tags[ip], ' (',
-                           signif(meanBR[ip], 2), ' +/- ',
-                           signif(sigBR[ip], 1), ')')
-    }
-    m0 = max(1,40-3*nt)
-    m1 = max(1,40-3*depth)
-    par(
-      mar = c(m0, 1, 1, m1), 
-      cex = 1)
-    mytree$tip.label = tagStat
-    mytree$edge.length = rep(1, dim(mytree$edge)[1])
-    plot(
-      mytree,
-      type = 'clado',
-      y.lim = c(length(tags), 1), # Reverse axis
-      show.tip.label = TRUE,
-      tip.color = gPars$cols[1],
-      use.edge.length = TRUE,
-      root.edge = TRUE,
-      edge.width = 2,
-      edge.color = gPars$cols[3],
-      align.tip.label = TRUE,
-      font = 1,
-      main = ''
-    )
-    mynodelabels(nodeTags, bg = 'gold')
-    # myedgelabels(edgeTags) # Not defined yet...
-    
-  }
-},
-height = plotHeight, width = 1.5*plotWidth)
+
 
 # Biblio ####
 output$ionsBiblio = shiny::renderUI({
