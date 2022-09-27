@@ -78,6 +78,10 @@ photoXSSources = c('Leiden','SWRI','Hebrard')
 photoBRSources = c('SWRI','Plessis')
 photoXSResolutions = c(1,0.1) # nm
 photoDefaultuF = 1.2
+photoRuBRN  = 0.2  # relative uncertainty for Neutral branching ratios
+photoRuBRI  = 0.2  # relative uncertainty for Ionic branching ratios
+photoRuBRNI = 0.03 # relative uncertainty on Ionic vs. Neutral channels
+photoEps    = 5e-3 # threshold fo zero in compositions
 source('R/photoFunctions.R')
 
 # Bibliography

@@ -440,18 +440,22 @@ photoXSSimulate = reactive({
 })
 
 photoBRSimulate = reactive({
+  req(photoXSMask())
   req(photoBRMask())
+  req(photoDB())
+  req(input$photoBRSource)
   
   nMC  = as.numeric(input$photoSimulateSize)
   reso = as.numeric(input$photoXSReso)
   type = input$photoBRSource
   
   sp   = photoXSMask()[['REACTANTS']][1]
+  nBR  = photoBRMask()$nBR
   
   # Get data
   source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
   
- if (type == 'SWRI') {
+  if (type == 'SWRI') {
     file = file.path(source,paste0(sp, '.dat'))
     if (!file.exists(file)) {
       id = shiny::showNotification(
@@ -485,10 +489,10 @@ photoBRSimulate = reactive({
       # Normal case: several channels
       i0 = 2
     }
-    qy = matrix(0, nrow = np, ncol = length(wl1))
+    qy = matrix(0, ncol = np, nrow = length(wl1))
     for (i in 1:np) {
       br = downSample(wl, S[, i+i0]/xs, reso = reso)$xs
-      qy[i,] = br[first:last] 
+      qy[ ,i] = br[first:last] 
     }
     wl = wl1
     
@@ -510,7 +514,7 @@ photoBRSimulate = reactive({
       )
       return(NULL)
     }
-    
+
     S = read.table(file = file.path(source,files[1]),
                    header = TRUE,
                    check.names = FALSE)
@@ -518,7 +522,7 @@ photoBRSimulate = reactive({
     xs  = S[, 2]
     xsl = downSample(wl, xs, reso = reso)
     wl  = xsl$wl
-    qy = matrix(0, nrow = length(files), ncol = length(wl))
+    qy = matrix(0, ncol = length(files), nrow = length(wl))
     
     for (i in seq_along(files)) {
       S = read.table(file = file.path(source,files[i]),
@@ -529,67 +533,53 @@ photoBRSimulate = reactive({
         xsl = downSample(wl, xs, reso = reso)
         wl  = xsl$wl
         xs  = xsl$xs
-        qy[i,] = xs
+        qy[ ,i] = xs
     }
     
-    # if(!is.null(input$photoXS_F))
-    #   uF = as.numeric(input$photoXS_F)
-    # else
-    #   uF = photoDefaultuF
-
   }
-  
-#   if(nc == 1) {
-#     # A single channel: no uncertainty in BR
-#     qySample = array(
-#       data = 1,
-#       dim = c(nMC, nw, nc)
-#     )
-#     
-#   } else {
-#     
-#     qy = qy / rowSums(qy)
-#     
-#     # Generate ordered Diri-based samples at each wavelength
-#     
-#     if (sum(ionic) * sum(!ionic) == 0) {
-#       # Diri sampling
-#       qySample = diriSample(qy,
-#                             ru = ifelse(
-#                               sum(ionic)==0,
-#                               ruBRN,
-#                               ruBRI),
-#                             nMC,
-#                             eps)
-#     } else {
-#       # Nested sampling
-#       qySample = hierSample(qy, ionic,
-#                             ru = c(ruBRNI, ruBRN, ruBRI),
-#                             nMC,
-#                             eps)
-#     }
-#   }
-#   
-#   
-#   # Save sets in random order
-#   shuffle = sample.int(n=nMC,size=nMC)
-#   for(iMC in 1:nMC) {
-#     for(i in 1:nc) {
-#       # Randomize global sample through file prefix
-#       prefix = paste0(sprintf('%04i',shuffle[iMC]),'_')
-#       fileOut = paste0(targetMCDir1,prefix,'qy',sp,'_',i,'.dat')
-#       write.table(
-#         cbind(wavl,qySample[iMC,,i]),
-#         sep=' ', row.names=FALSE, col.names=FALSE,
-#         file = gzfile(paste0(fileOut, '.gz'))
-#       )
-#     }
-#   }
-# }
 
-return(list(
+  # Sample
+  
+  if(nBR == 1) {
+    # A single channel: no uncertainty in BR
+    qySample = array(
+      data = 1,
+      dim = c(nMC, ncol(qy), nBR)
+    )
+
+  } else {
+
+    qy = qy / rowSums(qy)
+
+    # Generate ordered Diri-based samples at each wavelength
+    
+    ionic = c()
+    for (i in 1:nBR) {
+      iReac = photoBRMask()$channels[i]
+      ionic[i] = 'E' %in% photoDB()$PRODUCTS[iReac]
+    }
+    
+    if (sum(ionic) * sum(!ionic) == 0) {
+      # Diri sampling
+      qySample = diriSample(
+        qy,
+        ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
+        nMC,
+        photoEps)
+    } else {
+      # Nested sampling
+      qySample = hierSample(
+        qy, ionic,
+        ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
+        nMC,
+        photoEps)
+    }
+  }
+
+  return(list(
     sampleSize  = nMC,
-    sampleBR    = qy,
+    sampleBR0   = qy,
+    sampleBR    = qySample,
     sampleWl    = wl,
     sampleTitle = paste0(sp,' / ',type,' / ',reso) 
   ))
@@ -638,41 +628,65 @@ output$plotPhotoBRSample = renderPlot({
   req(photoBRMask())
   
   photoSimulSamples = photoBRSimulate()
-  
+  nMC         = photoSimulSamples$sampleSize
+  sampleBR0   = photoSimulSamples$sampleBR0
   sampleBR    = photoSimulSamples$sampleBR
-  nBR         = nrow(sampleBR)
   sampleWl    = photoSimulSamples$sampleWl
   sampleTitle = photoSimulSamples$sampleTitle
-  
+  nBR         = photoBRMask()$nBR
+ 
   par(mar = c(4, 4, 2, 1),
       mgp = gPars$mgp,
       tcl = gPars$tcl,
       lwd = gPars$lwd,
       pty = 'm',
       cex = 1.5)
+  
+  cols    = rep(gPars$cols,2)
+  cols_tr = rep(gPars$cols_tr,2)
+  lty     = c(rep(1,length(gPars$cols)),rep(2,length(gPars$cols)))
+  
   matplot(
-    sampleWl, t(sampleBR),
+    sampleWl, sampleBR[1,,],
     type = 'l', 
     lwd  = 3,
-    lty  = 1,
     xaxs = 'i',
     xlab = 'Wavelength [nm]',
     xlim = input$photoWLPlotRange,
     yaxs = 'i',
     ylim = c(-0.01, 1.01),
     ylab = paste('Branching ratios'),
-    col  = gPars$cols,
+    col  = cols_tr,
+    lty  = lty,
     main = sampleTitle
   )
   grid()
-  # lines(sampleWl, sampleXS[1,], lwd = 2, col= gPars$cols[2])
+
+  for(iMC in 2:nMC) {
+    matlines(
+      sampleWl, sampleBR[iMC,,],
+      lwd  = 3,
+      col  = cols_tr,
+      lty  = lty
+    )
+  }
+  
+  matlines(
+    sampleWl, 
+    sampleBR0, 
+    lwd = 2, 
+    col = cols, 
+    lty = lty
+  )
+  
   legend(
-    'right',
+    'right', bty = 'n',
     legend = 1:nBR,
-    lty = 1,
-    col = gPars$cols,
+    col = cols,
+    lty = lty,
     pch = NULL
   )
+  
   box()
   
 },
