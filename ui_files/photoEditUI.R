@@ -110,6 +110,11 @@ tabPanel(
             value = c(50,250),
             step  =  10,
             round = TRUE
+          ),
+          checkboxInput(
+            "photoBRSort",
+            label = "Sort samples",
+            value = TRUE
           )
         )
       )

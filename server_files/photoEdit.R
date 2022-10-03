@@ -444,6 +444,8 @@ photoBRSimulate = shiny::reactive({
   reso = as.numeric(input$photoXSReso)
   type = photoBRMask()$source
   req(type)
+  
+  sort = input$photoBRSort
 
   sp   = photoXSMask()[['REACTANTS']][1]
   nBR  = photoBRMask()$nBR
@@ -561,14 +563,16 @@ photoBRSimulate = shiny::reactive({
         qy,
         ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
         nMC,
-        photoEps)
+        photoEps,
+        sort)
     } else {
       # Nested sampling
       qySample = hierSample(
         qy, ionic,
         ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
         nMC,
-        photoEps)
+        photoEps,
+        sort)
     }
   }
   
@@ -671,7 +675,7 @@ output$plotPhotoBRSample = shiny::renderPlot({
   matlines(
     sampleWl, 
     sampleBR0, 
-    lwd = 2, 
+    lwd = 4, 
     col = cols, 
     lty = lty
   )
