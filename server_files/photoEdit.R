@@ -1,18 +1,16 @@
 photoReacs         = shiny::reactiveVal()
 photoXSMask        = shiny::reactiveVal()
 photoBRMask        = shiny::reactiveVal()
-photoSimulSamples  = shiny::reactiveVal()
 photoReacsFiltered = shiny::reactiveVal()
 photoReacID        = shiny::reactiveVal()
 
 # Manage reacs list ####
 observeEvent(
   input$photoReacSelInit,
-  {
-    shiny::updateTextInput(inputId = "photoReacSel", value = "")
-  })
+  shiny::updateTextInput(inputId = "photoReacSel", value = "")
+)
 
-observe({
+shiny::observe({
   req(photoDB())
   reacs = photoDB()$REACTANTS
   tag   = reacs[ photoDB()$CHANNEL == 1 ] 
@@ -48,8 +46,7 @@ observe({
   
 })
 
-observeEvent(
-  input$photoMinus,
+shiny::observeEvent(input$photoMinus,
   {
     iReac = as.numeric(input$photoReaction)
     if(iReac > 1) {
@@ -58,12 +55,11 @@ observeEvent(
         session = session,
         "photoReaction",
         selected = iReac
-      )      
+      )  
     }
   })
 
-observeEvent(
-  input$photoPlus,
+shiny::observeEvent(input$photoPlus,
   {
     req(photoReacsFiltered())
     
@@ -75,7 +71,7 @@ observeEvent(
         session = session,
         "photoReaction",
         selected = iReac
-      )      
+      )
     }
   })
 
@@ -98,11 +94,7 @@ shiny::observe({
   
   # Absolute index of selected reac
   iReac = which(photoDB()$REACTANTS == tag & photoDB()$CHANNEL == 1)
-  
   photoReacID(photoDB()$ID[iReac])
-  
-  # (Re-)Init samples for plots
-  photoSimulSamples(NULL)
   
   # Format data for masks
   mask = list()
@@ -122,19 +114,21 @@ shiny::observe({
   photoXSMask(mask)
   
   # BRs
-  chans = which(photoDB()$REACTANTS == tag)
-  nBR = length(chans)
+  chans  = which(photoDB()$REACTANTS == tag)
+  nBR    = length(chans)
+  source = photoDB()[['BR_SOURCE']][iReac] # Assumed identical for all channels
   
   photoBRMask(
     list(
       nBR      = nBR,
-      channels = chans
+      channels = chans,
+      source   = source
     )
   )
   
 })
 
-output$photoXSMask = shiny::renderUI({
+output$photoXSMaskUI = shiny::renderUI({
   req(photoXSMask())
   
   mask = photoXSMask()
@@ -194,10 +188,11 @@ output$photoXSMask = shiny::renderUI({
       )
     )
   )
-})
-outputOptions(output, "photoXSMask", suspendWhenHidden = FALSE)
 
-output$photoBRMask = shiny::renderUI({
+})
+shiny::outputOptions(output, "photoXSMaskUI", suspendWhenHidden = FALSE)
+
+output$photoBRMaskUI = shiny::renderUI({
   req(photoBRMask())
   req(photoDB())
 
@@ -236,18 +231,18 @@ output$photoBRMask = shiny::renderUI({
         column(
           3,
           shiny::selectInput(
-            paste0("photoBRSource"), 
+            "photoBRSource",
             label = NULL,
-            photoBRSources,
-            selected = photoDB()[['BR_SOURCE']][iReac]
+            choices = photoBRSources,
+            selected = mask$source
           )
         )
     )
   }
-  
+
   return(out)
 })
-outputOptions(output, "photoBRMask", suspendWhenHidden = FALSE)
+shiny::outputOptions(output, "photoBRMaskUI", suspendWhenHidden = FALSE)
 
 # Save ####
 # observeEvent(
@@ -336,12 +331,13 @@ outputOptions(output, "photoBRMask", suspendWhenHidden = FALSE)
 
 
 # Sampling ####
-photoXSSimulate = reactive({
+photoXSSimulate = shiny::reactive({
   req(photoXSMask())
 
   nMC  = as.numeric(input$photoSimulateSize)
   reso = as.numeric(input$photoXSReso)
   type = input$photoXSSource
+  req(type)
   
   sp   = photoXSMask()[['REACTANTS']][1]
   
@@ -439,16 +435,16 @@ photoXSSimulate = reactive({
   
 })
 
-photoBRSimulate = reactive({
+photoBRSimulate = shiny::reactive({
+  req(photoDB()) 
   req(photoXSMask())
   req(photoBRMask())
-  req(photoDB())
-  req(input$photoBRSource)
   
   nMC  = as.numeric(input$photoSimulateSize)
   reso = as.numeric(input$photoXSReso)
-  type = input$photoBRSource
-  
+  type = photoBRMask()$source
+  req(type)
+
   sp   = photoXSMask()[['REACTANTS']][1]
   nBR  = photoBRMask()$nBR
   
@@ -469,7 +465,7 @@ photoBRSimulate = reactive({
     S = read.table(file = file,
                    header = TRUE,
                    check.names = FALSE)
-    wl  = S[, 1] / 10 # Convert A to nm# Absorption cross-section
+    wl  = S[, 1] / 10 # Convert A to nm
     xs  = S[, 2]
     xsl = downSample(wl, xs, reso = reso)
     wl1  = xsl$wl
@@ -575,7 +571,7 @@ photoBRSimulate = reactive({
         photoEps)
     }
   }
-
+  
   return(list(
     sampleSize  = nMC,
     sampleBR0   = qy,
@@ -588,8 +584,9 @@ photoBRSimulate = reactive({
 
 
 # Plot XS ####
-output$plotPhotoXSSample = renderPlot({
+output$plotPhotoXSSample = shiny::renderPlot({
   req(photoXSMask())
+  req(input$photoXSSource)
   
   photoSimulSamples = photoXSSimulate()
   
@@ -624,10 +621,10 @@ output$plotPhotoXSSample = renderPlot({
 },
 height = plotHeight, width = plotWidth)
 # Plot BRs ####
-output$plotPhotoBRSample = renderPlot({
+output$plotPhotoBRSample = shiny::renderPlot({
   req(photoBRMask())
-  
-  photoSimulSamples = photoBRSimulate()
+    photoSimulSamples = photoBRSimulate()
+
   nMC         = photoSimulSamples$sampleSize
   sampleBR0   = photoSimulSamples$sampleBR0
   sampleBR    = photoSimulSamples$sampleBR
@@ -697,6 +694,7 @@ height = plotHeight, width = plotWidth)
 output$ionsBiblio = shiny::renderUI({
   req(ionsRateMask())
   req(ionsBRMask())
+  
   
   keys = c()
   bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))

@@ -93,7 +93,7 @@ tabPanel(
             'photoSimulateSize',
             label    = '# MC samples',
             choices  = seq(100,1000,by = 100),
-            selected = 500,
+            selected = 100,
             width = '200px'
           ),
           selectInput(
@@ -123,7 +123,7 @@ tabPanel(
             fluidRow(
               column(
                 5,
-                uiOutput("photoXSMask")
+                uiOutput("photoXSMaskUI")
               ),
               column(
                 7,
@@ -136,7 +136,7 @@ tabPanel(
             fluidRow(
               column(
                 5,
-                uiOutput("photoBRMask")
+                uiOutput("photoBRMaskUI")
               ),
               column(
                 7,
