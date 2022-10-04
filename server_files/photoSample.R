@@ -5,117 +5,314 @@ observeEvent(
     
     sampleSize = 1 + as.numeric(input$photoSampleSize) # Account for nominal
     
-    # Cross-sections ####
-    for (iReac in seq_along(photoDB()$REACTANTS)) {
-      
-      # Treat first channel only
-      if(photoDB()$CHANNEL[iReac] != 1)
-        next
-      
-      # Get descriptors
-      reactants = getSpecies(photoDB()$REACTANTS[iReac])
-      sp = reactants[1]
-      type     = photoDB()$XS_SOURCE[iReac]
-      uF0      = photoDB()$XS_F[iReac]
-      refs     = photoDB()$REFS[iReac]
-      comments = photoDB()$COMMENTS[iReac]
-
-      # Get data
-      source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
-      if(type == 'Leiden') {
-        xsl  = getXShdf5( sp, source_dir = source)
-        if(is.null(xsl)) {
-          id = shiny::showNotification(
-            strong(paste0('No data for:', sp,' in ',type)),
-            closeButton = TRUE,
-            duration = NULL,
-            type = 'error'
-          )
-          return(NULL)
-        }
-        wl   = xsl$wavelength
-        xs   = xsl$photoabsorption
-        uF0  = xsl$uncF # Priority on DB parameter
-        
-      } else if (type == 'SWRI') {
-        file = file.path(source,paste0(sp, '.dat'))
-        if (!file.exists(file)) {
-          id = shiny::showNotification(
-            strong(paste0('No data for:', sp,' in ',type)),
-            closeButton = TRUE,
-            duration = NULL,
-            type = 'error'
-          )
-          return(NULL)
-        }
-        S = read.table(file = file,
-                       header = TRUE,
-                       check.names = FALSE)
-        
-        wl = S[, 1] / 10 # Convert A to nm
-        xs = S[, 2]
-        
-      } else if (type == 'Hebrard') {
-        file = file.path(source,paste0('se', sp, '.dat'))
-        if (!file.exists(file)) {
-          id = shiny::showNotification(
-            strong(paste0('No data for:', sp,' in ',type)),
-            closeButton = TRUE,
-            duration = NULL,
-            type = 'error'
-          )
-          return(NULL)
-        }
-        S = read.table(file = file,
-                       header = FALSE,
-                       check.names = FALSE,
-                       fill = TRUE)
-        wl  = S[, 1]
-        xs  = S[, 2]
-      }
-      
-      if(!is.null(uF0))
-        uF = as.numeric(uF0)
-      else
-        uF = photoDefaultuF
-      
-      for (reso in photoXSResolutions){
-        target = file.path(photoPublic,photoEditOrigVersion(),
-                           paste0(reso,'nm'))
-        
-        # Interpolate on regular grid
-        xsl  = downSample(wl, xs, reso = reso)
-        wl   = xsl$wl
-        xs   = xsl$xs
-        
-        # Remove tailing zeroes
-        first = which(xs != 0)[1]
-        last  = length(xs) - which(rev(xs) != 0)[1] + 1
-        wl   = wl[first:last]
-        xs   = xs[first:last]
-        
-        for (iMC in 1:sampleSize) {
-          prefix = paste0(sprintf('%04i', iMC), '_')
-          # Systematic perturbation of XS
-          if(iMC == 1) {
-            Frnd = 1
-          } else {
-            rnd =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
-            # Frnd = rlnorm(1, meanlog = 0, sdlog = log(uF))
-            Frnd = exp( log(uF) * rnd )
-          }
-          write.table(
-            cbind(wl, xs * Frnd),
-            sep = ' ',
-            row.names = FALSE,
-            col.names = FALSE,
-            file = gzfile(
-              file.path(target, paste0(prefix, 'se', sp, '.dat.gz'))
-            )
-          )
-        }
-      }
+    photoSampleDir = paste0(photoPublic, '_', photoEditOrigVersion())
+    if (!dir.exists(photoSampleDir)) {
+      dir.create(photoSampleDir)
+    } else {
+      # Clean
+      fileList = list.files(path = photoSampleDir, 
+                            full.names = TRUE, recursive = TRUE)
+      file.remove(fileList)
     }
+    
+    reacs = photoDB()$REACTANTS
+    
+    # Scale for progress
+    len = 2 * sum(photoDB()$CHANNEL == 1) * length(photoXSResolutions) 
+    shiny::withProgress(
+      message = 'Sampling ', 
+      {
+        for (reso in photoXSResolutions){
+          
+          target = file.path(photoSampleDir, paste0(reso,'nm'))
+          if(!dir.exists(target))
+            dir.create(target)
+          
+          for (iReac in seq_along(photoDB()$REACTANTS)) {
+            
+            # Loop on reactant species only
+            if(photoDB()$CHANNEL[iReac] != 1)
+              next
+    
+            # Cross sections ####                    
+            incProgress(1/len, 
+                        detail = paste0(' XS ',sp,'/',type,'/',reso,' nm'))
+            # Get descriptors
+            reactants = getSpecies(photoDB()$REACTANTS[iReac])
+            sp = reactants[1]
+            type     = photoDB()$XS_SOURCE[iReac]
+            uF0      = photoDB()$XS_F[iReac]
+            refs     = photoDB()$REFS[iReac]
+            comments = photoDB()$COMMENTS[iReac]
+            
+            # Get data
+            source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
+            if(type == 'Leiden') {
+              xsl  = getXShdf5( sp, source_dir = source)
+              if(is.null(xsl)) {
+                id = shiny::showNotification(
+                  strong(paste0('No data for:', sp,' in ',type)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
+              wl0 = xsl$wavelength
+              xs0 = xsl$photoabsorption
+              uF0 = xsl$uncF # Priority on DB parameter
+              
+            } else if (type == 'SWRI') {
+              file = file.path(source,paste0(sp, '.dat'))
+              if (!file.exists(file)) {
+                id = shiny::showNotification(
+                  strong(paste0('No data for:', sp,' in ',type)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
+              S = read.table(file = file,
+                             header = TRUE,
+                             check.names = FALSE)
+              
+              wl0 = S[, 1] / 10 # Convert A to nm
+              xs0 = S[, 2]
+              
+            } else if (type == 'Hebrard') {
+              file = file.path(source,paste0('se', sp, '.dat'))
+              if (!file.exists(file)) {
+                id = shiny::showNotification(
+                  strong(paste0('No data for:', sp,' in ',type)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
+              S = read.table(file = file,
+                             header = FALSE,
+                             check.names = FALSE,
+                             fill = TRUE)
+              wl0 = S[, 1]
+              xs0 = S[, 2]
+            }
+            
+            if(!is.null(uF0))
+              uF = as.numeric(uF0)
+            else
+              uF = photoDefaultuF
+            
+            # Interpolate on regular grid
+            xsl  = downSample(wl0, xs0, reso = reso)
+            wl   = xsl$wl
+            xs   = xsl$xs
+            
+            # Remove tailing zeroes
+            first = which(xs != 0)[1]
+            last  = length(xs) - which(rev(xs) != 0)[1] + 1
+            wavlXS = wl[first:last]
+            xs     = xs[first:last]
+            
+           
+            # Branching ratios ####
+            incProgress(1/len, 
+                        detail = paste0(' BRs ',sp,'/',type,'/',reso,' nm'))
+            
+            # Get descriptors
+            type  = photoDB()$BR_SOURCE[iReac]
+            chans = which(photoDB()$REACTANTS == photoDB()$REACTANTS[iReac])
+            nBR    = length(chans)
+
+            # Get data
+            source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
+            
+            if (type == 'SWRI') {
+              file = file.path(source,paste0(sp, '.dat'))
+              if (!file.exists(file)) {
+                id = shiny::showNotification(
+                  strong(paste0('No BR data for:', sp,' in ',type)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
+              S = read.table(file = file,
+                             header = TRUE,
+                             check.names = FALSE)
+              wl  = S[, 1] / 10 # Convert A to nm
+              xs  = S[, 2]
+              xsl = downSample(wl, xs, reso = reso)
+              wl1  = xsl$wl
+              xs1  = xsl$xs
+              # Remove tailing zeroes
+              first = which(xs1 != 0)[1]
+              last  = length(xs1)-which(rev(xs1) !=0)[1] + 1
+              wl1    = wl1[first:last]
+              
+              # Quantum yields
+              np = ncol(S) - 2
+              if (np == 0) {
+                # Single channel: compute qy from total xs => qy=1
+                np = 1
+                i0 = 1
+              } else {
+                # Normal case: several channels
+                i0 = 2
+              }
+              qy = matrix(0, ncol = np, nrow = length(wl1))
+              for (i in 1:np) {
+                br = downSample(wl, S[, i+i0]/xs, reso = reso)$xs
+                qy[ ,i] = br[first:last] 
+              }
+              wl = wl1
+              
+            } else if (type == 'Plessis') {
+              
+              pattern = paste0('qy', sp)
+              files = list.files(source, pattern)
+              if (length(files) == 0) {
+                id = shiny::showNotification(
+                  strong(paste0('No BR data for:', sp,' in ',type)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
+              
+              S = read.table(file = file.path(source,files[1]),
+                             header = TRUE,
+                             check.names = FALSE)
+              wl  = S[, 1]
+              xs  = S[, 2]
+              xsl = downSample(wl, xs, reso = reso)
+              wl  = xsl$wl
+              qy = matrix(0, ncol = length(files), nrow = length(wl))
+              
+              for (i in seq_along(files)) {
+                S = read.table(file = file.path(source,files[i]),
+                               header = TRUE,
+                               check.names = FALSE)
+                wl  = S[, 1]
+                xs  = S[, 2]
+                xsl = downSample(wl, xs, reso = reso)
+                wl  = xsl$wl
+                xs  = xsl$xs
+                qy[ ,i] = xs
+              }
+              
+            }
+            wavlBR = wl
+            
+            ## Define common wavl range for se and qy
+            selXS = wavlXS %in% wavlBR
+            selBR = wavlBR %in% wavlXS
+            
+            wavlXS = wavlXS[selXS]
+            xs = xs[selXS]
+            wavlBR = wavlBR[selBR]
+            qy = qy[selBR,]
+            
+            # Sample
+            if(nBR == 1) {
+              # A single channel: no uncertainty in BR
+              qySample = array(
+                data = 1,
+                dim = c(nMC, ncol(qy), nBR)
+              )
+              
+            } else {
+              
+              qy = qy / rowSums(qy)
+              
+              # Generate ordered Diri-based samples at each wavelength
+              ionic = c()
+              for (i in 1:nBR) {
+                iReac = chans[i]
+                ionic[i] = 'E' %in% photoDB()$PRODUCTS[iReac]
+              }
+              
+              if (sum(ionic) * sum(!ionic) == 0) {
+                # Diri sampling
+                qySample = diriSample(
+                  qy,
+                  ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
+                  nMC,
+                  photoEps,
+                  sort)
+              } else {
+                # Nested sampling
+                qySample = hierSample(
+                  qy, ionic,
+                  ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
+                  nMC,
+                  photoEps,
+                  sort)
+              }
+            }
+           
+            for (iMC in 0:sampleSize) {
+              prefix = paste0(sprintf('%04i', iMC), '_')
+              # Systematic perturbation of XS
+              if(iMC == 0) {
+                Frnd = 1
+              } else {
+                rnd  =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
+                Frnd = exp( log(uF) * rnd )
+              }
+              write.table(
+                cbind(wavlXS, xs * Frnd),
+                sep = ' ',
+                row.names = FALSE,
+                col.names = FALSE,
+                file = gzfile(
+                  file.path(target, paste0(prefix, 'se', sp, '.dat.gz'))
+                )
+              )
+            }
+            
+            # Nominal run
+            iMC = 0
+            prefix = paste0(sprintf('%04i', iMC), '_')
+            # save
+            for (i in 1:nBR) {
+              fileOut = file.path(
+                target, 
+                paste0(prefix,'qy',sp,'_',i,'.dat.gz')
+              )
+              write.table(
+                cbind(wavlBR, qy[, i]),
+                sep = ' ',
+                row.names = FALSE,
+                col.names = FALSE,
+                file = gzfile(fileOut)
+              )
+            }
+            # Save sets in random order: WHY ?????
+            # 
+            shuffle = sample.int(n=nMC,size=nMC)
+            for(iMC in 1:nMC) {
+              for(i in 1:nBR) {
+                # Randomize global sample through file prefix
+                prefix = paste0(sprintf('%04i',shuffle[iMC]),'_')
+                fileOut = file.path(
+                  target, 
+                  paste0(prefix,'qy',sp,'_',i,'.dat.gz')
+                )
+                write.table(
+                  cbind(wavlBR,qySample[iMC,,i]),
+                  sep=' ', row.names=FALSE, col.names=FALSE,
+                  file = gzfile(fileOut)
+                )
+              }
+            }
+          }
+        }
+      })
+    
   })
 
 # Statistics ####

@@ -5,24 +5,24 @@ tabPanel(
       width = sideWidth,
       h4("PhotoProcs - Sample",.noWS = "outside"),
       br(),
-      fluidRow(
-        column(
-          6,
-          checkboxInput(
-            'photoSampleUpdate',
-            label = 'Update',
-            value = TRUE
-          )
-        ),
-        column(
-          6,
-          checkboxInput(
-            'photoSampleCheck',
-            label = 'Check only',
-            value = FALSE
-          )
-        )
-      ),
+      # fluidRow(
+      #   column(
+      #     6,
+      #     checkboxInput(
+      #       'photoSampleUpdate',
+      #       label = 'Update',
+      #       value = TRUE
+      #     )
+      #   ),
+      #   column(
+      #     6,
+      #     checkboxInput(
+      #       'photoSampleCheck',
+      #       label = 'Check only',
+      #       value = FALSE
+      #     )
+      #   )
+      # ),
       fluidRow(
         column(
           7,
