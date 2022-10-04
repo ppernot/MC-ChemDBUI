@@ -9,13 +9,10 @@ function(input, output, session) {
     "ionsEdit.R",
     "ionsSample.R",
     "photoLoad.R",
-    # "photoSample",
-    "photoEdit.R"
+    "photoEdit.R",
+    "photoSample.R"
   )
-
+  
   for (f in files)
-    source(
-      file.path("server_files", f),
-      local = TRUE
-    )
+    source( file.path("server_files", f), local = TRUE )
 }
