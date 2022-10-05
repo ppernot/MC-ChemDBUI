@@ -4,46 +4,122 @@ tabPanel(
     sidebarPanel(
       width = sideWidth,
       h4("PhotoProcs - Sample",.noWS = "outside"),
-      br(),
-      # fluidRow(
-      #   column(
-      #     6,
-      #     checkboxInput(
-      #       'photoSampleUpdate',
-      #       label = 'Update',
-      #       value = TRUE
-      #     )
-      #   ),
-      #   column(
-      #     6,
-      #     checkboxInput(
-      #       'photoSampleCheck',
-      #       label = 'Check only',
-      #       value = FALSE
-      #     )
-      #   )
-      # ),
-      fluidRow(
-        column(
-          7,
-          selectInput(
-            'photoSampleSize',
-            label    = '# MC samples',
-            choices  = c(0,10,100,500,1000),
-            selected = 500
+      tabsetPanel(
+        tabPanel(
+          "Generate",
+          br(),
+          fluidRow(
+            column(
+              6,
+              checkboxInput(
+                "photoBRSampleSort",
+                label = "Sort samples",
+                value = TRUE
+              )
+            )
+            #   column(
+            #     6,
+            #     checkboxInput(
+            #       'photoSampleUpdate',
+            #       label = 'Update',
+            #       value = TRUE
+            #     )
+            #   ),
+            #   column(
+            #     6,
+            #     checkboxInput(
+            #       'photoSampleCheck',
+            #       label = 'Check only',
+            #       value = FALSE
+            #     )
+            #   )
+          ),
+          fluidRow(
+            column(
+              7,
+              selectInput(
+                'photoSampleSize',
+                label    = '# MC samples',
+                choices  = c(0,10,100,500,1000),
+                selected = 10# 500
+              )
+            ),
+            column(
+              5,
+              actionButton(
+                "photoSampleBtn",
+                label = "Go !",
+                icon  = icon('gear',verify_fa = FALSE),
+                class = "btn-primary"
+              ),
+              tags$style(
+                type='text/css',
+                "#photoSampleBtn { width:100%; margin-top: 30px;}"
+              )
+            )
           )
         ),
-        column(
-          5,
-          actionButton(
-            "photoSampleBtn",
-            label = "Sample !",
-            icon  = icon('gear',verify_fa = FALSE),
-            class = "btn-primary"
+        tabPanel(
+          "Plot",
+          br(),
+          fluidRow(
+            column(
+              8,
+              shiny::selectizeInput(
+                "photoSampleReaction",
+                "Reactions",
+                choices = NULL,
+                options = list(maxOptions = maxOptions)
+              )
+            ),
+            column(
+              4,
+              fluidRow(
+                column(
+                  6,
+                  actionButton(
+                    "photoSampleMinus", "",
+                    icon = icon('angle-down',verify_fa = FALSE)
+                  ),
+                  tags$style(
+                    type='text/css',
+                    "#photoSampleMinus { width:100%; margin-top: 30px;}"
+                  )
+                ),
+                column(
+                  6,
+                  actionButton(
+                    "photoSamplePlus", "",
+                    icon = icon('angle-up',verify_fa = FALSE)
+                  ),
+                  tags$style(
+                    type='text/css',
+                    "#photoSamplePlus { width:100%; margin-top: 30px;}"
+                  )
+                )
+              )
+            )
           ),
-          tags$style(
-            type='text/css',
-            "#photoSampleBtn { width:100%; margin-top: 30px;}"
+          selectInput(
+            'photoSamplePlotSize',
+            label    = '# MC samples',
+            choices  = c(0,10,100,500,1000),
+            selected = 10# 500
+          ),
+          selectInput(
+            "photoSampleXSReso",
+            "Resolution (nm):",
+            photoXSResolutions,
+            selected = 1
+          ),
+          sliderInput(
+            "photoSampleWLPlotRange",
+            label = "Wavelength [nm]",
+            min   = 50, 
+            max   = 350,
+            value = c(50,250),
+            step  =  10,
+            round = TRUE
           )
         )
       )
@@ -52,6 +128,10 @@ tabPanel(
       width = mainWidth,
       wellPanel(
         tabsetPanel(
+          tabPanel(
+            title = "Plots",
+            plotOutput("plotSampleXS")
+          ),
           tabPanel(
             title = "Statistics",
             verbatimTextOutput("photoStats",)

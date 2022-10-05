@@ -168,11 +168,11 @@ gamDiri = function(x,ru) {   #Eq.9 in Plessis2010
   )
 }
 
-hierSample  = function(qy, ionic,ru=c(0.1,0.1,0.1), 
-                       nMC=500, eps=1e-4, sort = TRUE) {
+hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1), 
+                       nMC = 500, eps = 1e-4, sortBR = TRUE) {
   # Nested sampling when ionic and !ionic channels present
   # *** Treat only non-zero channels ***
-
+# print('Enter hierSample')
   nc = ncol(qy); nw = nrow(qy)
   qySample = array(
     data = 0,
@@ -245,13 +245,13 @@ hierSample  = function(qy, ionic,ru=c(0.1,0.1,0.1),
     }
 
     # Order samples to improve wavelength-wise continuity
-    if(sort)
+    if(sortBR)
       for (ic in 1:nc)
         qySample[, il, ic] = sort(qySample[, il, ic])
   }
 
   # Renormalize after reordering
-  if(sort)
+  if(sortBR)
     for (iMC in 1:nMC) {
       tmp = qySample[iMC, , ]
       tmp = tmp / rowSums(tmp)
@@ -261,7 +261,8 @@ hierSample  = function(qy, ionic,ru=c(0.1,0.1,0.1),
   return(qySample)
 }
 diriSample0 = function(br, ru, nMC, eps) {
-
+  # print('Enter diriSample0')
+  
   qySample = matrix(0, nrow = nMC, ncol = length(br))
 
   # Count non-zero channels
@@ -269,7 +270,7 @@ diriSample0 = function(br, ru, nMC, eps) {
   br[br <= eps] = 0
   br = br / sum(br)
   sel_nz = br != 0
-
+ 
   if( sum(sel_nz) <= 1 ) {
     # 1 channel: no uncertainty
     qySample[,sel_nz] = 1
@@ -285,33 +286,34 @@ diriSample0 = function(br, ru, nMC, eps) {
       gamma,
       ')'
     )
-
     # Sample by Nested.x
     qySample[,sel_nz] = nds(nMC, stringBR)
-
   }
-
+  
   return(qySample)
 }
-diriSample = function(qy, ru=0.1, nMC=500, eps=1e-4, sort = TRUE) {
+diriSample = function(qy, ru = 0.1, nMC = 500, 
+                      eps = 1e-4, sortBR = TRUE) {
   # Nested sampling when ionic and !ionic channels present
-
-  nc = ncol(qy); nw = nrow(qy)
+  # print('Enter diriSample')
+  
+  nc = ncol(qy)
+  nw = nrow(qy)
   qySample = array(
     data = 0,
     dim  = c(nMC,nw,nc)
   )
-
+ 
   for (il in 1:nw) {
     qySample[ , il, ] = diriSample0(qy[il,], ru, nMC, eps)
     # Order samples to improve wavelength-wise continuity
-    if(sort)
+    if(sortBR)
       for (ic in 1:nc)
         qySample[, il, ic] = sort(qySample[, il, ic])
   }
 
   # Renormalize after reordering
-  if(sort)
+  if(sortBR)
     for (iMC in 1:nMC) {
       tmp = qySample[iMC, , ]
       tmp = tmp / rowSums(tmp)

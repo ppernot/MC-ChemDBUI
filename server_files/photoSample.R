@@ -1,9 +1,11 @@
+photoSampleReacsFiltered = shiny::reactiveVal()
+
 observeEvent(
   input$photoSampleBtn,
   {
     req(photoDB())
     
-    sampleSize = 1 + as.numeric(input$photoSampleSize) # Account for nominal
+    nMC = 1 + as.numeric(input$photoSampleSize) # Account for nominal
     
     photoSampleDir = paste0(photoPublic, '_', photoEditOrigVersion())
     if (!dir.exists(photoSampleDir)) {
@@ -14,6 +16,8 @@ observeEvent(
                             full.names = TRUE, recursive = TRUE)
       file.remove(fileList)
     }
+    
+    sortBR = input$photoBRSampleSort
     
     reacs = photoDB()$REACTANTS
     
@@ -34,9 +38,8 @@ observeEvent(
             if(photoDB()$CHANNEL[iReac] != 1)
               next
     
-            # Cross sections ####                    
-            incProgress(1/len, 
-                        detail = paste0(' XS ',sp,'/',type,'/',reso,' nm'))
+            # Get XS ####                    
+            
             # Get descriptors
             reactants = getSpecies(photoDB()$REACTANTS[iReac])
             sp = reactants[1]
@@ -113,17 +116,13 @@ observeEvent(
             first = which(xs != 0)[1]
             last  = length(xs) - which(rev(xs) != 0)[1] + 1
             wavlXS = wl[first:last]
-            xs     = xs[first:last]
-            
-           
-            # Branching ratios ####
-            incProgress(1/len, 
-                        detail = paste0(' BRs ',sp,'/',type,'/',reso,' nm'))
-            
+            valXS  = xs[first:last]
+          
+            # Get BRs ####
             # Get descriptors
             type  = photoDB()$BR_SOURCE[iReac]
             chans = which(photoDB()$REACTANTS == photoDB()$REACTANTS[iReac])
-            nBR    = length(chans)
+            nBR   = length(chans)
 
             # Get data
             source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
@@ -207,16 +206,41 @@ observeEvent(
             }
             wavlBR = wl
             
-            ## Define common wavl range for se and qy
+            ## Define common wavl range for XS and qy
             selXS = wavlXS %in% wavlBR
             selBR = wavlBR %in% wavlXS
             
             wavlXS = wavlXS[selXS]
-            xs = xs[selXS]
+            valXS  = valXS[selXS]
             wavlBR = wavlBR[selBR]
-            qy = qy[selBR,]
+            qy     = qy[selBR,]
             
-            # Sample
+            # Sample XS ####
+            incProgress(1/len, 
+                        detail = paste0(' XS ',sp,'/',type,'/',reso,' nm'))
+            for (iMC in 0:nMC) {
+              prefix = paste0(sprintf('%04i', iMC), '_')
+              # Systematic perturbation of XS
+              if(iMC == 0) {
+                Frnd = 1
+              } else {
+                rnd  =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
+                Frnd = exp( log(uF) * rnd )
+              }
+              write.table(
+                cbind(wavlXS, valXS * Frnd),
+                sep = ' ',
+                row.names = FALSE,
+                col.names = FALSE,
+                file = gzfile(
+                  file.path(target, paste0(prefix, 'se', sp, '.dat.gz'))
+                )
+              )
+            }
+           
+            # Sample BRs ####
+            incProgress(1/len, 
+                        detail = paste0(' BRs ',sp,'/',type,'/',reso,' nm'))
             if(nBR == 1) {
               # A single channel: no uncertainty in BR
               qySample = array(
@@ -228,50 +252,30 @@ observeEvent(
               
               qy = qy / rowSums(qy)
               
-              # Generate ordered Diri-based samples at each wavelength
+              # Generate Diri-based samples at each wavelength
               ionic = c()
               for (i in 1:nBR) {
                 iReac = chans[i]
-                ionic[i] = 'E' %in% photoDB()$PRODUCTS[iReac]
+                ionic[i] = 'E' %in% photoDB()$PRODUCTS[iReac+i-1]
               }
-              
-              if (sum(ionic) * sum(!ionic) == 0) {
+              if ( (sum(ionic) * sum(!ionic)) == 0) {
                 # Diri sampling
                 qySample = diriSample(
                   qy,
                   ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
-                  nMC,
-                  photoEps,
-                  sort)
+                  nMC = nMC,
+                  eps = photoEps,
+                  sortBR = sortBR)
               } else {
                 # Nested sampling
                 qySample = hierSample(
-                  qy, ionic,
+                  qy, 
+                  ionic = ionic,
                   ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
-                  nMC,
-                  photoEps,
-                  sort)
+                  nMC = nMC,
+                  eps = photoEps,
+                  sortBR = sortBR)
               }
-            }
-           
-            for (iMC in 0:sampleSize) {
-              prefix = paste0(sprintf('%04i', iMC), '_')
-              # Systematic perturbation of XS
-              if(iMC == 0) {
-                Frnd = 1
-              } else {
-                rnd  =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
-                Frnd = exp( log(uF) * rnd )
-              }
-              write.table(
-                cbind(wavlXS, xs * Frnd),
-                sep = ' ',
-                row.names = FALSE,
-                col.names = FALSE,
-                file = gzfile(
-                  file.path(target, paste0(prefix, 'se', sp, '.dat.gz'))
-                )
-              )
             }
             
             # Nominal run
@@ -291,13 +295,9 @@ observeEvent(
                 file = gzfile(fileOut)
               )
             }
-            # Save sets in random order: WHY ?????
-            # 
-            shuffle = sample.int(n=nMC,size=nMC)
             for(iMC in 1:nMC) {
               for(i in 1:nBR) {
-                # Randomize global sample through file prefix
-                prefix = paste0(sprintf('%04i',shuffle[iMC]),'_')
+                prefix = paste0(sprintf('%04i',iMC),'_')
                 fileOut = file.path(
                   target, 
                   paste0(prefix,'qy',sp,'_',i,'.dat.gz')
@@ -314,6 +314,120 @@ observeEvent(
       })
     
   })
+
+# Plots ####
+
+shiny::observe({
+  req(photoDB())
+  reacs = photoDB()$REACTANTS
+  tag   = reacs[ photoDB()$CHANNEL == 1 ] 
+  nums = 0:length(tag)  
+  names(nums) = c("0",tag)
+  photoSampleReacsFiltered(nums)
+  shiny::updateSelectInput(
+    session  = session,
+    "photoSampleReaction",
+    choices  = nums,
+    selected = "0"
+  )    
+  
+})
+
+shiny::observeEvent(
+  input$photoSampleMinus,
+  {
+    iReac = as.numeric(input$photoSampleReaction)
+    if(iReac > 1) {
+      iReac = iReac - 1
+      shiny::updateSelectInput(
+        session = session,
+        "photoSampleReaction",
+        selected = iReac
+      )  
+    }
+  })
+
+shiny::observeEvent(
+  input$photoSamplePlus,
+  {
+    req(photoSampleReacsFiltered())
+    
+    reacs = photoSampleReacsFiltered()
+    iReac = as.numeric(input$photoSampleReaction)
+    if(iReac < length(reacs)) {
+      iReac = iReac + 1
+      shiny::updateSelectInput(
+        session = session,
+        "photoSampleReaction",
+        selected = iReac
+      )
+    }
+  })
+
+output$plotSampleXS = renderPlot({
+  
+  reso = input$photoSampleXSReso
+  photoSampleDir = paste0(photoPublic, '_', photoEditOrigVersion())
+  source_dir = file.path(photoSampleDir, paste0(reso,'nm'))
+  req(dir.exists(source_dir))
+  
+  req(input$photoSampleReaction)
+  iReac = as.numeric(input$photoSampleReaction)
+  req(iReac != 0)
+
+  nMC = input$photoSamplePlotSize  
+  
+  sp = getSpecies(names(photoSampleReacsFiltered())[iReac])[1]
+  iMC = 0
+  prefix=paste0(sprintf('%04i',iMC),'_')
+  file = file.path(source_dir,paste0(prefix,'se',sp,'.dat.gz'))
+  print(file)
+  x = read.table(
+    file,
+    col.names=1:10,
+    header=FALSE, 
+    fill=TRUE)
+  wavl = x[,1]
+  X = matrix(NA,nrow=nrow(x),ncol=nMC+1)
+  X[,1] = x[,2]
+  for (iMC in 1:nMC) {
+    prefix=paste0(sprintf('%04i',iMC),'_')
+    file = file.path(source_dir,paste0(prefix,'se',sp,'.dat.gz'))
+    if(!file.exists(file))
+      next
+    x = read.table(
+      file,
+      col.names=1:10,
+      header=FALSE, 
+      fill=TRUE)
+    X[,iMC+1] = x[,2]
+  }
+  par(mar = c(4, 4, 2, 1),
+      mgp = gPars$mgp,
+      tcl = gPars$tcl,
+      lwd = gPars$lwd,
+      pty = 'm',
+      cex = 1.5)
+  matplot(
+    wavl, X,
+    type = 'l', 
+    lwd  = 3,
+    lty  = 1,
+    xaxs = 'i',
+    xlab = 'Wavelength [nm]',
+    xlim = input$photoSampleWLPlotRange,
+    yaxs = 'i',
+    ylim = c(0, 1.1*max(X[1,])),
+    ylab = expression(paste('Cross-section [', cm ^ 2, ']')),
+    col = gPars$cols_tr[5],
+    main = sp
+  )
+  grid()
+  lines(wavl,X[,1],col=gPars$cols[2])
+  box()
+})
+
+
 
 # Statistics ####
 output$photoStats = renderPrint({
