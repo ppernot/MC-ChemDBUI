@@ -1,5 +1,6 @@
 photoSampleReacsFiltered = shiny::reactiveVal()
 
+# Sample ####
 observeEvent(
   input$photoSampleBtn,
   {
@@ -7,38 +8,47 @@ observeEvent(
     
     nMC = 1 + as.numeric(input$photoSampleSize) # Account for nominal
     
-    photoSampleDir = paste0(photoPublic, '_', photoEditOrigVersion())
-    if (!dir.exists(photoSampleDir)) {
-      dir.create(photoSampleDir)
-    } else {
-      # Clean
-      fileList = list.files(path = photoSampleDir, 
-                            full.names = TRUE, recursive = TRUE)
-      file.remove(fileList)
-    }
-    
     sortBR = input$photoBRSampleSort
     
     reacs = photoDB()$REACTANTS
     
-    # Scale for progress
-    len = 2 * sum(photoDB()$CHANNEL == 1) * length(photoXSResolutions) 
+    resos = input$photoSampleReso
+    if(resos == "All")
+      resos = photoXSResolutions
+    else
+      resos = as.numeric(resos)
+    
+    photoSampleDir = paste0(photoPublic, '_', photoEditOrigVersion())
+    if (!dir.exists(photoSampleDir))
+      dir.create(photoSampleDir)
+    for (reso in resos){
+      target = file.path(photoSampleDir, paste0(reso,'nm'))
+      if(!dir.exists(target)) {
+        dir.create(target)
+        
+      } else {
+        # Clean
+        fileList = list.files(path = target, full.names = TRUE)
+        file.remove(fileList)
+      }
+    }
+    
+    # Scale for progress / factor 2 is for XS and BRs
+    len = 2 * sum(photoDB()$CHANNEL == 1) * length(resos) 
     shiny::withProgress(
-      message = 'Sampling ', 
+      message = 'Sampling : ', 
       {
-        for (reso in photoXSResolutions){
+        for (reso in resos){
           
           target = file.path(photoSampleDir, paste0(reso,'nm'))
-          if(!dir.exists(target))
-            dir.create(target)
-          
+
           for (iReac in seq_along(photoDB()$REACTANTS)) {
             
             # Loop on reactant species only
             if(photoDB()$CHANNEL[iReac] != 1)
               next
     
-            # Get XS ####                    
+            ## Get XS ####                    
             
             # Get descriptors
             reactants = getSpecies(photoDB()$REACTANTS[iReac])
@@ -207,13 +217,23 @@ observeEvent(
             wavlBR = wl
             
             ## Define common wavl range for XS and qy
-            selXS = wavlXS %in% wavlBR
-            selBR = wavlBR %in% wavlXS
-            
-            wavlXS = wavlXS[selXS]
-            valXS  = valXS[selXS]
+            ## BRs outside od XS range are useless...
+            selBR  = wavlBR %in% wavlXS
             wavlBR = wavlBR[selBR]
             qy     = qy[selBR,]
+            if(max(wavlBR) < max(wavlXS)) {
+              # Expand qy range
+              vlims = qy[nrow(qy),]
+              qy = rbind(
+                qy,
+                matrix(
+                  vlims,
+                  ncol = length(vlims),
+                  nrow = length(wavlXS)-length(wavlBR),
+                  byrow = TRUE)
+                )
+              wavlBR = wavlXS
+            }
             
             # Sample XS ####
             incProgress(1/len, 
@@ -337,7 +357,7 @@ shiny::observeEvent(
   input$photoSampleMinus,
   {
     iReac = as.numeric(input$photoSampleReaction)
-    if(iReac > 1) {
+    if(iReac > 0) {
       iReac = iReac - 1
       shiny::updateSelectInput(
         session = session,
@@ -351,10 +371,10 @@ shiny::observeEvent(
   input$photoSamplePlus,
   {
     req(photoSampleReacsFiltered())
-    
     reacs = photoSampleReacsFiltered()
+    
     iReac = as.numeric(input$photoSampleReaction)
-    if(iReac < length(reacs)) {
+    if(iReac < length(reacs)-1) {
       iReac = iReac + 1
       shiny::updateSelectInput(
         session = session,
@@ -364,6 +384,7 @@ shiny::observeEvent(
     }
   })
 
+## XS ####
 output$plotSampleXS = renderPlot({
   
   reso = input$photoSampleXSReso
@@ -375,13 +396,12 @@ output$plotSampleXS = renderPlot({
   iReac = as.numeric(input$photoSampleReaction)
   req(iReac != 0)
 
-  nMC = input$photoSamplePlotSize  
+  nMC = as.numeric(input$photoSamplePlotSize)  
   
-  sp = getSpecies(names(photoSampleReacsFiltered())[iReac])[1]
+  sp = getSpecies(names(photoSampleReacsFiltered())[iReac+1])[1]
   iMC = 0
   prefix=paste0(sprintf('%04i',iMC),'_')
   file = file.path(source_dir,paste0(prefix,'se',sp,'.dat.gz'))
-  print(file)
   x = read.table(
     file,
     col.names=1:10,
@@ -417,17 +437,108 @@ output$plotSampleXS = renderPlot({
     xlab = 'Wavelength [nm]',
     xlim = input$photoSampleWLPlotRange,
     yaxs = 'i',
-    ylim = c(0, 1.1*max(X[1,])),
+    ylim = c(0, 1.1*max(X[,1])),
     ylab = expression(paste('Cross-section [', cm ^ 2, ']')),
-    col = gPars$cols_tr[5],
-    main = sp
+    col  = gPars$cols_tr[5],
+    main = paste0(sp,' / ',reso,'nm / ',photoEditOrigVersion())
   )
   grid()
   lines(wavl,X[,1],col=gPars$cols[2])
   box()
-})
+},
+height = plotHeight)
 
+## BRs ####
+output$plotSampleBR = renderPlot({
 
+  req(input$photoSampleReaction)
+  iReac = as.numeric(input$photoSampleReaction)
+  req(iReac != 0)
+  
+  reso = input$photoSampleXSReso
+  photoSampleDir = paste0(photoPublic, '_', photoEditOrigVersion())
+  source_dir = file.path(photoSampleDir, paste0(reso,'nm'))
+  req(dir.exists(source_dir))
+  
+  nMC = as.numeric(input$photoSamplePlotSize)  
+  
+  sp = getSpecies(names(photoSampleReacsFiltered())[iReac+1])[1]
+  
+  # Search BR files for sp
+  prefix  =  paste0(sprintf('%04i',0),'_')
+  pattern = paste0(prefix,'qy',sp,'_')
+  files   = list.files(path = source_dir, pattern = pattern)
+  nBR     = length(files)
+
+  wavl = read.table(
+    file.path(source_dir,paste0(prefix,'qy',sp,'_1.dat.gz'))
+  )[,1]
+
+  qySample = array(data = 0,dim  = c(nMC+1,length(wavl),nBR) )
+  for(iMC in 0:nMC) {
+    prefix=paste0(sprintf('%04i',iMC),'_')
+    for (j in 1:nBR) {
+      x = read.table(
+        file.path(source_dir,paste0(prefix,'qy',sp,'_',j,'.dat.gz'))
+      )
+      qySample[iMC+1,,j] = x[,2]
+    }
+  }
+  
+  par(mar = c(4, 4, 2, 1),
+        mgp = gPars$mgp,
+        tcl = gPars$tcl,
+        lwd = gPars$lwd,
+        pty = 'm',
+        cex = 1.5)
+    
+    cols    = rep(gPars$cols,2)
+    cols_tr = rep(gPars$cols_tr,2)
+    lty     = c(rep(1,length(gPars$cols)),rep(2,length(gPars$cols)))
+    
+    matplot(
+      wavl, qySample[1,,],
+      type = 'l', 
+      lwd  = 3,
+      xaxs = 'i',
+      xlab = 'Wavelength [nm]',
+      xlim = input$photoSampleWLPlotRange,
+      yaxs = 'i',
+      ylim = c(-0.01, 1.01),
+      ylab = paste('Branching ratios'),
+      col  = cols_tr,
+      lty  = lty,
+      main = ""
+    )
+    grid()
+    for(iMC in 1:nMC) {
+      matlines(
+        wavl, qySample[iMC+1,,],
+        lwd  = 3,
+        col  = cols_tr,
+        lty  = lty
+      )
+    }
+    # Overdraw nominal curves
+    matlines(
+      wavl, 
+      qySample[1,,], 
+      lwd = 4, 
+      col = cols, 
+      lty = lty
+    )
+    
+    legend(
+      'right', bty = 'n',
+      legend = 1:nBR,
+      col = cols,
+      lty = lty,
+      pch = NULL
+    )
+    
+    box()
+},
+height = plotHeight)
 
 # Statistics ####
 output$photoStats = renderPrint({

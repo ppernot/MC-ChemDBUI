@@ -16,6 +16,15 @@ tabPanel(
                 label = "Sort samples",
                 value = TRUE
               )
+            ),
+            column(
+              6,
+              selectInput(
+                "photoSampleReso",
+                "Resolution (nm):",
+                c("All",photoXSResolutions),
+                selected = "1"
+              )
             )
             #   column(
             #     6,
@@ -100,17 +109,25 @@ tabPanel(
               )
             )
           ),
-          selectInput(
-            'photoSamplePlotSize',
-            label    = '# MC samples',
-            choices  = c(0,10,100,500,1000),
-            selected = 10# 500
-          ),
-          selectInput(
-            "photoSampleXSReso",
-            "Resolution (nm):",
-            photoXSResolutions,
-            selected = 1
+          fluidRow(
+            column(
+              6,
+              selectInput(
+                'photoSamplePlotSize',
+                label    = '# MC samples',
+                choices  = c(0,10,100,500,1000),
+                selected = 10# 500
+              )
+            ),
+            column(
+              6,
+              selectInput(
+                "photoSampleXSReso",
+                "Resolution (nm):",
+                photoXSResolutions,
+                selected = 1
+              )
+            )
           ),
           sliderInput(
             "photoSampleWLPlotRange",
@@ -130,7 +147,16 @@ tabPanel(
         tabsetPanel(
           tabPanel(
             title = "Plots",
-            plotOutput("plotSampleXS")
+            fluidRow(
+              column(
+                6,
+                plotOutput("plotSampleXS", height = plotHeight)
+              ),
+              column(
+                6,
+                plotOutput("plotSampleBR", height = plotHeight)
+              )
+            )
           ),
           tabPanel(
             title = "Statistics",

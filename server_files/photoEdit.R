@@ -598,6 +598,13 @@ output$plotPhotoXSSample = shiny::renderPlot({
   sampleWl    = photoSimulSamples$sampleWl
   sampleTitle = photoSimulSamples$sampleTitle
   
+  log = ''
+  ylim = c(0, 1.1*max(sampleXS[1,]))
+  if(input$photoXSLog){
+    log = 'y'  
+    ylim = NULL
+  }
+
   par(mar = c(4, 4, 2, 1),
       mgp = gPars$mgp,
       tcl = gPars$tcl,
@@ -613,7 +620,8 @@ output$plotPhotoXSSample = shiny::renderPlot({
     xlab = 'Wavelength [nm]',
     xlim = input$photoWLPlotRange,
     yaxs = 'i',
-    ylim = c(0, 1.1*max(sampleXS[1,])),
+    log  = log,
+    ylim = ylim,
     ylab = expression(paste('Cross-section [', cm ^ 2, ']')),
     col = gPars$cols_tr[5],
     main = sampleTitle

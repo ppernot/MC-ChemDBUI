@@ -89,18 +89,26 @@ tabPanel(
         ),
         tabPanel(
           'Plot',
-          selectInput(
-            'photoSimulateSize',
-            label    = '# MC samples',
-            choices  = seq(100,1000,by = 100),
-            selected = 100,
-            width = '200px'
-          ),
-          selectInput(
-            "photoXSReso",
-            "Resolution (nm):",
-            photoXSResolutions,
-            selected = 1
+          fluidRow(
+            column(
+              6,
+              selectInput(
+                'photoSimulateSize',
+                label    = '# MC samples',
+                choices  = seq(100,1000,by = 100),
+                selected = 100,
+                width = '200px'
+              )
+            ),
+            column(
+              6,
+              selectInput(
+                "photoXSReso",
+                "Resolution (nm):",
+                photoXSResolutions,
+                selected = 1
+              )
+            )
           ),
           sliderInput(
             "photoWLPlotRange",
@@ -111,10 +119,24 @@ tabPanel(
             step  =  10,
             round = TRUE
           ),
-          checkboxInput(
-            "photoBRSort",
-            label = "Sort samples",
-            value = TRUE
+          fluidRow(
+            column(
+              6,
+              checkboxInput(
+                "photoBRSort",
+                label = "Sort samples",
+                value = TRUE
+              )
+            ),
+            column(
+              6,
+              
+              checkboxInput(
+                "photoXSLog",
+                label = "log XS",
+                value = TRUE
+              )
+            )
           )
         )
       )
