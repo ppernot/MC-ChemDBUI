@@ -21,6 +21,7 @@ observeEvent(
     photoSampleDir = paste0(photoPublic, '_', photoEditOrigVersion())
     if (!dir.exists(photoSampleDir))
       dir.create(photoSampleDir)
+    
     for (reso in resos){
       target = file.path(photoSampleDir, paste0(reso,'nm'))
       if(!dir.exists(target)) {
@@ -128,6 +129,9 @@ observeEvent(
             wavlXS = wl[first:last]
             valXS  = xs[first:last]
           
+            # print(paste0('Got XS for ',sp))
+            # print(str(wavlXS))
+            
             # Get BRs ####
             # Get descriptors
             type  = photoDB()$BR_SOURCE[iReac]
@@ -154,12 +158,12 @@ observeEvent(
               wl  = S[, 1] / 10 # Convert A to nm
               xs  = S[, 2]
               xsl = downSample(wl, xs, reso = reso)
-              wl1  = xsl$wl
-              xs1  = xsl$xs
+              wl1 = xsl$wl
+              xs1 = xsl$xs
               # Remove tailing zeroes
               first = which(xs1 != 0)[1]
               last  = length(xs1)-which(rev(xs1) !=0)[1] + 1
-              wl1    = wl1[first:last]
+              wl1   = wl1[first:last]
               
               # Quantum yields
               np = ncol(S) - 2
@@ -172,11 +176,10 @@ observeEvent(
                 i0 = 2
               }
               qy = matrix(0, ncol = np, nrow = length(wl1))
-              for (i in 1:np) {
-                br = downSample(wl, S[, i+i0]/xs, reso = reso)$xs
-                qy[ ,i] = br[first:last] 
-              }
-              wl = wl1
+              for (i in 1:np)
+                qy[ ,i] = downSample(wl, S[, i+i0]/xs, 
+                                     reso = reso)$xs[first:last]
+              wavlBR = wl1
               
             } else if (type == 'Plessis') {
               
@@ -193,47 +196,66 @@ observeEvent(
               }
               
               S = read.table(file = file.path(source,files[1]),
-                             header = TRUE,
-                             check.names = FALSE)
+                             header = TRUE, check.names = FALSE)
               wl  = S[, 1]
               xs  = S[, 2]
               xsl = downSample(wl, xs, reso = reso)
-              wl  = xsl$wl
-              qy = matrix(0, ncol = length(files), nrow = length(wl))
+              wl1 = xsl$wl
+              xs1 = xsl$xs
+              # Remove tailing zeroes
+              first = which(xs1 != 0)[1]
+              last  = length(xs1)-which(rev(xs1) !=0)[1] + 1
+              wl1    = wl1[first:last]
               
+              qy  = matrix(0, ncol = length(files), nrow = length(wl1))
               for (i in seq_along(files)) {
                 S = read.table(file = file.path(source,files[i]),
-                               header = TRUE,
-                               check.names = FALSE)
+                               header = TRUE, check.names = FALSE)
                 wl  = S[, 1]
                 xs  = S[, 2]
-                xsl = downSample(wl, xs, reso = reso)
-                wl  = xsl$wl
-                xs  = xsl$xs
-                qy[ ,i] = xs
+                qy[ ,i] = downSample(wl, xs, reso = reso)$xs[first:last]
               }
-              
+              wavlBR = wl1
             }
-            wavlBR = wl
+            # print(paste0('Got BRs for ',sp))
+            # print(tail(qy))
             
             ## Define common wavl range for XS and qy
-            ## BRs outside od XS range are useless...
-            selBR  = wavlBR %in% wavlXS
+            ## BRs outside of XS range are useless...
+            lims   = range(wavlXS)
+            selBR  = wavlBR >= lims[1] & wavlBR <= lims[2]
             wavlBR = wavlBR[selBR]
             qy     = qy[selBR,]
-            if(max(wavlBR) < max(wavlXS)) {
-              # Expand qy range
-              vlims = qy[nrow(qy),]
-              qy = rbind(
-                qy,
-                matrix(
-                  vlims,
-                  ncol = length(vlims),
-                  nrow = length(wavlXS)-length(wavlBR),
-                  byrow = TRUE)
-                )
+            # print(str(wavlBR))
+            # print(rowSums(qy))
+            
+            # Expand BR range to XS if necessary
+            lims = range(wavlBR)
+            sel  = wavlXS >= lims[1] & wavlXS <= lims[2] 
+            if(sum(!sel) != 0 ) {
+              qy1 = matrix(0, ncol = ncol(qy), nrow = length(wavlXS))
+              qy1[sel,] = qy
+              # print(sel)
+              if(!sel[1]) {
+                # print('Extrap. left')
+                # Extrapolate towards short wavl
+                i0 = which(sel)[1]
+                for(i in 1:(i0-1))
+                  qy1[i,] = qy[1,]
+              }
+              if(!sel[length(sel)]) {
+                # print('Extrap. right')
+                # Extrapolate towards long wavl
+                i0 = length(sel) - which(rev(sel))[1] + 1
+                for(i in (i0+1):nrow(qy1))
+                  qy1[i,] = qy[nrow(qy),]
+              }
+              # print(qy1)
+              qy = qy1
               wavlBR = wavlXS
             }
+            # print(rowSums(qy))
+            
             
             # Sample XS ####
             incProgress(1/len, 
@@ -274,10 +296,9 @@ observeEvent(
               
               # Generate Diri-based samples at each wavelength
               ionic = c()
-              for (i in 1:nBR) {
-                iReac = chans[i]
-                ionic[i] = 'E' %in% photoDB()$PRODUCTS[iReac+i-1]
-              }
+              for (i in 1:nBR)
+                ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[chans[i]])
+              
               if ( (sum(ionic) * sum(!ionic)) == 0) {
                 # Diri sampling
                 qySample = diriSample(
@@ -316,8 +337,8 @@ observeEvent(
               )
             }
             for(iMC in 1:nMC) {
+              prefix = paste0(sprintf('%04i',iMC),'_')
               for(i in 1:nBR) {
-                prefix = paste0(sprintf('%04i',iMC),'_')
                 fileOut = file.path(
                   target, 
                   paste0(prefix,'qy',sp,'_',i,'.dat.gz')
@@ -422,6 +443,14 @@ output$plotSampleXS = renderPlot({
       fill=TRUE)
     X[,iMC+1] = x[,2]
   }
+  
+  log = ''
+  ylim = c(0, 1.1*max(X[,1]))
+  if(input$photoSampleXSLog){
+    log = 'y'  
+    ylim = NULL
+  }
+  
   par(mar = c(4, 4, 2, 1),
       mgp = gPars$mgp,
       tcl = gPars$tcl,
@@ -437,7 +466,8 @@ output$plotSampleXS = renderPlot({
     xlab = 'Wavelength [nm]',
     xlim = input$photoSampleWLPlotRange,
     yaxs = 'i',
-    ylim = c(0, 1.1*max(X[,1])),
+    log  = log,
+    ylim = ylim,
     ylab = expression(paste('Cross-section [', cm ^ 2, ']')),
     col  = gPars$cols_tr[5],
     main = paste0(sp,' / ',reso,'nm / ',photoEditOrigVersion())
@@ -484,6 +514,29 @@ output$plotSampleBR = renderPlot({
       qySample[iMC+1,,j] = x[,2]
     }
   }
+
+  reac = which(
+    photoDB()$REACTANTS == names(photoSampleReacsFiltered())[iReac+1]
+  )[1]
+  
+  if (input$photoSampleBRDisplay == 0 | nBR == 1) {
+    qy = qySample
+    leg = photoDB()$PRODUCTS[reac:(reac+nBR-1)]
+    
+  } else if (input$photoSampleBRDisplay == 1) {
+    ionic = c()
+    for (i in 1:nBR)
+      ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[reac + i - 1])
+    qy = array(data = 0, dim  = c(nMC + 1, length(wavl), 2))
+    qy[, , 1] = rowSums(qySample[, , !ionic, drop = FALSE], dims = 2)
+    qy[, , 2] = rowSums(qySample[, ,  ionic, drop = FALSE], dims = 2)
+    leg = c("Neutrals","Ions")
+    
+  } else {
+    qy = array(data = 0, dim  = c(nMC + 1, length(wavl), 1))
+    qy[, , 1] = rowSums(qySample, dims = 2)
+    leg = c("Sum-to-one")
+  }
   
   par(mar = c(4, 4, 2, 1),
         mgp = gPars$mgp,
@@ -497,14 +550,14 @@ output$plotSampleBR = renderPlot({
     lty     = c(rep(1,length(gPars$cols)),rep(2,length(gPars$cols)))
     
     matplot(
-      wavl, qySample[1,,],
+      wavl, qy[1,,],
       type = 'l', 
       lwd  = 3,
       xaxs = 'i',
       xlab = 'Wavelength [nm]',
       xlim = input$photoSampleWLPlotRange,
       yaxs = 'i',
-      ylim = c(-0.01, 1.01),
+      ylim = c(-0.01, 1.2),
       ylab = paste('Branching ratios'),
       col  = cols_tr,
       lty  = lty,
@@ -513,7 +566,7 @@ output$plotSampleBR = renderPlot({
     grid()
     for(iMC in 1:nMC) {
       matlines(
-        wavl, qySample[iMC+1,,],
+        wavl, qy[iMC+1,,],
         lwd  = 3,
         col  = cols_tr,
         lty  = lty
@@ -521,18 +574,18 @@ output$plotSampleBR = renderPlot({
     }
     # Overdraw nominal curves
     matlines(
-      wavl, 
-      qySample[1,,], 
+      wavl, qy[1,,], 
       lwd = 4, 
       col = cols, 
       lty = lty
     )
     
     legend(
-      'right', bty = 'n',
-      legend = 1:nBR,
+      'top', ncol =2, box.col = "white",
+      legend = leg,  cex = 0.75,
       col = cols,
       lty = lty,
+      lwd = 4,
       pch = NULL
     )
     

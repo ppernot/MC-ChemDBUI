@@ -173,16 +173,17 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
   # Nested sampling when ionic and !ionic channels present
   # *** Treat only non-zero channels ***
 # print('Enter hierSample')
+# print(ru)
   nc = ncol(qy); nw = nrow(qy)
   qySample = array(
     data = 0,
     dim  = c(nMC,nw,nc)
   )
-
+  
   for (il in 1:nw) {
 
-    # BR for neutral species
-    brNI = sum(qy[il,!ionic])
+    # BR for neutral/ionic species
+    brNI = sum(qy[il, !ionic])
     if(brNI < eps)
       brNI = 0
     if(brNI > 1-eps)
@@ -257,7 +258,9 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       tmp = tmp / rowSums(tmp)
       qySample[iMC, , ] = tmp
     }
-
+  
+# print('Exit hierSample')
+  
   return(qySample)
 }
 diriSample0 = function(br, ru, nMC, eps) {

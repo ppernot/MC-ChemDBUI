@@ -130,7 +130,6 @@ tabPanel(
             ),
             column(
               6,
-              
               checkboxInput(
                 "photoXSLog",
                 label = "log XS",

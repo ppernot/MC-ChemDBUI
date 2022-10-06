@@ -137,6 +137,28 @@ tabPanel(
             value = c(50,250),
             step  =  10,
             round = TRUE
+          ),
+          fluidRow(
+            column(
+              6,
+              selectInput(
+                'photoSampleBRDisplay',
+                label    = 'Display of Brs',
+                choices  = c(
+                  "All channels" = 0,
+                  "Neus vs Ions" = 1,
+                  "Sum-to-one"   = 2
+                )
+              )
+            ),
+            column(
+              6,
+              checkboxInput(
+                "photoSampleXSLog",
+                label = "log XS",
+                value = TRUE
+              )
+            )
           )
         )
       )

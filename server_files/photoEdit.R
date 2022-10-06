@@ -212,15 +212,7 @@ output$photoBRMaskUI = shiny::renderUI({
         )
       ),
       column(
-        1,
-        shiny::checkboxInput(
-          paste0("photoBROut_",i),
-          label = NULL,
-          value = photoDB()[['OUTPUT']][iReac]
-        )
-      ),
-      column(
-        6,
+        7,
         shiny::textInput(
           paste0("photoBRProds_",i), 
           label = NULL,
@@ -331,6 +323,7 @@ shiny::outputOptions(output, "photoBRMaskUI", suspendWhenHidden = FALSE)
 
 
 # Sampling ####
+## XS ####
 photoXSSimulate = shiny::reactive({
   req(photoXSMask())
 
@@ -434,7 +427,7 @@ photoXSSimulate = shiny::reactive({
   ))
   
 })
-
+## BRs ####
 photoBRSimulate = shiny::reactive({
   req(photoDB()) 
   req(photoXSMask())
