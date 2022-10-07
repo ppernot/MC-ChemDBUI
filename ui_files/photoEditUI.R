@@ -136,6 +136,20 @@ tabPanel(
                 value = TRUE
               )
             )
+          ),
+          fluidRow(
+            column(
+              6,
+              selectInput(
+                'photoEditBRDisplay',
+                label    = 'Display of Brs',
+                choices  = c(
+                  "All channels" = 0,
+                  "Neus vs Ions" = 1,
+                  "Sum-to-one"   = 2
+                )
+              )
+            )
           )
         )
       )

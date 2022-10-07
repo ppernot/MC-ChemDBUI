@@ -627,15 +627,18 @@ output$plotPhotoXSSample = shiny::renderPlot({
 height = plotHeight, width = plotWidth)
 # Plot BRs ####
 output$plotPhotoBRSample = shiny::renderPlot({
+  req(photoDB())
   req(photoBRMask())
-    photoSimulSamples = photoBRSimulate()
-
+  
+  photoSimulSamples = photoBRSimulate()
   nMC         = photoSimulSamples$sampleSize
   sampleBR0   = photoSimulSamples$sampleBR0
   sampleBR    = photoSimulSamples$sampleBR
   sampleWl    = photoSimulSamples$sampleWl
   sampleTitle = photoSimulSamples$sampleTitle
   nBR         = photoBRMask()$nBR
+  channels    = photoBRMask()$channels
+  
  
   par(mar = c(4, 4, 2, 1),
       mgp = gPars$mgp,
@@ -648,15 +651,39 @@ output$plotPhotoBRSample = shiny::renderPlot({
   cols_tr = rep(gPars$cols_tr,2)
   lty     = c(rep(1,length(gPars$cols)),rep(2,length(gPars$cols)))
   
+  if (input$photoEditBRDisplay == 0 | nBR == 1) {
+    qy0 = sampleBR0
+    qy  = sampleBR
+    leg = photoDB()$PRODUCTS[channels]
+    
+  } else if (input$photoEditBRDisplay == 1) {
+    ionic = c()
+    for (i in 1:nBR)
+      ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[channels[i]])
+    qy0 = matrix(data = 0, nrow = length(sampleWl), ncol = 2)
+    qy0[, 1] = rowSums(sampleBR0[, !ionic, drop = FALSE])
+    qy0[, 2] = rowSums(sampleBR0[,  ionic, drop = FALSE])
+    qy = array(data = 0, dim  = c(nMC, length(sampleWl), 2))
+    qy[, , 1] = rowSums(sampleBR[, , !ionic, drop = FALSE], dims = 2)
+    qy[, , 2] = rowSums(sampleBR[, ,  ionic, drop = FALSE], dims = 2)
+    leg = c("Neutrals", "Ions")
+    
+  } else {
+    qy0 = rowSums(sampleBR0)
+    qy = array(data = 0, dim  = c(nMC, length(sampleWl), 1))
+    qy[, , 1] = rowSums(sampleBR, dims = 2)
+    leg = c("Sum-to-one")
+  }
+  
   matplot(
-    sampleWl, sampleBR[1,,],
+    sampleWl, qy0,
     type = 'l', 
     lwd  = 3,
     xaxs = 'i',
     xlab = 'Wavelength [nm]',
     xlim = input$photoWLPlotRange,
     yaxs = 'i',
-    ylim = c(-0.01, 1.01),
+    ylim = c(-0.01, 1.2),
     ylab = paste('Branching ratios'),
     col  = cols_tr,
     lty  = lty,
@@ -664,9 +691,9 @@ output$plotPhotoBRSample = shiny::renderPlot({
   )
   grid()
 
-  for(iMC in 2:nMC) {
+  for(iMC in 1:nMC) {
     matlines(
-      sampleWl, sampleBR[iMC,,],
+      sampleWl, qy[iMC,,],
       lwd  = 3,
       col  = cols_tr,
       lty  = lty
@@ -674,16 +701,15 @@ output$plotPhotoBRSample = shiny::renderPlot({
   }
   
   matlines(
-    sampleWl, 
-    sampleBR0, 
+    sampleWl, qy0, 
     lwd = 4, 
     col = cols, 
     lty = lty
   )
   
   legend(
-    'right', bty = 'n',
-    legend = 1:nBR,
+    'top', ncol =2, box.col = "white",
+    legend = leg,  cex = 0.75,
     col = cols,
     lty = lty,
     pch = NULL
