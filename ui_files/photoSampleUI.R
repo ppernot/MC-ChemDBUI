@@ -12,6 +12,16 @@ tabPanel(
             column(
               6,
               checkboxInput(
+                'photoSampleCheck',
+                label = 'Check only',
+                value = FALSE
+              )
+            )
+          ),
+          fluidRow(
+            column(
+              6,
+              checkboxInput(
                 "photoBRSampleSort",
                 label = "Sort samples",
                 value = TRUE
@@ -180,10 +190,10 @@ tabPanel(
               )
             )
           ),
-          tabPanel(
-            title = "Statistics",
-            verbatimTextOutput("photoStats",)
-          ),
+          # tabPanel(
+          #   title = "Statistics",
+          #   verbatimTextOutput("photoStats",)
+          # ),
           tabPanel(
             title = "Help",
             HTML(

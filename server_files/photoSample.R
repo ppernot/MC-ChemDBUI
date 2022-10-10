@@ -6,7 +6,7 @@ observeEvent(
   {
     req(photoDB())
     
-    nMC = 1 + as.numeric(input$photoSampleSize) # Account for nominal
+    nMC = as.numeric(input$photoSampleSize) 
     
     sortBR = input$photoBRSampleSort
     
@@ -29,10 +29,35 @@ observeEvent(
         
       } else {
         # Clean
-        fileList = list.files(path = target, full.names = TRUE)
-        file.remove(fileList)
+        if(!input$photoSampleCheck) {
+          fileList = list.files(path = target, full.names = TRUE)
+          file.remove(fileList)
+        }
       }
     }
+    
+    photoSchemeFile = file.path(photoSampleDir,'PhotoScheme.dat')
+    schemeTab = data.frame(
+      R1 = photoDB()$R1,
+      R2 = photoDB()$R2,
+      P1 = photoDB()$P1,
+      P2 = photoDB()$P2,
+      P3 = photoDB()$P3,
+      P4 = photoDB()$P4,
+      CHANNEL = photoDB()$CHANNEL
+    )
+    Lines <- with(
+      schemeTab,
+      sprintf(
+        "%-11s%-11s%-11s%-11s%-11s%-11s%-11.2i", 
+        R1, R2, P1, P2, P3, P4, CHANNEL
+      )
+    )
+    writeLines(Lines,photoSchemeFile)
+    
+    photoSourceFile = file.path(photoSampleDir,'provenance.txt')
+    if(file.exists(photoSourceFile))
+      file.remove(photoSourceFile)
     
     # Scale for progress / factor 2 is for XS and BRs
     len = 2 * sum(photoDB()$CHANNEL == 1) * length(resos) 
@@ -45,6 +70,7 @@ observeEvent(
 
           for (iReac in seq_along(photoDB()$REACTANTS)) {
             
+
             # Loop on reactant species only
             if(photoDB()$CHANNEL[iReac] != 1)
               next
@@ -61,6 +87,7 @@ observeEvent(
             
             # Get data
             source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
+            
             if(type == 'Leiden') {
               xsl  = getXShdf5( sp, source_dir = source)
               if(is.null(xsl)) {
@@ -75,6 +102,8 @@ observeEvent(
               wl0 = xsl$wavelength
               xs0 = xsl$photoabsorption
               uF0 = xsl$uncF # Priority on DB parameter
+              file = file.path(source, 'cross_sections', 
+                               sp, paste0( sp, '.hdf5') )
               
             } else if (type == 'SWRI') {
               file = file.path(source,paste0(sp, '.dat'))
@@ -117,6 +146,10 @@ observeEvent(
               uF = as.numeric(uF0)
             else
               uF = photoDefaultuF
+            
+            sink(file = photoSourceFile, append = TRUE)
+            cat(sp,'\n','  XS :',file,'; Unc. F = ',uF,'\n')
+            sink()
             
             # Interpolate on regular grid
             xsl  = downSample(wl0, xs0, reso = reso)
@@ -180,6 +213,7 @@ observeEvent(
                 qy[ ,i] = downSample(wl, S[, i+i0]/xs, 
                                      reso = reso)$xs[first:last]
               wavlBR = wl1
+              files = paste0(sp, '.dat')
               
             } else if (type == 'Plessis') {
               
@@ -219,6 +253,10 @@ observeEvent(
             }
             # print(paste0('Got BRs for ',sp))
             # print(tail(qy))
+            
+            sink(file = photoSourceFile, append = TRUE)
+            cat(paste0('   BR : ',source,'/',files, collapse = '\n'),'\n')
+            sink()
             
             ## Define common wavl range for XS and qy
             ## BRs outside of XS range are useless...
@@ -260,94 +298,99 @@ observeEvent(
             # Sample XS ####
             incProgress(1/len, 
                         detail = paste0(' XS ',sp,'/',type,'/',reso,' nm'))
-            for (iMC in 0:nMC) {
-              prefix = paste0(sprintf('%04i', iMC), '_')
-              # Systematic perturbation of XS
-              if(iMC == 0) {
-                Frnd = 1
-              } else {
-                rnd  =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
-                Frnd = exp( log(uF) * rnd )
-              }
-              write.table(
-                cbind(wavlXS, valXS * Frnd),
-                sep = ' ',
-                row.names = FALSE,
-                col.names = FALSE,
-                file = gzfile(
-                  file.path(target, paste0(prefix, 'se', sp, '.dat.gz'))
+            if(!input$photoSampleCheck) { 
+              for (iMC in 0:nMC) {
+                prefix = paste0(sprintf('%04i', iMC), '_')
+                # Systematic perturbation of XS
+                if(iMC == 0) {
+                  # Nominal run
+                  Frnd = 1
+                } else {
+                  rnd  =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
+                  Frnd = exp( log(uF) * rnd )
+                }
+                write.table(
+                  cbind(wavlXS, valXS * Frnd),
+                  sep = ' ',
+                  row.names = FALSE,
+                  col.names = FALSE,
+                  file = gzfile(
+                    file.path(target, paste0(prefix, 'se', sp, '.dat.gz'))
+                  )
                 )
-              )
+              }
             }
            
             # Sample BRs ####
             incProgress(1/len, 
                         detail = paste0(' BRs ',sp,'/',type,'/',reso,' nm'))
-            if(nBR == 1) {
-              # A single channel: no uncertainty in BR
-              qySample = array(
-                data = 1,
-                dim = c(nMC, ncol(qy), nBR)
-              )
-              
-            } else {
-              
-              qy = qy / rowSums(qy)
-              
-              # Generate Diri-based samples at each wavelength
-              ionic = c()
-              for (i in 1:nBR)
-                ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[chans[i]])
-              
-              if ( (sum(ionic) * sum(!ionic)) == 0) {
-                # Diri sampling
-                qySample = diriSample(
-                  qy,
-                  ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
-                  nMC = nMC,
-                  eps = photoEps,
-                  sortBR = sortBR)
+            if(!input$photoSampleCheck) { 
+              if(nBR == 1) {
+                # A single channel: no uncertainty in BR
+                qySample = array(
+                  data = 1,
+                  dim = c(1+nMC, ncol(qy), nBR)
+                )
+                
               } else {
-                # Nested sampling
-                qySample = hierSample(
-                  qy, 
-                  ionic = ionic,
-                  ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
-                  nMC = nMC,
-                  eps = photoEps,
-                  sortBR = sortBR)
+                
+                qy = qy / rowSums(qy)
+                
+                # Generate Diri-based samples at each wavelength
+                ionic = c()
+                for (i in 1:nBR)
+                  ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[chans[i]])
+                
+                if ( (sum(ionic) * sum(!ionic)) == 0) {
+                  # Diri sampling
+                  qySample = diriSample(
+                    qy,
+                    ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
+                    nMC = nMC,
+                    eps = photoEps,
+                    sortBR = sortBR)
+                } else {
+                  # Nested sampling
+                  qySample = hierSample(
+                    qy, 
+                    ionic = ionic,
+                    ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
+                    nMC = nMC,
+                    eps = photoEps,
+                    sortBR = sortBR)
+                }
               }
-            }
-            
-            # Nominal run
-            iMC = 0
-            prefix = paste0(sprintf('%04i', iMC), '_')
-            # save
-            for (i in 1:nBR) {
-              fileOut = file.path(
-                target, 
-                paste0(prefix,'qy',sp,'_',i,'.dat.gz')
-              )
-              write.table(
-                cbind(wavlBR, qy[, i]),
-                sep = ' ',
-                row.names = FALSE,
-                col.names = FALSE,
-                file = gzfile(fileOut)
-              )
-            }
-            for(iMC in 1:nMC) {
-              prefix = paste0(sprintf('%04i',iMC),'_')
-              for(i in 1:nBR) {
+              
+              # Nominal run
+              iMC = 0
+              prefix = paste0(sprintf('%04i', iMC), '_')
+              # save
+              for (i in 1:nBR) {
                 fileOut = file.path(
                   target, 
                   paste0(prefix,'qy',sp,'_',i,'.dat.gz')
                 )
                 write.table(
-                  cbind(wavlBR,qySample[iMC,,i]),
-                  sep=' ', row.names=FALSE, col.names=FALSE,
+                  cbind(wavlBR, qy[, i]),
+                  sep = ' ',
+                  row.names = FALSE,
+                  col.names = FALSE,
                   file = gzfile(fileOut)
                 )
+              }
+              for(iMC in 1:nMC) {
+                prefix = paste0(sprintf('%04i',iMC),'_')
+                for(i in 1:nBR) {
+                  fileOut = file.path(
+                    target, 
+                    paste0(prefix,'qy',sp,'_',i,'.dat.gz')
+                  )
+                  write.table(
+                    cbind(wavlBR,qySample[iMC,,i]),
+                    sep=' ', row.names=FALSE, col.names=FALSE,
+                    file = gzfile(fileOut)
+                  )
+                }
               }
             }
           }
@@ -593,8 +636,8 @@ output$plotSampleBR = renderPlot({
 },
 height = plotHeight)
 
-# Statistics ####
-output$photoStats = renderPrint({
+# # Statistics ####
+# output$photoStats = renderPrint({
   # req(collateDone())
   # 
   # id = shiny::showNotification(
@@ -696,4 +739,4 @@ output$photoStats = renderPrint({
   #   cat(strwrap(paste0(prodless, collapse = ', '),width=60,prefix='\n'),'\n\n')
   # 
   # id0=shiny::removeNotification(id)
-})
+# })

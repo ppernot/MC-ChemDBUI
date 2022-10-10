@@ -237,89 +237,72 @@ output$photoBRMaskUI = shiny::renderUI({
 shiny::outputOptions(output, "photoBRMaskUI", suspendWhenHidden = FALSE)
 
 # Save ####
-# observeEvent(
-#   input$ionsParseSave,
-#   {
-#     req(ionsDB())
-#     
-#     # Rate parameters
-#     rateParDistStrings = rep(NA,length(ionsRateParKwdList))
-#     names(rateParDistStrings) = ionsRateParKwdList
-#     for (kwd in ionsRateParKwdList) 
-#       rateParDistStrings[kwd] = input[[paste0('ionsReac',kwd)]]
-#     
-#     # Branching ratios
-#     req(input$ionsStringDist)
-#     stringDist = input$ionsStringDist # Enable user mod
-#     stringDist = gsub('\n','',stringDist)
-#     stringDist = gsub('\t','',stringDist)
-#     tags = getTagsFromTaggedDist(stringDist)
-#     
-#     if(length(tags) != input$ionsReacNBR)
-#       id = shiny::showNotification(
-#         h4(paste0('>>> Pb. with channels number:',
-#                   paste0(tags,collapse = ';'))),
-#         closeButton = TRUE,
-#         duration = NULL,
-#         type = 'error'
-#       )
-#     
-#     # Sanity checks !!!!!
-#     # TBD...
-#     # * Mass consistency
-#     # * Correct distributions for Pars (Delta, Logu, Logn, Unif...)
-#     # * Correct distributions for BRs (Diri, Diun, Dirg, Mlgn...)
-#     
-#     # Biblio
-#     bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
-#     refBib = rep(NA, length(bibKwd))
-#     names(refBib) = bibKwd
-#     for (kwd in bibKwd)
-#       refBib[kwd] = input[[paste0('ionsReac',kwd)]]
-#     
-#     reactants = trimws(input$ionsReacReactants)
-#     if(input$ionsParseComment)
-#       reactants = paste0('#',reactants)
-#     
-#     id = ionsReacID()
-#     line = c(
-#       id,
-#       reactants,
-#       trimws(input$ionsReacTYPE),
-#       rateParDistStrings,
-#       length(tags),
-#       trimws(stringDist),
-#       refBib,
-#       input$ionsReacRQ,
-#       paste0(Sys.time())
-#     )
-#     line = matrix(line,nrow=1)
-#     line = capture.output(
-#       write.table(line,sep=';',row.names = FALSE, col.names = FALSE)
-#     )
-#     
-#     # Update editor's content
-#     data  = ionsDB()
-#     tag = paste0(id,': ',input$ionsReacReactants)
-#     iReac = which(data$TAG == tag)
-#     
-#     # Update editor's content
-#     dataEditor = ionsEditDBText()
-#     dl = length(dataEditor)
-#     
-#     if(length(iReac) != 0) {
-#       # Tag exists: replace in situ
-#       dataEditor[id+1] = line   # Header counts as first line...
-#     } else {
-#       # Tag does not exist: set new ID
-#       line = sub(paste0('^',id),paste0(dl),line)
-#       dataEditor = c(dataEditor,line)
-#     }
-#     
-#     ionsEditDBText(dataEditor)
-#     
-#   }
-# )
+observeEvent(
+  input$photoParseSave,
+  {
+    req(photoDB())
+    req(photoBRMask())
+    
+    nBR = photoBRMask()$nBR
+    Lines = c()
+    
+    # ID;R1;R2;P1;P2;P3;P4;CHANNEL;XS_SOURCE;XS_F;BR_SOURCE;REFS;COMMENTS;TIMESTAMP
+    reactants = getSpecies(trimws(input$photoReactants))
+    R1 = reactants[1]
+    R2 = reactants[2]
+    if(input$ionsParseComment)
+      R1 = paste0('#',R1)
+    
+    XS_SOURCE = input$photoXSSource
+    XS_F      = input$photoXS_F
+    
+    id = photoReacID()
+    
+    P1 = P2 = P3 = P4 = ""
+    for( i in 1:nBR) {
+      products = getSpecies(trimws(input[[paste0('photoBRProds_',i)]]))
+      P1 = products[1]
+      if(length(products) >=2)
+        P2 = products[2]
+      if(length(products) >=3)
+        P3 = products[3]
+      if(length(products) ==4)
+        P4 = products[4]
+      
+      line = c(
+        id + i -1,
+        R1, R2, P1, P2, P3, P4, i,
+        input$photoXSSource, 
+        input$photoXS_F, 
+        input$photoBRSource, 
+        input$photoReacREF, 
+        input$photoRQ,
+        paste0(Sys.time())
+      )
+      line = matrix(line,nrow=1)
+      Lines[i] = capture.output(
+        write.table(line,sep=';',row.names = FALSE, col.names = FALSE)
+      )
+    }
+    
+    # Update editor's content
+    dataEditor = photoEditDBText()
+    # dl = length(dataEditor)
+    dataEditor[(id+1):(id+nBR)] = Lines
+    
+    # if(length(iReac) != 0) {
+    #  # Tag exists: replace in situ
+    #   dataEditor[id+1] = line   # Header counts as first line...
+    # } else {
+    #   # Tag does not exist: set new ID
+    #   line = sub(paste0('^',id),paste0(dl),line)
+    #   dataEditor = c(dataEditor,line)
+    # }
+
+    photoEditDBText(dataEditor)
+
+  }
+)
 
 
 # Sampling ####
@@ -722,19 +705,13 @@ height = plotHeight, width = plotWidth)
 
 
 # Biblio ####
-output$ionsBiblio = shiny::renderUI({
-  req(ionsRateMask())
-  req(ionsBRMask())
+output$photoBiblio = shiny::renderUI({
+  req(photoXSMask())
+  req(input$photoReacREF)
   
-  
-  keys = c()
-  bibKwd = paste0('REF_',c(ionsRateParKwdList,'BR'))
-  for (elt in bibKwd) {
-    k = ionsRateMask()[[elt]]
-    if(k != "NA" & !is.na(k) & k!="")
-      keys = c(keys,unlist(str_split(k,';')))
-  }
-  keys = sort(unique(keys))
+  k = input$photoReacREF
+  keys = unlist(str_split(k,';'))
+  keys = trimws(sort(unique(keys)))
   
   refs = '<H4>References</H4><DL>'
   if(length(keys) != 0) {
