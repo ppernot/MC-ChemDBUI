@@ -25,10 +25,11 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
     
     2. Uses a new version of [MC-ChemDB](https://github.com/ppernot/MC-ChemDB) with a single .csv file for neutrals and another one for ions. This enables an easier management of [MC-ChemDB](https://github.com/ppernot/MC-ChemDB) with GitHub.
     
-## To Be Done...
+* `2022/10/11` v0.4
 
-* Manage photo-processes
-
+    1. Implements the management of photo-processes.
+    
+    
 ## Documentation
 
 See the [User's Manual](https://raw.githubusercontent.com/ppernot/MC-ChemDBUI/main/docs/manual.pdf)

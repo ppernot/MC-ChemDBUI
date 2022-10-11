@@ -1,4 +1,4 @@
-version = 0.3
+version = 0.4
 
 # Options ####
 Sys.setlocale(category = "LC_NUMERIC", locale = "C")

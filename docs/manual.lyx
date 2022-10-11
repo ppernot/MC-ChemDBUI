@@ -90,7 +90,7 @@ MC-ChemDBUI User's Manual
 \begin_inset Newline newline
 \end_inset
 
-v0.3
+v0.4
 \end_layout
 
 \begin_layout Author
@@ -175,15 +175,15 @@ In this server-client framework, the chemistry server database (
 mc-chemdbui
 \family default
 ) generates and stores a large number (say 1000) Monte Carlo samples of
- chemistry files in a public repository (
+ chemistry files into a public repository (
 \family typewriter
 ChemDBPublic
 \family default
 ).
  Users download a number of these samples according to their needs.
- The user has then only to run her/his code on each of the sample to get
- a sample of model predictions, to be used for uncertainty estimation and
- sensitivity analysis.
+ The user has then only to run her code on each of the sample to get a sample
+ of model predictions, to be used for uncertainty estimation and sensitivity
+ analysis.
  
 \end_layout
 
@@ -429,6 +429,16 @@ MC-ChemDB
 \begin_layout Itemize
 \begin_inset CommandInset ref
 LatexCommand nameref
+reference "chap:Photo-processes"
+
+\end_inset
+
+: manage photo-processes (photodissociation, photoionization...) 
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset ref
+LatexCommand nameref
 reference "chap:Neutrals-module"
 
 \end_inset
@@ -443,16 +453,19 @@ reference "chap:Ions-module"
 
 \end_inset
 
-: manage reactions involving ions 
-\end_layout
-
-\begin_layout Itemize
-Photoprocesses: TBD 
+: manage reactions involving ions (ion-neutral collisions, dissociative
+ recombination...) 
 \end_layout
 
 \begin_layout Standard
 Their functionalities are uniformly accessed through a menu with the 'Files',
- 'Edit', 'Sample', and 'Report' items.
+ 'Edit', and 'Sample' tabs.
+ Each tab contains a 
+\family typewriter
+Help
+\family default
+ panel describing the main controls.
+ 
 \end_layout
 
 \begin_layout Section
@@ -484,6 +497,345 @@ https://github.com/ppernot/MC-ChemDB
 \end_inset
 
 ).
+\end_layout
+
+\begin_layout Chapter
+Photo processes
+\begin_inset CommandInset label
+LatexCommand label
+name "chap:Photo-processes"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+
+\family typewriter
+Files
+\family default
+ tab
+\end_layout
+
+\begin_layout Subsection
+Left Panel
+\end_layout
+
+\begin_layout Standard
+This is where one chooses the 
+\emph on
+version
+\emph default
+ of the database to load on the 
+\family typewriter
+Source
+\begin_inset space \space{}
+\end_inset
+
+DB
+\begin_inset space \space{}
+\end_inset
+
+version
+\family default
+ selector.
+ The most recent one is selected by default.
+\end_layout
+
+\begin_layout Standard
+If you want to save changes, you need to type a version tag in the 
+\family typewriter
+Target
+\begin_inset space \space{}
+\end_inset
+
+DB
+\begin_inset space \space{}
+\end_inset
+
+version
+\family default
+ textbox.
+ The tag might be the same as the source tag, in which case it will be overwritt
+en.
+ Then, press 
+\family typewriter
+Save
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+To cancel all changes, press on 
+\family typewriter
+Restore
+\family default
+.
+\end_layout
+
+\begin_layout Subsection
+Right Panel
+\end_layout
+
+\begin_layout Standard
+This panel contains two text editors:
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+\series bold
+Database
+\family default
+\series default
+ It contains the text file (.csv format) in which the database is stored,
+ augmented by an 
+\family typewriter
+ID
+\family default
+ column.
+ You can edit the database directly here, but it is not recommended, as
+ the time-stamps will not be managed properly.
+\begin_inset Newline newline
+\end_inset
+
+Note: If you have important changes to do to the database (such as adding
+ many reactions), it might be simpler to make them directly in the .csv file,
+ before loading it in 
+\family typewriter
+mc-chemdbui
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+\series bold
+Release
+\begin_inset space ~
+\end_inset
+
+Notes
+\family default
+\series default
+ contains the history of the database.
+ You should mention your modifications here.
+ The format is free.
+ 
+\end_layout
+
+\begin_layout Section
+
+\family typewriter
+Edit
+\family default
+ tab
+\end_layout
+
+\begin_layout Standard
+This panel enables to select individual reactions and display/edit their
+ cross-section (XS) and branching ratios (BRs).
+\end_layout
+
+\begin_layout Subsection
+Left Panel
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+Edit
+\family default
+ tab contains two panels: 
+\family typewriter
+Select
+\family default
+ and 
+\family typewriter
+Plot
+\family default
+.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Select
+\family default
+ Here, you can filter the reactions by species (as reactant and/or product).
+ The 
+\family typewriter
+Reactions
+\family default
+ list of filtered or unfiltered reactions can be accessed by a drop-down
+ selector, or navigated using the up and down arrows.
+ If you make changes to the values in the Right panel, you can apply them
+ to the database with the 
+\family typewriter
+Apply
+\begin_inset space \space{}
+\end_inset
+
+changes
+\family default
+ button.
+ The 
+\family typewriter
+Comment
+\begin_inset space \space{}
+\end_inset
+
+reaction
+\family default
+ checkbox enables to change the line corresponding to the reaction to a
+ comments line, so it is preserved in the database but not parsed or used
+ to generate samples.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Plot
+\family default
+ Various options enable to customize the plots of the cross-sections and
+ branching ratios.
+\end_layout
+
+\begin_layout Subsection
+Right Panel
+\end_layout
+
+\begin_layout Standard
+This panel contains the information for the reaction selected in the left
+ panel.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Cross-section
+\family default
+ All parameters describing the XS are displayed.
+ You can change the 
+\family typewriter
+Data
+\begin_inset space ~
+\end_inset
+
+source, Refs and Comments.
+
+\family default
+ To preserve modifications, click on 
+\family typewriter
+Apply
+\begin_inset space \space{}
+\end_inset
+
+changes
+\family default
+.
+\end_layout
+
+\begin_layout Description
+BRs Displays the channels and source of the data.
+ The source cannot be changed, as it is intimately linked to the set of
+ channels described in the database.
+ Such changes are best handled directly in the '.csv' file.
+ The products of each channel can be edited.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Biblio
+\family default
+ Presents the list of references mentioned in the 
+\family typewriter
+Refs
+\family default
+ field.
+ The bibtex key links to a notice in the 
+\family typewriter
+refDR.bib
+\family default
+ file.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Help
+\family default
+ A short help to the main controls in the page.
+\end_layout
+
+\begin_layout Section
+
+\family typewriter
+Sample
+\family default
+ tab
+\end_layout
+
+\begin_layout Standard
+This is where samples of the uncertain XSs and BRs are generated to be stored
+ in 
+\family typewriter
+ChemDBPublic
+\family default
+.
+\end_layout
+
+\begin_layout Description
+Generate Select the number of samples to generate (typically 500 for production)
+, the wavelength resolution(s) and 
+\family typewriter
+Go!
+\family default
+.
+ This may take some time...
+ It is possible to perform a blank run by checking 
+\family typewriter
+Check
+\begin_inset space ~
+\end_inset
+
+only
+\family default
+.
+ The 
+\family typewriter
+Sort
+\begin_inset space ~
+\end_inset
+
+samples
+\family default
+ checkbox affects the generation of BRs.
+ If inactivated, BRs uncertainties are purely random, i.e.
+ there is no wavelength-wise correlations.
+ To introduce some systematic effects (albeit in unknown proportion) one
+ can order the samples for each wavelength and associate them.
+\end_layout
+
+\begin_layout Description
+Plot
+\emph on
+ 
+\emph default
+Plots of the 
+\family typewriter
+ChemDBPublic
+\family default
+ samples for XSs and BRs.
+ If everything is OK, they should be similar to the plots in the 
+\family typewriter
+Edit
+\family default
+ panel.
 \end_layout
 
 \begin_layout Chapter
@@ -806,18 +1158,6 @@ ChemDBPublic
 Edit
 \family default
  panel.
-\end_layout
-
-\begin_layout Section
-
-\family typewriter
-Report
-\family default
- tab
-\end_layout
-
-\begin_layout Standard
-TBD
 \end_layout
 
 \begin_layout Chapter
@@ -1158,18 +1498,6 @@ Check
 only No sample is generated.
  The database is processed and checked for problems in mass balance or species
  names...
-\end_layout
-
-\begin_layout Section
-
-\family typewriter
-Report
-\family default
- tab
-\end_layout
-
-\begin_layout Standard
-TBD
 \end_layout
 
 \begin_layout Standard
