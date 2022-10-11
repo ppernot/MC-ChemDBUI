@@ -202,6 +202,33 @@ shiny::observeEvent(
         from = file.path(photoOrigDir,photoEditRNFile()),
         to   = file.path(photoOrigDir,photoEditRNFileBack())
       )
+      
+    } else {
+      # Copy all the XS and BR data
+      source = file.path(photoOrigDir,'Data')
+      files  = list.files(
+        path         = source, 
+        full.names   = FALSE, 
+        recursive    = TRUE,
+        include.dirs = TRUE)
+      shiny::withProgress(
+        message = 'Copying ', 
+        {
+          for(file in files) {
+            incProgress(1/length(files), detail = file)
+            file.copy(
+              from = file.path(source), 
+              to   = file.path(photoCopyDir),
+              recursive = TRUE
+            )
+          }
+        }
+      )
+      id = shiny::showNotification(
+        h4('Saved Data directory'),
+        closeButton = FALSE,
+        duration = 5
+      )
     }
     
     # Save DB and RN files to target version
