@@ -192,22 +192,47 @@ tabPanel(
             'Help',
             fluidRow(
               column(
-                6,
+                12,
                 HTML(
-                  "<h4>Photo-Edit/View</h4> Visualize and edit data for individual
+                  "<h4>PhotoProcs-Edit/View</h4> Visualize and edit data for individual
                   reactions.
+                  <h5>Select</h5> 
                   <ul>
-                    <li> <strong>Search</strong>: enter a species name to 
+                    <li> <strong>Species filter</strong>: enter a species name to 
                   filter reactions. Reinitialize with Reset button.
                     <li> <strong>Reactions</strong>: list of reactions in DB, 
                   possibly filtered. The up and down arrows enable to go through
                   the list step by step.
+                    <li> <strong>Comment reaction</strong>: inactivate this reaction
+                  in the database.
                     <li> <strong>Apply changes</strong>: click to apply the 
                   changes made to the reaction's data. To save to disk, go to 
                   the Load page.
                   </ul>
-                  <h4>Plot</h4> Generate random samples and
-                  build graphs for rate constants and branching ratios.
+                  <h5>Plot</h5>
+                  <ul>
+                    <li> <strong># MC samples</strong>: number of samples 
+                         to plot
+                    <li> <strong>Résolution</strong>: wavelength resolution
+                    <li> <strong>Wavelength</strong>: defines the wavelength range 
+                         of the plot 
+                    <li> <strong>Sort samples</strong>: used to preserve as much 
+                         as possible a wavelength-wise continuity of the random 
+                         samples. Introduces a (unknown) level of systematic
+                         uncertainty wrt the pure random uncertainty generated 
+                         by sampling.
+                    <li> <strong>log XS</strong>: use a log axis for 
+                         cross-sections.
+                    <li> <strong>Display of BRs</strong>:
+                         <ul>
+                            <li> All Channels: display all channels
+                            <li> Neus vs Ions: display the sum of neutral
+                                 channels and the sum of ionic channels
+                            <li> Sum-to-one: display the sum of all channels
+                                 (should be 1 if sampling is OK)
+                         </ul>
+                  </ul>
+                  
                   <br>
                    
                   "

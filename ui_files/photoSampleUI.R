@@ -195,22 +195,57 @@ tabPanel(
           #   verbatimTextOutput("photoStats",)
           # ),
           tabPanel(
-            title = "Help",
-            HTML(
-              "<h4>Sample</h4> 
-          Generate MC samples. <BR>
-          <h4>Options</h4>
-          <UL>
-          <LI> <B>Update</B>: if checked, only reactions recently modified or with missing
-          samples are sampled. If unchecked, all reactions are sampled, which might 
-          take some time...
-          <LI> <B>Check only</B>: if checked, the data are tested for consistency, 
-          but samples are not generated.
-          <LI> <B># MC samples</B>: number of samples, default (and recommended minimum
-          for production) is 500. Smaller values are used for testing. Zero (0) 
-          corresponds to a single draw with nominal values of parameters. It is always 
-          provided as the first sample in file run_0000.csv.
-          </UL>"
+            'Help',
+            fluidRow(
+              column(
+                12,
+                HTML(
+                  "<h4>PhotoProcs-Sample</h4> Generate MC samples in ChemDBPublic.
+                  
+                  <h5>Generate</h5> 
+                  <ul>
+                    <li> <strong>Check only</strong>: goes through the process
+                         without saving to disk. Can be used to verify that
+                         generation will go smoothly...
+                    <li> <strong>Sort samples</strong>: used to preserve as much 
+                         as possible a wavelength-wise continuity of the random 
+                         samples. Introduces a (unknown) level of systematic
+                         uncertainty wrt the pure random uncertainty generated 
+                         by sampling.
+                    <li> <strong>Résolution</strong>: wavelength resolution
+                    <li> <strong># MC samples</strong>: number of samples 
+                         to generate
+                    <li> <strong>Go !</strong>: click to start generation
+                         process. This may take some time...
+                    
+                  </ul>
+                  <h5>Plot</h5>
+                  Read XS and BR samples on disk and plot them. 
+                  <ul>
+                    <li> <strong>Reactions</strong>: list of availables reactions
+                    <li> <strong># MC samples</strong>: number of samples 
+                         to plot
+                    <li> <strong>Résolution</strong>: wavelength resolution
+                    <li> <strong>Wavelength</strong>: defines the wavelength range 
+                         of the plot 
+                    
+                    <li> <strong>Display of BRs</strong>:
+                         <ul>
+                            <li> All Channels: display all channels
+                            <li> Neus vs Ions: display the sum of neutral
+                                 channels and the sum of ionic channels
+                            <li> Sum-to-one: display the sum of all channels
+                                 (should be 1 if sampling is OK)
+                         </ul>
+                    <li> <strong>log XS</strong>: use a log axis for 
+                         cross-sections.
+                  </ul>
+                  
+                  <br>
+                   
+                  "
+                )
+              )
             )
           )
         )  
