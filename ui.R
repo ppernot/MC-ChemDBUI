@@ -19,10 +19,6 @@ function(request) {
       tabPanel(
         title = "Sample",
         source_ui("photoSampleUI.R")
-      ),
-      tabPanel(
-        title = "Report",
-        source_ui("photoReportUI.R")
       )
     ),
     
@@ -39,10 +35,6 @@ function(request) {
       tabPanel(
         title = "Sample",
         source_ui("neutralsSampleUI.R")
-      ),
-      tabPanel(
-        title = "Report",
-        source_ui("neutralsReportUI.R")
       )
     ),
     
@@ -59,10 +51,6 @@ function(request) {
       tabPanel(
         title = "Sample",
         source_ui("ionsSampleUI.R")
-      ),
-      tabPanel(
-        title = "Report",
-        source_ui("ionsReportUI.R")
       )
     ),
    

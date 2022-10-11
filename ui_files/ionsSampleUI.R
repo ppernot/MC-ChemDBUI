@@ -37,7 +37,7 @@ tabPanel(
           5,
           actionButton(
             "ionsSampleBtn",
-            label = "Sample !",
+            label = "Go !",
             icon  = icon('gear',verify_fa = FALSE),
             class = "btn-primary"
           ),
