@@ -336,28 +336,79 @@ observeEvent(
                 
                 qy = qy / rowSums(qy)
                 
-                # Generate Diri-based samples at each wavelength
-                ionic = c()
-                for (i in 1:nBR)
-                  ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[chans[i]])
+                if(input$GP_Fit) {
+                  # Experimental...
+                  nw = length(wavlBR)
+                  
+                  qySample = array(data = NA,
+                                   dim = c(nMC, nw, nBR))
+                  ## Apply threshold
+                  mask = qy < eps
+                  qy[mask] = eps
+                  
+                  # Transform to logit-space
+                  qy1  = log(qy/(1-qy))
+                  noise = 0.2 * sqrt(qy*(1-qy)) # Distrib of uncert peaks at 0.06
+                  unc1 = noise/(qy*(1-qy))
+                  
+                  ##  GP
+                  gp=list()
+                  kernel = c('gauss','matern5_2','matern3_2','exp')[2]
+                  coef.var = 20.0
+                  coef.cov = 10 # nm
+                  sel = seq(1, nw, length.out = 50)
+                  for (i in 1:nBR) {
+                    gp[[i]] = DiceKriging::km(
+                      design   = data.frame(x=wavlBR[sel]),
+                      response = data.frame(y=qy1[sel,i]),
+                      covtype  = kernel,
+                      coef.trend = mean(qy1[,i]),
+                      coef.cov = coef.cov,
+                      coef.var = coef.var,
+                      noise.var= unc1[sel,i]^2
+                    )
+                  }
+                  
+                  for (iMC in 1:nMC) {
+                    pred = matrix(nrow = nw, ncol = nBR)
+                    for (i in 1:nBR) {
+                      p = DiceKriging::simulate(
+                        gp[[i]],
+                        newdata = data.frame(x = wavlBR),
+                        cond = TRUE)
+                      pred[, i] = p
+                    }
+                    ## back-transform
+                    brPred = 1 / (1 + exp(-pred))
+                    brPred[mask] = 0 # Restore true 0s
+                    qySample[iMC, , ] = brPred / rowSums(brPred)
+                  }
                 
-                if ( (sum(ionic) * sum(!ionic)) == 0) {
-                  # Diri sampling
-                  qySample = diriSample(
-                    qy,
-                    ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
-                    nMC = nMC,
-                    eps = photoEps,
-                    sortBR = sortBR)
                 } else {
-                  # Nested sampling
-                  qySample = hierSample(
-                    qy, 
-                    ionic = ionic,
-                    ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
-                    nMC = nMC,
-                    eps = photoEps,
-                    sortBR = sortBR)
+                  
+                  # Generate Diri-based samples at each wavelength
+                  ionic = c()
+                  for (i in 1:nBR)
+                    ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[chans[i]])
+                  
+                  if ( (sum(ionic) * sum(!ionic)) == 0) {
+                    # Diri sampling
+                    qySample = diriSample(
+                      qy,
+                      ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
+                      nMC = nMC,
+                      eps = photoEps,
+                      sortBR = sortBR)
+                  } else {
+                    # Nested sampling
+                    qySample = hierSample(
+                      qy, 
+                      ionic = ionic,
+                      ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
+                      nMC = nMC,
+                      eps = photoEps,
+                      sortBR = sortBR)
+                  }
                 }
               }
               

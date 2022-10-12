@@ -121,7 +121,14 @@ tabPanel(
           ),
           fluidRow(
             column(
-              6,
+              4,
+              checkboxInput(
+                "photoEditGP_Fit",
+                label = "Gaussian Process"
+              ) 
+            ),
+            column(
+              4,
               checkboxInput(
                 "photoBRSort",
                 label = "Sort samples",
@@ -129,7 +136,7 @@ tabPanel(
               )
             ),
             column(
-              6,
+              4,
               checkboxInput(
                 "photoXSLog",
                 label = "log XS",

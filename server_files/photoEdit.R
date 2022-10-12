@@ -524,31 +524,82 @@ photoBRSimulate = shiny::reactive({
   } else {
 
     qy = qy / rowSums(qy)
+    
+    if(input$photoEditGP_Fit) {
+      
+      nw = length(wl)
+      
+      qySample = array(data = NA,
+                       dim = c(nMC, nw, nBR))
+      ## Apply threshold
+      mask = qy < photoEps
+      qy[mask] = photoEps
+      
+      # Transform to logit-space
+      qy1  = log(qy/(1-qy))
+      noise = 0.2 * sqrt(qy*(1-qy)) # Distrib of uncert peaks at 0.06
+      unc1 = noise/(qy*(1-qy))
+      
+      ##  GP
+      gp = list()
+      kernel = c('gauss', 'matern5_2', 'matern3_2', 'exp')[2]
+      coef.var = 20.0
+      coef.cov = 100 # nm
+      sel = seq(1, nw, length.out = 30)
+      for (i in 1:nBR) {
+        gp[[i]] = DiceKriging::km(
+          design   = data.frame(x=wl[sel]),
+          response = data.frame(y=qy1[sel,i]),
+          covtype  = kernel,
+          coef.trend = mean(qy1[,i]),
+          coef.cov = coef.cov,
+          coef.var = coef.var,
+          noise.var= unc1[sel,i]^2
+        )
+      }
+      
+      for (iMC in 1:nMC) {
+        pred = matrix(nrow = nw, ncol = nBR)
+        for (i in 1:nBR) {
+          p = DiceKriging::simulate(
+            gp[[i]],
+            newdata = data.frame(x = wl),
+            cond = TRUE)
+          pred[, i] = p
+        }
+        ## back-transform
+        brPred = 1 / (1 + exp(-pred))
+        brPred[mask] = 0 # Restore true 0s
+        qySample[iMC, , ] = brPred / rowSums(brPred)
+      }
 
-    # Generate ordered Diri-based samples at each wavelength
-    
-    ionic = c()
-    for (i in 1:nBR) {
-      iReac = photoBRMask()$channels[i]
-      ionic[i] = 'E' %in% photoDB()$PRODUCTS[iReac]
-    }
-    
-    if (sum(ionic) * sum(!ionic) == 0) {
-      # Diri sampling
-      qySample = diriSample(
-        qy,
-        ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
-        nMC,
-        photoEps,
-        sort)
     } else {
-      # Nested sampling
-      qySample = hierSample(
-        qy, ionic,
-        ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
-        nMC,
-        photoEps,
-        sort)
+      # Generate ordered Diri-based samples at each wavelength
+      
+      ionic = c()
+      for (i in 1:nBR) {
+        iReac = photoBRMask()$channels[i]
+        ionic[i] = 'E' %in% photoDB()$PRODUCTS[iReac]
+      }
+      
+      if (sum(ionic) * sum(!ionic) == 0) {
+        # Diri sampling
+        qySample = diriSample(
+          qy,
+          ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
+          nMC,
+          photoEps,
+          sort)
+      } else {
+        # Nested sampling
+        qySample = hierSample(
+          qy, ionic,
+          ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
+          nMC,
+          photoEps,
+          sort)
+      }
+      
     }
   }
   

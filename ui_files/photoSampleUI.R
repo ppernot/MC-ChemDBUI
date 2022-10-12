@@ -76,7 +76,11 @@ tabPanel(
                 "#photoSampleBtn { width:100%; margin-top: 30px;}"
               )
             )
-          )
+          ),
+          checkboxInput(
+            "GP_Fit",
+            label = "Gaussian Process"
+          ) 
         ),
         tabPanel(
           "Plot",
