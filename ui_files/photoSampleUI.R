@@ -16,16 +16,6 @@ tabPanel(
                 label = 'Check only',
                 value = FALSE
               )
-            )
-          ),
-          fluidRow(
-            column(
-              6,
-              checkboxInput(
-                "photoBRSampleSort",
-                label = "Sort samples",
-                value = TRUE
-              )
             ),
             column(
               6,
@@ -36,22 +26,6 @@ tabPanel(
                 selected = "1"
               )
             )
-            #   column(
-            #     6,
-            #     checkboxInput(
-            #       'photoSampleUpdate',
-            #       label = 'Update',
-            #       value = TRUE
-            #     )
-            #   ),
-            #   column(
-            #     6,
-            #     checkboxInput(
-            #       'photoSampleCheck',
-            #       label = 'Check only',
-            #       value = FALSE
-            #     )
-            #   )
           ),
           fluidRow(
             column(
@@ -77,10 +51,33 @@ tabPanel(
               )
             )
           ),
+          hr(),
           checkboxInput(
-            "GP_Fit",
-            label = "Gaussian Process"
-          ) 
+            "photoSampleAdvanced",
+            label = "Advanced options",
+            value = FALSE
+          ),
+          conditionalPanel(
+            condition = "input.photoSampleAdvanced",
+            fluidRow(
+              column(
+                6,
+                checkboxInput(
+                  "GP_Fit",
+                  label = "Gaussian Process",
+                  value = FALSE
+                ) 
+              ),
+              column(
+                6,
+                checkboxInput(
+                  "photoBRSampleSort",
+                  label = "Sort samples",
+                  value = FALSE
+                )
+              )
+            )
+          )
         ),
         tabPanel(
           "Plot",

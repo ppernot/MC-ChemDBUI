@@ -543,8 +543,8 @@ photoBRSimulate = shiny::reactive({
       ##  GP
       gp = list()
       kernel = c('gauss', 'matern5_2', 'matern3_2', 'exp')[2]
-      coef.var = 20.0
-      coef.cov = 100 # nm
+      coef.var = input$photoGPCorVar
+      coef.cov = input$photoGPCorLen
       sel = seq(1, nw, length.out = 30)
       for (i in 1:nBR) {
         gp[[i]] = DiceKriging::km(
@@ -602,6 +602,19 @@ photoBRSimulate = shiny::reactive({
       
     }
   }
+  
+  # for(i in 1:nBR) {
+  #   print(paste0('*** ',i,' ***'))
+  #   Y = qySample[,,i]
+  #   # print(str(Y))
+  #   # print(sum(is.na(Y)))
+  #   # X = cor(Y,)
+  #   # print(str(X))
+  #   # print(X[1,])
+  #   # Xm = apply(Y,2,mean)
+  #   Xs = apply(Y,2,sd)
+  #   print(range(Xs,na.rm = TRUE))
+  # }
   
   return(list(
     sampleSize  = nMC,
@@ -746,6 +759,7 @@ output$plotPhotoBRSample = shiny::renderPlot({
     legend = leg,  cex = 0.75,
     col = cols,
     lty = lty,
+    lwd = 4,
     pch = NULL
   )
   

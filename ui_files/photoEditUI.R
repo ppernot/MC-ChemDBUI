@@ -89,6 +89,7 @@ tabPanel(
         ),
         tabPanel(
           'Plot',
+          br(),
           fluidRow(
             column(
               6,
@@ -121,31 +122,6 @@ tabPanel(
           ),
           fluidRow(
             column(
-              4,
-              checkboxInput(
-                "photoEditGP_Fit",
-                label = "Gaussian Process"
-              ) 
-            ),
-            column(
-              4,
-              checkboxInput(
-                "photoBRSort",
-                label = "Sort samples",
-                value = TRUE
-              )
-            ),
-            column(
-              4,
-              checkboxInput(
-                "photoXSLog",
-                label = "log XS",
-                value = TRUE
-              )
-            )
-          ),
-          fluidRow(
-            column(
               6,
               selectInput(
                 'photoEditBRDisplay',
@@ -156,6 +132,58 @@ tabPanel(
                   "Sum-to-one"   = 2
                 )
               )
+            ),
+            column(
+              6,
+              checkboxInput(
+                "photoXSLog",
+                label = "log XS",
+                value = TRUE
+              )
+            )
+          ),
+          hr(),
+          checkboxInput(
+            "photoEditAdvanced",
+            label = "Advanced options",
+            value = FALSE
+          ),
+          conditionalPanel(
+            condition = "input.photoEditAdvanced",
+            fluidRow(
+              column(
+                6,
+                checkboxInput(
+                  "photoEditGP_Fit",
+                  label = "Gaussian Process"
+                ) 
+              ),
+              column(
+                6,
+                checkboxInput(
+                  "photoBRSort",
+                  label = "Sort samples",
+                  value = FALSE
+                )
+              )
+            ),
+            sliderInput(
+              "photoGPCorLen",
+              label = "GP corr. len. [nm]",
+              min   =   5, 
+              max   = 100,
+              value =  20,
+              step  =   5,
+              round = TRUE
+            ),
+            sliderInput(
+              "photoGPCorVar",
+              label = "GP Var.",
+              min   =   1, 
+              max   =  20,
+              value =   2,
+              step  =   1,
+              round = TRUE
             )
           )
         )
