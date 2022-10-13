@@ -96,7 +96,7 @@ tabPanel(
               selectInput(
                 'photoSimulateSize',
                 label    = '# MC samples',
-                choices  = seq(100,1000,by = 100),
+                choices  = c(10,seq(100,1000,by = 100)),
                 selected = 100,
                 width = '200px'
               )
@@ -152,17 +152,25 @@ tabPanel(
             condition = "input.photoEditAdvanced",
             fluidRow(
               column(
-                6,
+               4,
                 checkboxInput(
                   "photoEditGP_Fit",
                   label = "Gaussian Process"
                 ) 
               ),
               column(
-                6,
+                4,
                 checkboxInput(
-                  "photoBRSort",
-                  label = "Sort samples",
+                  "photoBRArrange",
+                  label = "Arrange samples",
+                  value = FALSE
+                )
+              ),
+              column(
+                4,
+                checkboxInput(
+                  "photoBRUseRanks",
+                  label = "Use ranks",
                   value = FALSE
                 )
               )

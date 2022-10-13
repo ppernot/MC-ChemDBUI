@@ -421,7 +421,7 @@ photoBRSimulate = shiny::reactive({
   type = photoBRMask()$source
   req(type)
   
-  sort = input$photoBRSort
+  sort = FALSE # input$photoBRSort
 
   sp   = photoXSMask()[['REACTANTS']][1]
   nBR  = photoBRMask()$nBR
@@ -587,34 +587,42 @@ photoBRSimulate = shiny::reactive({
         qySample = diriSample(
           qy,
           ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
-          nMC,
-          photoEps,
-          sort)
+          nMC = nMC,
+          eps = photoEps,
+          sortBR = FALSE)
       } else {
         # Nested sampling
         qySample = hierSample(
-          qy, ionic,
+          qy, 
+          ionic = ionic,
           ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
-          nMC,
-          photoEps,
-          sort)
+          nMC = nMC,
+          eps = photoEps ,
+          sortBR = FALSE)
       }
+      
+      # Rearrange samples for better wavelength continuity
+      if(input$photoBRArrange)
+        qySample = arrangeSample(
+          qySample, 
+          useRanks = input$photoBRUseRanks
+        )
       
     }
   }
   
-  # for(i in 1:nBR) {
-  #   print(paste0('*** ',i,' ***'))
-  #   Y = qySample[,,i]
-  #   # print(str(Y))
-  #   # print(sum(is.na(Y)))
-  #   # X = cor(Y,)
-  #   # print(str(X))
-  #   # print(X[1,])
-  #   # Xm = apply(Y,2,mean)
-  #   Xs = apply(Y,2,sd)
-  #   print(range(Xs,na.rm = TRUE))
-  # }
+  for(i in 1:nBR) {
+    print(paste0('*** ',i,' ***'))
+    Y = qySample[,,i]
+    # print(str(Y))
+    # print(sum(is.na(Y)))
+    X = cor(Y)
+    # print(str(X))
+    print(X[1,1:5])
+    # Xm = apply(Y,2,mean)
+    Xs = apply(Y,2,sd)
+    print(range(Xs,na.rm = TRUE))
+  }
   
   return(list(
     sampleSize  = nMC,

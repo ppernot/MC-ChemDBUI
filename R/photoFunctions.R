@@ -325,3 +325,28 @@ diriSample = function(qy, ru = 0.1, nMC = 500,
 
   return(qySample)
 }
+arrangeSample = function(S, useRanks = FALSE) {
+  dd = dim(S)
+  nMC = dd[1]; nWl = dd[2]; nBR = dd[3]
+  pow = ifelse(useRanks, 1, 2)
+  
+  for(iWl in 1:(nWl-1)) {
+    X = S[,iWl,]
+    Y = S[,iWl+1,]
+    if(useRanks)
+      for(iBR in 1:nBR) {
+        X[,iBR] = rank(S[ ,iWl  ,iBR])
+        Y[,iBR] = rank(S[ ,iWl+1,iBR])
+      }
+    iord = vector("integer",nMC)
+    for(iMC in 1:(nMC-1)) {
+      Z = abs(t(t(Y)-X[iMC,]))^pow
+      closest = which.min(rowSums(Z))
+      iord[iMC] = closest
+      Y[closest,] = rep(nMC^3,nBR) # Replace by very large value
+    }
+    iord[nMC] = setdiff(1:nMC,iord)
+    S[,iWl+1,] = S[iord,iWl+1,]
+  }
+  return(S)
+}

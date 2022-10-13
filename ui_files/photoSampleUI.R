@@ -63,16 +63,16 @@ tabPanel(
               column(
                 6,
                 checkboxInput(
-                  "GP_Fit",
-                  label = "Gaussian Process",
+                  "photoSampleBRArrange",
+                  label = "Arrange samples",
                   value = FALSE
-                ) 
+                )
               ),
               column(
                 6,
                 checkboxInput(
-                  "photoBRSampleSort",
-                  label = "Sort samples",
+                  "photoSampleBRUseRanks",
+                  label = "Use ranks",
                   value = FALSE
                 )
               )
