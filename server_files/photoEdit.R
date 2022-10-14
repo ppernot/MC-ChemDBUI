@@ -579,9 +579,8 @@ photoBRSimulate = shiny::reactive({
       ionic = c()
       for (i in 1:nBR) {
         iReac = photoBRMask()$channels[i]
-        ionic[i] = 'E' %in% photoDB()$PRODUCTS[iReac]
+        ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[iReac])
       }
-      
       if (sum(ionic) * sum(!ionic) == 0) {
         # Diri sampling
         qySample = diriSample(

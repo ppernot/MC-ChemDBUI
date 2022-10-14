@@ -150,48 +150,62 @@ tabPanel(
           ),
           conditionalPanel(
             condition = "input.photoEditAdvanced",
-            fluidRow(
-              column(
-               4,
-                checkboxInput(
-                  "photoEditGP_Fit",
-                  label = "Gaussian Process"
-                ) 
-              ),
-              column(
-                4,
-                checkboxInput(
-                  "photoBRArrange",
-                  label = "Arrange samples",
-                  value = FALSE
-                )
-              ),
-              column(
-                4,
-                checkboxInput(
-                  "photoBRUseRanks",
-                  label = "Use ranks",
-                  value = FALSE
+            conditionalPanel(
+              condition = "!input.photoEditGP_Fit",
+              fluidRow(
+                column(
+                  6,
+                  checkboxInput(
+                    "photoBRArrange",
+                    label = "Arrange samples",
+                    value = FALSE
+                  )
+                ),
+                column(
+                  6,
+                  conditionalPanel(
+                    condition = "input.photoBRArrange",
+                    checkboxInput(
+                      "photoBRUseRanks",
+                      label = "Use ranks",
+                      value = FALSE
+                    )
+                  )
                 )
               )
             ),
-            sliderInput(
-              "photoGPCorLen",
-              label = "GP corr. len. [nm]",
-              min   =   5, 
-              max   = 100,
-              value =  20,
-              step  =   5,
-              round = TRUE
-            ),
-            sliderInput(
-              "photoGPCorVar",
-              label = "GP Var.",
-              min   =   1, 
-              max   =  20,
-              value =   2,
-              step  =   1,
-              round = TRUE
+            conditionalPanel(
+              condition = "!input.photoBRArrange",
+              fluidRow(
+                column(
+                  6,
+                  checkboxInput(
+                    "photoEditGP_Fit",
+                    label = "Gaussian Process"
+                  ) 
+                )
+              ),
+              conditionalPanel(
+                condition = "input.photoEditGP_Fit",
+                sliderInput(
+                  "photoGPCorLen",
+                  label = "GP corr. len. [nm]",
+                  min   =   5, 
+                  max   = 100,
+                  value =  20,
+                  step  =   5,
+                  round = TRUE
+                ),
+                sliderInput(
+                  "photoGPCorVar",
+                  label = "GP Var.",
+                  min   =   1, 
+                  max   =  20,
+                  value =   2,
+                  step  =   1,
+                  round = TRUE
+                )
+              )
             )
           )
         )

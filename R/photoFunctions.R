@@ -326,27 +326,39 @@ diriSample = function(qy, ru = 0.1, nMC = 500,
   return(qySample)
 }
 arrangeSample = function(S, useRanks = FALSE) {
+
+  # Reorder MC samples of branching ratios for each wavelength 
+  # in order to introduce serial correlation.
+  # - for each sample at wavelength i, look for
+  #   the *closest* sample at wavelength i+1.
+  # - two distances possible: L1 based on ranks, and
+  #   L2 based on BR values.
+  # - sample at i+1 is reordered and used as reference for
+  #   next step.      
+     
   dd = dim(S)
   nMC = dd[1]; nWl = dd[2]; nBR = dd[3]
   pow = ifelse(useRanks, 1, 2)
   
   for(iWl in 1:(nWl-1)) {
-    X = S[,iWl,]
-    Y = S[,iWl+1,]
-    if(useRanks)
+    X = S[ , iWl,]
+    Y = S[ , iWl+1,]
+    if(useRanks) {
       for(iBR in 1:nBR) {
-        X[,iBR] = rank(S[ ,iWl  ,iBR])
-        Y[,iBR] = rank(S[ ,iWl+1,iBR])
+        X[ ,iBR] = rank(S[ ,iWl  ,iBR])
+        Y[ ,iBR] = rank(S[ ,iWl+1,iBR])
       }
-    iord = vector("integer",nMC)
-    for(iMC in 1:(nMC-1)) {
-      Z = abs(t(t(Y)-X[iMC,]))^pow
-      closest = which.min(rowSums(Z))
-      iord[iMC] = closest
-      Y[closest,] = rep(nMC^3,nBR) # Replace by very large value
     }
-    iord[nMC] = setdiff(1:nMC,iord)
-    S[,iWl+1,] = S[iord,iWl+1,]
+    iord = vector("integer",nMC)
+    for (iMC in 1:(nMC - 1)) {
+      Z = abs(t(Y) - X[iMC,])^pow
+      closest = which.min(colSums(Z))
+      iord[iMC] = closest
+      Y[closest,] = rep(nMC^3, nBR) # Replace by very large value
+    }
+    iord[nMC]    = setdiff(1:nMC, iord)
+    S[ , iWl+1,] = S[iord, iWl+1,]
   }
+  
   return(S)
 }
