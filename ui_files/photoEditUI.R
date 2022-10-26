@@ -158,7 +158,7 @@ tabPanel(
                   checkboxInput(
                     "newGam",
                     label = "New unc.",
-                    value = FALSE
+                    value = TRUE
                   )
                 ),
                 column(

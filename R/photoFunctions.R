@@ -163,6 +163,8 @@ gamDiri = function(x,ru) { # Eq.9 in Plessis2010
   return( 1 / ru^2 * (sum(x*(1-x)) / sum(x*sqrt(x*(1-x))))^2 - 1 )
 }
 gamBeta = function(a,ru) {
+  # This elicitation conserves the mean variance 
+  # for two channels only (with BRs a & 1-a).
   ru = ru / 2 # Convert from 95% interval
   return( 0.5 * (a^2 + (1-a)^2) / (ru^2 * a*(1-a)) - 1 )
 }
