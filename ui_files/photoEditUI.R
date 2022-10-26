@@ -154,7 +154,15 @@ tabPanel(
               condition = "!input.photoEditGP_Fit",
               fluidRow(
                 column(
-                  6,
+                  4,
+                  checkboxInput(
+                    "newGam",
+                    label = "New unc.",
+                    value = FALSE
+                  )
+                ),
+                column(
+                  4,
                   checkboxInput(
                     "photoBRArrange",
                     label = "Arrange samples",
@@ -162,7 +170,7 @@ tabPanel(
                   )
                 ),
                 column(
-                  6,
+                  4,
                   conditionalPanel(
                     condition = "input.photoBRArrange",
                     checkboxInput(
@@ -171,8 +179,7 @@ tabPanel(
                       value = FALSE
                     )
                   )
-                )
-              )
+                )              )
             ),
             conditionalPanel(
               condition = "!input.photoBRArrange",

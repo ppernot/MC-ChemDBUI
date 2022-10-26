@@ -536,9 +536,9 @@ photoBRSimulate = shiny::reactive({
       qy[mask] = photoEps
       
       # Transform to logit-space
-      qy1  = log(qy/(1-qy))
-      noise = 0.2 * sqrt(qy*(1-qy)) # Distrib of uncert peaks at 0.06
-      unc1 = noise/(qy*(1-qy))
+      qy1   = log( qy/(1-qy) )
+      noise = 0.2 * sqrt( qy*(1-qy) ) # Distrib of uncert peaks at 0.06
+      unc1  = noise/( qy*(1-qy) )
       
       ##  GP
       gp = list()
@@ -581,23 +581,26 @@ photoBRSimulate = shiny::reactive({
         iReac = photoBRMask()$channels[i]
         ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[iReac])
       }
+      
       if (sum(ionic) * sum(!ionic) == 0) {
+        
         # Diri sampling
         qySample = diriSample(
           qy,
           ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
           nMC = nMC,
           eps = photoEps,
-          sortBR = FALSE)
+          newGam = input$newGam)
       } else {
+        
         # Nested sampling
         qySample = hierSample(
           qy, 
           ionic = ionic,
           ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
           nMC = nMC,
-          eps = photoEps ,
-          sortBR = FALSE)
+          eps = photoEps,
+          newGam = input$newGam)
       }
       
       # Rearrange samples for better wavelength continuity
