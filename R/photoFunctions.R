@@ -163,72 +163,72 @@ gamDiri = function(x,ru) { # Eq.9 in Plessis2010
   return( 1 / ru^2 * (sum(x*(1-x)) / sum(x*sqrt(x*(1-x))))^2 - 1 )
 }
 gamBeta = function(a,ru) {
-  # This elicitation conserves the mean variance 
+  # This elicitation conserves the mean variance
   # for two channels only (with BRs a & 1-a).
   ru = ru / 2 # Convert from 95% interval
   return( 0.5 * (a^2 + (1-a)^2) / (ru^2 * a*(1-a)) - 1 )
 }
-diriSample0 = function(br, ru, nMC, eps, newGam = TRUE) {
-  # print('Enter diriSample0')
-  
-  qySample = matrix(0, nrow = nMC, ncol = length(br))
-
-  # Count non-zero channels
-  br = br / sum(br)
-  br[br <= eps] = 0
-  br = br / sum(br)
-  sel_nz = br != 0
- 
-  if( sum(sel_nz) <= 1 ) {
-    # 1 channel: no uncertainty
-    qySample[,sel_nz] = 1
-
-  } else {
-    if(newGam) {
-      # Dirg
-      stringBR = paste0(
-        'Dirg(',
-        paste0(br[sel_nz],collapse=','),
-        ';',
-        paste0(br[sel_nz] * ru/2, collapse=','),
-        ')'
-      )
-        
-    } else {
-      gamma = gamDiri(br[sel_nz],ru)
-      
-      # Dirichlet
-      stringBR = paste0(
-        'Diri(',
-        paste0(br[sel_nz],collapse=','),
-        ';',
-        gamma,
-        ')'
-      )
-      
-    }
-    # Sample by Nested.x
-    qySample[,sel_nz] = nds(nMC, stringBR)
-  }
-  
-  return(qySample)
-}
-diriSample = function(qy, ru = 0.1, nMC = 500, eps = 1e-4, newGam = TRUE) {
-  # Nested sampling when ionic and !ionic channels present
-  # print('Enter diriSample')
-  
-  nc = ncol(qy)
-  nw = nrow(qy)
-  qySample = array(
-    data = 0,
-    dim  = c(nMC,nw,nc)
-  )
- 
-  for (il in 1:nw)
-    qySample[ , il, ] = diriSample0(qy[il,], ru, nMC, eps, newGam)
-
-  return(qySample)
-}
+# diriSample0 = function(br, ru, nMC, eps, newGam = TRUE) {
+#   # print('Enter diriSample0')
+#   
+#   qySample = matrix(0, nrow = nMC, ncol = length(br))
+# 
+#   # Count non-zero channels
+#   br = br / sum(br)
+#   br[br <= eps] = 0
+#   br = br / sum(br)
+#   sel_nz = br != 0
+#  
+#   if( sum(sel_nz) <= 1 ) {
+#     # 1 channel: no uncertainty
+#     qySample[,sel_nz] = 1
+# 
+#   } else {
+#     if(newGam) {
+#       # Dirg
+#       stringBR = paste0(
+#         'Dirg(',
+#         paste0(br[sel_nz],collapse=','),
+#         ';',
+#         paste0(br[sel_nz] * ru/2, collapse=','),
+#         ')'
+#       )
+#         
+#     } else {
+#       gamma = gamDiri(br[sel_nz],ru)
+#       
+#       # Dirichlet
+#       stringBR = paste0(
+#         'Diri(',
+#         paste0(br[sel_nz],collapse=','),
+#         ';',
+#         gamma,
+#         ')'
+#       )
+#       
+#     }
+#     # Sample by Nested.x
+#     qySample[,sel_nz] = nds(nMC, stringBR)
+#   }
+#   
+#   return(qySample)
+# }
+# diriSample = function(qy, ru = 0.1, nMC = 500, eps = 1e-4, newGam = TRUE) {
+#   # Nested sampling when ionic and !ionic channels present
+#   # print('Enter diriSample')
+#   
+#   nc = ncol(qy)
+#   nw = nrow(qy)
+#   qySample = array(
+#     data = 0,
+#     dim  = c(nMC,nw,nc)
+#   )
+#  
+#   for (il in 1:nw)
+#     qySample[ , il, ] = diriSample0(qy[il,], ru, nMC, eps, newGam)
+# 
+#   return(qySample)
+# }
 hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1), 
                        nMC = 500, eps = 1e-4, newGam = TRUE) {
   # Nested sampling when ionic and !ionic channels present
@@ -250,39 +250,85 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
     if(brNI > 1-eps)
       brNI = 1
     
-    if(brNI*(1-brNI) == 0) {
-      # Sample neutral or ionic channels by flat Diri
-      if(brNI == 1){
-        qySample[ , il, !ionic] = diriSample0(qy[il,!ionic], ru[2], nMC, eps)
-      } else {
-        qySample[ , il, ionic] = diriSample0(qy[il,ionic], ru[3], nMC, eps)
-      }
-      
-    } else {
+    # if(brNI*(1-brNI) == 0) {
+    #   # Only neutrals or ions
+    #   
+    #   if(newGam) {
+    #     # Use Dirg instead of Diri
+    #     if(brNI == 1){
+    #       # Only neutrals
+    #       br = qy[il,] / sum(qy[il,])
+    #       br[br <= eps] = 0
+    #       br = br / sum(br)
+    #       sel_nz = br != 0
+    #       if(sum(sel_nz) > 1)
+    #         bru = br * ru[2] 
+    #       stringBR = paste0(
+    #         '*Dirg(',
+    #         paste0(brN[ sel_nz],collapse=','),';',
+    #         paste0(brNu[sel_nz],collapse=','),'),'
+    #       )
+    #       qySample[, il, sel_nz] = nds(nMC, stringBR)
+    #       
+    #     } else {
+    #       # Only ions
+    #       brN = qy[il,] / sum(qy[il,])
+    #       brN[brN <= eps] = 0
+    #       brN = brN / sum(brN)
+    #       sel_nz = brN != 0
+    #       if(sum(sel_nz) > 1)
+    #         brNu = brN * ru[2] 
+    #       stringBR = paste0(
+    #         '*Dirg(',
+    #         paste0(brN[ sel_nz],collapse=','),';',
+    #         paste0(brNu[sel_nz],collapse=','),'),'
+    #       )
+    #       qySample[, il, sel_nz] = nds(nMC, stringBR)
+    #     
+    #     }
+    #     
+    #   } else {
+    #     # Sample neutral or ionic channels by flat Diri
+    #     if(brNI == 1){
+    #       qySample[ , il, !ionic] = diriSample0(qy[il,!ionic], ru[2], nMC, eps)
+    #     } else {
+    #       qySample[ , il,  ionic] = diriSample0(qy[il, ionic], ru[3], nMC, eps)
+    #     }
+    #   }
+    #   
+    # } else {
       # Use a hierarchical representation
       if(newGam) {
         gammaNI = gamBeta(brNI, ru = ru[1])
         
         sel_nzN = TRUE
         if(sum(!ionic) > 1) {
-          brN = qy[il, !ionic] / sum(qy[il, !ionic])
-          brN[brN <= eps] = 0
-          brN = brN / sum(brN)
-          sel_nzN = brN != 0
-          if(sum(sel_nzN) > 1)
-            # gammaN = gamDiri(brN[sel_nzN],ru=ru[2])
-            brNu = brN * ru[2] / 2 # Standard uncertainty
+          brN = qy[il, !ionic] 
+          if(sum(brN) > 0) {
+            brN = brN / sum(brN)
+            brN[brN <= eps] = 0
+            if(sum(brN) > 0) {
+              brN = brN / sum(brN)
+              sel_nzN = brN != 0
+              if(sum(sel_nzN) > 1)
+                brNu = brN * ru[2]
+            }
+          }
         }
         
         sel_nzI = TRUE
         if(sum(ionic) > 1) {
-          brI = qy[il, ionic] / sum(qy[il, ionic])
-          brI[brI <= eps] = 0
-          brI = brI / sum(brI)
-          sel_nzI = brI != 0
-          if(sum(sel_nzI) > 1)
-            # gammaI = gamDiri(brI[sel_nzI],ru=ru[3])
-            brIu = brI * ru[3] / 2 # Standard uncertainty
+          brI = qy[il, ionic]
+          if(sum(brI) > 0) {
+            brI = brI / sum(brI)
+            brI[brI <= eps] = 0
+            if(sum(brI) > 0) {
+              brI = brI / sum(brI)
+              sel_nzI = brI != 0
+              if(sum(sel_nzI) > 1)
+                brIu = brI * ru[3]
+            }
+          }
         }
         
         # Nested Dirichlet
@@ -302,32 +348,62 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
                      paste0(brI[ sel_nzI],collapse=','),';',
                      paste0(brIu[sel_nzI],collapse=','),')'),
             ';',
-            gammaNI,
+            brNI,
           ')'
         )
+        # print(stringBR)
         
       } else {
         gammaNI = gamDiri(c(brNI, 1 - brNI), ru = ru[1])
       
         sel_nzN = TRUE
         if(sum(!ionic) > 1) {
-          brN = qy[il, !ionic] / sum(qy[il, !ionic])
-          brN[brN <= eps] = 0
-          brN = brN / sum(brN)
-          sel_nzN = brN != 0
-          if(sum(sel_nzN) > 1)
-            gammaN = gamDiri(brN[sel_nzN],ru=ru[2])
+          brN = qy[il, !ionic] 
+          if(sum(brN) > 0) {
+            brN = brN / sum(brN)
+            brN[brN <= eps] = 0
+            if(sum(brN) > 0) {
+              brN = brN / sum(brN)
+              sel_nzN = brN != 0
+              if(sum(sel_nzN) > 1)
+                gammaN = gamDiri(brN[sel_nzN],ru=ru[2])
+            }
+          }
         }
         
         sel_nzI = TRUE
         if(sum(ionic) > 1) {
-          brI = qy[il, ionic] / sum(qy[il, ionic])
-          brI[brI <= eps] = 0
-          brI = brI / sum(brI)
-          sel_nzI = brI != 0
-          if(sum(sel_nzI) > 1)
-            gammaI = gamDiri(brI[sel_nzI],ru=ru[3])
+          brI = qy[il, ionic]
+          if(sum(brI) > 0) {
+            brI = brI / sum(brI)
+            brI[brI <= eps] = 0
+            if(sum(brI) > 0) {
+              brI = brI / sum(brI)
+              sel_nzI = brI != 0
+              if(sum(sel_nzI) > 1)
+                gammaI = gamDiri(brI[sel_nzI],ru=ru[3])
+            }
+          }
         }
+        # sel_nzN = TRUE
+        # if(sum(!ionic) > 1) {
+        #   brN = qy[il, !ionic] / sum(qy[il, !ionic])
+        #   brN[brN <= eps] = 0
+        #   brN = brN / sum(brN)
+        #   sel_nzN = brN != 0
+        #   if(sum(sel_nzN) > 1)
+        #     gammaN = gamDiri(brN[sel_nzN],ru=ru[2])
+        # }
+        # 
+        # sel_nzI = TRUE
+        # if(sum(ionic) > 1) {
+        #   brI = qy[il, ionic] / sum(qy[il, ionic])
+        #   brI[brI <= eps] = 0
+        #   brI = brI / sum(brI)
+        #   sel_nzI = brI != 0
+        #   if(sum(sel_nzI) > 1)
+        #     gammaI = gamDiri(brI[sel_nzI],ru=ru[3])
+        # }
         
         # Nested Dirichlet
         stringBR = paste0(
@@ -341,16 +417,21 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
           1-brNI,
           if(sum(ionic) > 1 & sum(sel_nzI) > 1)
             paste0('*Diri(',paste0(brI[sel_nzI],collapse=','),';',gammaI,')'),
-          ';',gammaNI,
+          ';',
+          gammaNI,
           ')'
         )
       }
       
-      # Sample by Nested.x and reorder
+      # Sample by Nested.x 
       io = order(ionic)
-      ret_nz = c(sel_nzN,sel_nzI)
+      ret_nz = c()
+      if(sum(!ionic) > 1)
+        ret_nz = c(ret_nz,sel_nzN)
+      if(sum( ionic) > 1)
+        ret_nz = c(ret_nz,sel_nzI)
       qySample[, il, io[ret_nz]] = nds(nMC, stringBR)
-    }
+    # }
     
   }
   

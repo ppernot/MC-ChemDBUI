@@ -582,16 +582,16 @@ photoBRSimulate = shiny::reactive({
         ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[iReac])
       }
       
-      if (sum(ionic) * sum(!ionic) == 0) {
-        
-        # Diri sampling
-        qySample = diriSample(
-          qy,
-          ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
-          nMC = nMC,
-          eps = photoEps,
-          newGam = input$newGam)
-      } else {
+      # if (sum(ionic) * sum(!ionic) == 0) {
+      #   
+      #   # Diri sampling
+      #   qySample = diriSample(
+      #     qy,
+      #     ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
+      #     nMC = nMC,
+      #     eps = photoEps,
+      #     newGam = input$newGam)
+      # } else {
         
         # Nested sampling
         qySample = hierSample(
@@ -601,7 +601,7 @@ photoBRSimulate = shiny::reactive({
           nMC = nMC,
           eps = photoEps,
           newGam = input$newGam)
-      }
+      # }
       
       # Rearrange samples for better wavelength continuity
       if(input$photoBRArrange)
