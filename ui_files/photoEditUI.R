@@ -127,9 +127,11 @@ tabPanel(
                 'photoEditBRDisplay',
                 label    = 'Display of Brs',
                 choices  = c(
-                  "All channels" = 0,
-                  "Neus vs Ions" = 1,
-                  "Sum-to-one"   = 2
+                  "All channels"   = 0,
+                  "Neus vs Ions"   = 1,
+                  "Sum-to-one"     = 2,
+                  "Rel. unc."      = 3,
+                  "Mean rel. unc." = 4
                 )
               )
             ),
@@ -187,7 +189,16 @@ tabPanel(
                       value = TRUE
                     )
                   )
-                )              )
+                )
+              ),
+              sliderInput(
+                "fDirg",
+                label = "Dirg factor",
+                min   =  1, 
+                max   =  3,
+                value =  1.5,
+                step  =  0.1
+              )
             ),
             conditionalPanel(
               condition = "!input.photoBRArrange",

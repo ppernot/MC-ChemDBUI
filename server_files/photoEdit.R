@@ -585,7 +585,8 @@ photoBRSimulate = shiny::reactive({
           ru = photoRuBRN,
           nMC = nMC,
           eps = photoEps,
-          newGam = input$newGam)
+          newGam = input$newGam,
+          fDirg = input$fDirg)
         
       } else {
         
@@ -596,7 +597,8 @@ photoBRSimulate = shiny::reactive({
           ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
           nMC = nMC,
           eps = photoEps,
-          newGam = input$newGam)
+          newGam = input$newGam,
+          fDirg = input$fDirg)
       }
       
       # Rearrange samples for better wavelength continuity
@@ -691,10 +693,14 @@ output$plotPhotoBRSample = shiny::renderPlot({
   cols_tr = rep(gPars$cols_tr,2)
   lty     = c(rep(1,length(gPars$cols)),rep(2,length(gPars$cols)))
   
+  ylab = 'Branching ratios'
+  ylim = c(-0.01, 1.4)
+  
   if (input$photoEditBRDisplay == 0 | nBR == 1) {
     qy0 = sampleBR0
     qy  = sampleBR
     leg = photoDB()$PRODUCTS[channels]
+    
     
   } else if (input$photoEditBRDisplay == 1) {
     ionic = c()
@@ -708,11 +714,48 @@ output$plotPhotoBRSample = shiny::renderPlot({
     qy[, , 2] = rowSums(sampleBR[, ,  ionic, drop = FALSE], dims = 2)
     leg = c("Neutrals", "Ions")
     
-  } else {
+  } else if (input$photoEditBRDisplay == 2) {
     qy0 = rowSums(sampleBR0)
     qy = array(data = 0, dim  = c(nMC, length(sampleWl), 1))
     qy[, , 1] = rowSums(sampleBR, dims = 2)
     leg = c("Sum-to-one")
+    
+  } else if (input$photoEditBRDisplay == 3) {
+    # ionic = c()
+    # for (i in 1:nBR)
+    #   ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[channels[i]])
+
+    mu  = apply(sampleBR, c(2,3), mean, na.rm = TRUE)
+    sig = apply(sampleBR, c(2,3), sd  , na.rm = TRUE)
+    mu[mu==0] = 1
+    qy0 = sig / mu
+    leg = photoDB()$PRODUCTS[channels]
+    ylab = 'Relative uncertainty'
+    ylim = c(-0.01,1.4*max(qy0))
+    
+  } else if (input$photoEditBRDisplay == 4) {
+    ionic = c()
+    for (i in 1:nBR)
+      ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[channels[i]])
+    
+    mu  = apply(sampleBR, c(2,3), mean, na.rm = TRUE)
+    sig = apply(sampleBR, c(2,3), sd  , na.rm = TRUE)
+    mu[mu==0] = 1
+    qy = sig / mu
+    gm = function(X) { # Geometric mean
+      x = X[X != 0]
+      if(length(x) == 0) 
+        return(NA)
+      else
+        return( prod(x)^(1/length(x)) )
+    } 
+    qy0 = matrix(data = 0, nrow = length(sampleWl), ncol = 3)
+    qy0[,1] = apply(qy[, !ionic, drop = FALSE], 1, gm)
+    qy0[,2] = apply(qy[,  ionic, drop = FALSE], 1, gm)
+    qy0[,3] = apply(qy, 1, gm)
+    leg = c("Neutrals", "Ions", "Global")
+    ylab = 'Mean relative uncertainty'
+    ylim = c(-0.01,1.4*max(qy0, na.rm = TRUE))
   }
   
   matplot(
@@ -723,29 +766,30 @@ output$plotPhotoBRSample = shiny::renderPlot({
     xlab = 'Wavelength [nm]',
     xlim = input$photoWLPlotRange,
     yaxs = 'i',
-    ylim = c(-0.01, 1.4),
-    ylab = paste('Branching ratios'),
-    col  = cols_tr,
+    ylim = ylim,
+    ylab = ylab,
+    col  = cols,
     lty  = lty,
     main = sampleTitle
   )
   grid()
 
-  for(iMC in 1:nMC) {
+  if (input$photoEditBRDisplay < 3) {
+    for(iMC in 1:nMC) {
+      matlines(
+        sampleWl, qy[iMC,,],
+        lwd  = 3,
+        col  = cols_tr,
+        lty  = lty
+      )
+    }
     matlines(
-      sampleWl, qy[iMC,,],
-      lwd  = 3,
-      col  = cols_tr,
-      lty  = lty
+      sampleWl, qy0, 
+      lwd = 4, 
+      col = cols, 
+      lty = lty
     )
   }
-  
-  matlines(
-    sampleWl, qy0, 
-    lwd = 4, 
-    col = cols, 
-    lty = lty
-  )
   
   legend(
     'top', ncol =2, box.col = "white",

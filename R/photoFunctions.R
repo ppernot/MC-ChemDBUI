@@ -166,7 +166,18 @@ gamDiriGM = function(x,r) { # Geom Mean gamma
   p = prod( (1 - x - x*r^2) / (x*r^2))
   return( p^(1/length(x)) )
 }
-diriSample0 = function(br, ru, nMC, eps, newGam = TRUE) {
+threshComp = function(X,r) {
+  # Threshold to avoid stray Diri samples
+  # Might be problematic in dimensions > 2 and for large r !!!
+  amin = 1.1 * r^2 / (1+r^2) 
+  sel  = X < amin
+  if(sum(sel) > 0) {
+    X[ sel] = amin
+    X[!sel] = X[!sel] / sum(X[!sel]) * (1 - sum(sel)*amin)
+  }
+  return(X)
+}
+diriSample0 = function(br, ru, nMC, eps, newGam = TRUE, fDirg = 1) {
   # Flat sampling by Diri or Dirg
   # 
   qySample = matrix(0, nrow = nMC, ncol = length(br))
@@ -188,15 +199,17 @@ diriSample0 = function(br, ru, nMC, eps, newGam = TRUE) {
         'Dirg(',
         paste0(br[sel_nz], collapse = ','),
         ';',
-        paste0(br[sel_nz] * ru, collapse = ','),
+        paste0(br[sel_nz] * ru * fDirg, collapse = ','),
         ')')
       
     } else {
-      gamma = gamDiri(br[sel_nz], ru)
+      X = br[sel_nz]
+      X = threshComp( X, ru)
+      gamma = gamDiriGM(X, ru)
       # Dirichlet
       stringBR = paste0(
         'Diri(',
-        paste0(br[sel_nz], collapse = ','),
+        paste0(X, collapse = ','),
         ';',
         gamma,
         ')')
@@ -207,7 +220,8 @@ diriSample0 = function(br, ru, nMC, eps, newGam = TRUE) {
 
   return(qySample)
 }
-diriSample = function(qy, ru = 0.1, nMC = 500, eps = 1e-4, newGam = TRUE) {
+diriSample = function(qy, ru = 0.1, nMC = 500, eps = 1e-4, 
+                      newGam = TRUE, fDirg = 1) {
 
   nc = ncol(qy)
   nw = nrow(qy)
@@ -217,7 +231,7 @@ diriSample = function(qy, ru = 0.1, nMC = 500, eps = 1e-4, newGam = TRUE) {
   )
 
   for (il in 1:nw)
-    qySample[ , il, ] = diriSample0(qy[il,], ru, nMC, eps, newGam)
+    qySample[ , il, ] = diriSample0(qy[il,], ru, nMC, eps, newGam, fDirg)
 
   return(qySample)
 }
@@ -227,9 +241,9 @@ defDir = function(n){
   else
     paste0('*Diun(',n,')')
 }
-  
-hierSampleOld  = function(qy, ionic, ru = c(0.1,0.1,0.1), 
-                       nMC = 500, eps = 1e-4, newGam = TRUE) {
+hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1), 
+                       nMC = 500, eps = 1e-4, 
+                       newGam = TRUE, fDirg = 1) {
   # Nested sampling when ionic and !ionic channels present
   # *** Treat only non-zero channels ***
   nc = ncol(qy); nw = nrow(qy)
@@ -243,7 +257,7 @@ hierSampleOld  = function(qy, ionic, ru = c(0.1,0.1,0.1),
     br = qy[il,]
     br[br <= eps] = 0 # Threshold
     br = br / sum(br) # Renormalize
-
+    
     brNeu = sum(br[!ionic])
     indxN = NULL
     if (brNeu > 0) {
@@ -253,7 +267,7 @@ hierSampleOld  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       stringBRN = defDir(sum(sel_nzN))
       if (sum(sel_nzN) > 1) {
         if (newGam) {
-          brNu = brN * ru[2]
+          brNu = brN * ru[2] * fDirg
           stringBRN = paste0(
             '*Dirg(',
             paste0(brN[sel_nzN], collapse = ','),
@@ -261,120 +275,17 @@ hierSampleOld  = function(qy, ionic, ru = c(0.1,0.1,0.1),
             paste0(brNu[sel_nzN], collapse = ','),
             ')')
         } else {
-          gamma = gamDiri(brN[sel_nzN], ru = 2 * ru[2])
+          r = ru[2]
+          X = brN[sel_nzN]
+          X = threshComp( X, r)
+          gamma = gamDiriGM(X, r)
           stringBRN = paste0(
             '*Diri(',
-            paste0(brN[sel_nzN], collapse = ','), ';',
-            gamma, 
-            ')')
-        }
-      }
-    }
-    
-    brIon = sum(br[ionic])
-    indxI = NULL
-    if (brIon > 0) {
-      brI  = br[ionic] / brIon # Renormalize for ionic sub-tree
-      sel_nzI = brI > 0
-      indxI  = which(ionic)[sel_nzI]
-      stringBRI = defDir(sum(sel_nzI))
-      if (sum(sel_nzI) > 1) {
-        if (newGam) {
-          brIu = brI * ru[3]
-          stringBRI = paste0(
-            '*Dirg(',
-            paste0(brI[sel_nzI], collapse = ','),
-            ';',
-            paste0(brIu[sel_nzI], collapse = ','),
-            ')')
-        } else {
-          gamma = gamDiri(brI[sel_nzI], ru = 2 * ru[3])
-          stringBRI = paste0(
-            '*Diri(',
-            paste0(brI[sel_nzI], collapse = ','), ';',
+            paste0(X, collapse = ','), ';',
             gamma, ')')
         }
       }
     }
-
-    # Collate sampled channels indices
-    ret_nz = c()
-    if(!is.null(indxN))
-      ret_nz = c(ret_nz,indxN)
-    if(!is.null(indxI))
-      ret_nz = c(ret_nz,indxI)
-    
-    # Sampling
-    if(length(ret_nz) == 1) {
-      qySample[, il, ret_nz] = 1.0
-      
-    } else {
-      if(brIon == 0)
-        stringBR = substring(stringBRN,2) # Remove leading star
-      
-      else if(brNeu == 0)
-        stringBR = substring(stringBRI,2) # Remove leading star
-      
-      else {
-        if(newGam) {
-          gammaNI = gamDiriGM(brNeu, ru = ru[1])
-        } else {
-          gammaNI = gamDiri(c(brNeu, brIon), ru = 2 * ru[1])
-        } 
-        gammaNI = max(1, gammaNI) # Prevent 0
-        stringBR = paste0(
-          'Diri(',brNeu,stringBRN,',',brIon,stringBRI,';',gammaNI,')'
-        )
-      }
-      qySample[, il, ret_nz] = nds(nMC, stringBR)
-    }    
-    
-  }
-  
-  return(qySample)
-}
-hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1), 
-                       nMC = 500, eps = 1e-4, newGam = TRUE) {
-  # Nested sampling when ionic and !ionic channels present
-  # *** Treat only non-zero channels ***
-  nc = ncol(qy); nw = nrow(qy)
-  qySample = array(
-    data = 0,
-    dim  = c(nMC,nw,nc)
-  )
-  
-  for (il in 1:nw) {
-    
-    br = qy[il,]
-    br[br <= eps] = 0 # Threshold
-    br = br / sum(br) # Renormalize
-    
-    brNeu = sum(br[!ionic])
-    indxN = NULL
-    if (brNeu > 0) {
-      brN = br[!ionic] / brNeu # Renormalize for neutrals sub-tree
-      sel_nzN = brN > 0
-      indxN = which(!ionic)[sel_nzN]
-      stringBRN = defDir(sum(sel_nzN))
-      if (sum(sel_nzN) > 1) {
-        if (newGam) {
-          brNu = brN * ru[2]
-          stringBRN = paste0(
-            '*Dirg(',
-            paste0(brN[sel_nzN], collapse = ','),
-            ';',
-            paste0(brNu[sel_nzN], collapse = ','),
-            ')')
-        } else {
-          gamma = gamDiri(brN[sel_nzN], r = ru[2])
-          stringBRN = paste0(
-            '*Diri(',
-            paste0(brN[sel_nzN], collapse = ','), ';',
-            gamma, 
-            ')')
-        }
-      }
-    }
     
     brIon = sum(br[ionic])
     indxI = NULL
@@ -385,7 +296,7 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       stringBRI = defDir(sum(sel_nzI))
       if (sum(sel_nzI) > 1) {
         if (newGam) {
-          brIu = brI * ru[3]
+          brIu = brI * ru[3] * fDirg
           stringBRI = paste0(
             '*Dirg(',
             paste0(brI[sel_nzI], collapse = ','),
@@ -393,10 +304,13 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
             paste0(brIu[sel_nzI], collapse = ','),
             ')')
         } else {
-          gamma = gamDiri(brI[sel_nzI], r = ru[3])
+          r = ru[3]
+          X = brI[sel_nzI]
+          X = threshComp( X, r)
+          gamma = gamDiriGM(X, r)
           stringBRI = paste0(
             '*Diri(',
-            paste0(brI[sel_nzI], collapse = ','), ';',
+            paste0(X, collapse = ','), ';',
             gamma, ')')
         }
       }
@@ -422,21 +336,15 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       
       else {
         r = ru[1]
+        X = c(brNeu,brIon)
+        X = threshComp( X, r)
         if(newGam) {
-          amin = 1.1 * r^2 / (1+r^2) # Threshold to avoid rogue Diri samples
-          if(brIon <= amin) {
-            brIon = amin
-          } else if(brIon >= 1-amin) {
-            brIon = 1-amin
-          }
-          brNeu = 1-brIon
-          gammaNI = gamDiriGM(c(brNeu, brIon), r)
+          gammaNI = gamDiriGM(X, r)
         } else {
-          gammaNI = gamDiri(c(brNeu, brIon), r)
-          gammaNI = max(1, gammaNI) # Prevent 0
+          gammaNI = gamDiri(X, r)
         } 
         stringBR = paste0(
-          'Diri(',brNeu,stringBRN,',',brIon,stringBRI,';',gammaNI,')'
+          'Diri(',X[1],stringBRN,',',X[2],stringBRI,';',gammaNI,')'
         )
       }
       qySample[, il, ret_nz] = nds(nMC, stringBR)
