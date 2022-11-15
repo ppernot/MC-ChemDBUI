@@ -470,11 +470,6 @@ photoBRSimulate = shiny::reactive({
     }
     wl = wl1
     
-  #   if(!is.null(input$photoXS_F))
-  #     uF = as.numeric(input$photoXS_F)
-  #   else
-  #     uF = photoDefaultuF
-  #   
   } else if (type == 'Plessis') {
     
     pattern = paste0('qy', sp)
@@ -582,16 +577,17 @@ photoBRSimulate = shiny::reactive({
         ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[iReac])
       }
       
-      # if (sum(ionic) * sum(!ionic) == 0) {
-      #   
-      #   # Diri sampling
-      #   qySample = diriSample(
-      #     qy,
-      #     ru = ifelse( sum(ionic) == 0, photoRuBRN, photoRuBRI),
-      #     nMC = nMC,
-      #     eps = photoEps,
-      #     newGam = input$newGam)
-      # } else {
+      if (input$flatDiri) {
+
+        # Diri sampling
+        qySample = diriSample(
+          qy,
+          ru = photoRuBRN,
+          nMC = nMC,
+          eps = photoEps,
+          newGam = input$newGam)
+        
+      } else {
         
         # Nested sampling
         qySample = hierSample(
@@ -601,7 +597,7 @@ photoBRSimulate = shiny::reactive({
           nMC = nMC,
           eps = photoEps,
           newGam = input$newGam)
-      # }
+      }
       
       # Rearrange samples for better wavelength continuity
       if(input$photoBRArrange)
@@ -611,19 +607,6 @@ photoBRSimulate = shiny::reactive({
         )
       
     }
-  }
-  
-  for(i in 1:nBR) {
-    print(paste0('*** ',i,' ***'))
-    Y = qySample[,,i]
-    # print(str(Y))
-    # print(sum(is.na(Y)))
-    X = cor(Y)
-    # print(str(X))
-    print(X[1,1:5])
-    # Xm = apply(Y,2,mean)
-    Xs = apply(Y,2,sd)
-    print(range(Xs,na.rm = TRUE))
   }
   
   return(list(
@@ -740,7 +723,7 @@ output$plotPhotoBRSample = shiny::renderPlot({
     xlab = 'Wavelength [nm]',
     xlim = input$photoWLPlotRange,
     yaxs = 'i',
-    ylim = c(-0.01, 1.2),
+    ylim = c(-0.01, 1.4),
     ylab = paste('Branching ratios'),
     col  = cols_tr,
     lty  = lty,

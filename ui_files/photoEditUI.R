@@ -97,7 +97,7 @@ tabPanel(
                 'photoSimulateSize',
                 label    = '# MC samples',
                 choices  = c(10,seq(100,1000,by = 100)),
-                selected = 100,
+                selected = 10,
                 width = '200px'
               )
             ),
@@ -154,7 +154,7 @@ tabPanel(
               condition = "!input.photoEditGP_Fit",
               fluidRow(
                 column(
-                  4,
+                  3,
                   checkboxInput(
                     "newGam",
                     label = "New unc.",
@@ -162,21 +162,29 @@ tabPanel(
                   )
                 ),
                 column(
-                  4,
+                  3,
                   checkboxInput(
-                    "photoBRArrange",
-                    label = "Arrange samples",
+                    "flatDiri",
+                    label = "Flat Diri",
                     value = FALSE
                   )
                 ),
                 column(
-                  4,
+                  3,
+                  checkboxInput(
+                    "photoBRArrange",
+                    label = "Arrange samples",
+                    value = TRUE
+                  )
+                ),
+                column(
+                  3,
                   conditionalPanel(
                     condition = "input.photoBRArrange",
                     checkboxInput(
                       "photoBRUseRanks",
                       label = "Use ranks",
-                      value = FALSE
+                      value = TRUE
                     )
                   )
                 )              )
@@ -231,7 +239,9 @@ tabPanel(
               ),
               column(
                 7,
-                plotOutput("plotPhotoXSSample",height = plotHeight)
+                shinycssloaders::withSpinner(
+                  plotOutput("plotPhotoXSSample",height = plotHeight)
+                )
               )
             )
           ),
@@ -244,7 +254,9 @@ tabPanel(
               ),
               column(
                 7,
-                plotOutput("plotPhotoBRSample",height = plotHeight)
+                shinycssloaders::withSpinner(
+                  plotOutput("plotPhotoBRSample",height = plotHeight)
+                )
               )
             )
           ),
