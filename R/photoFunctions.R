@@ -169,7 +169,7 @@ gamDiriGM = function(x,r) { # Geom Mean gamma
 threshComp = function(X,r) {
   # Threshold to avoid stray Diri samples
   # Might be problematic in dimensions > 2 and for large r !!!
-  amin = 1.1 * r^2 / (1+r^2) 
+  amin = 1.1 * r^2 / (1 + r^2) 
   sel  = X < amin
   if(sum(sel) > 0) {
     X[ sel] = amin
@@ -177,7 +177,7 @@ threshComp = function(X,r) {
   }
   return(X)
 }
-diriSample0 = function(br, ru, nMC, eps, newGam = TRUE, fDirg = 1) {
+diriSample0 = function(br, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
   # Flat sampling by Diri or Dirg
   # 
   qySample = matrix(0, nrow = nMC, ncol = length(br))
@@ -195,11 +195,14 @@ diriSample0 = function(br, ru, nMC, eps, newGam = TRUE, fDirg = 1) {
   } else {
     if(newGam) {
       # Dirg
+      bru = br[sel_nz] * ru
+      if(fDirg)
+        bru = bru * fScaleDirg(sum(sel_nz))
       stringBR = paste0(
         'Dirg(',
         paste0(br[sel_nz], collapse = ','),
         ';',
-        paste0(br[sel_nz] * ru * fDirg, collapse = ','),
+        paste0(bru, collapse = ','),
         ')')
       
     } else {
@@ -221,7 +224,7 @@ diriSample0 = function(br, ru, nMC, eps, newGam = TRUE, fDirg = 1) {
   return(qySample)
 }
 diriSample = function(qy, ru = 0.1, nMC = 500, eps = 1e-4, 
-                      newGam = TRUE, fDirg = 1) {
+                      newGam = TRUE, fDirg = TRUE) {
 
   nc = ncol(qy)
   nw = nrow(qy)
@@ -243,7 +246,7 @@ defDir = function(n){
 }
 hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1), 
                        nMC = 500, eps = 1e-4, 
-                       newGam = TRUE, fDirg = 1) {
+                       newGam = TRUE, fDirg = TRUE) {
   # Nested sampling when ionic and !ionic channels present
   # *** Treat only non-zero channels ***
   nc = ncol(qy); nw = nrow(qy)
@@ -257,7 +260,7 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
     br = qy[il,]
     br[br <= eps] = 0 # Threshold
     br = br / sum(br) # Renormalize
-    
+
     brNeu = sum(br[!ionic])
     indxN = NULL
     if (brNeu > 0) {
@@ -267,7 +270,10 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       stringBRN = defDir(sum(sel_nzN))
       if (sum(sel_nzN) > 1) {
         if (newGam) {
-          brNu = brN * ru[2] * fDirg
+          r = ru[2]
+          brNu = r * brN
+          if(fDirg)
+            brNu = brNu * fScaleDirg(sum(sel_nzN))
           stringBRN = paste0(
             '*Dirg(',
             paste0(brN[sel_nzN], collapse = ','),
@@ -296,7 +302,10 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       stringBRI = defDir(sum(sel_nzI))
       if (sum(sel_nzI) > 1) {
         if (newGam) {
-          brIu = brI * ru[3] * fDirg
+          r = ru[3]
+          brIu = r * brI
+          if(fDirg)
+            brIu = brIu * fScaleDirg(sum(sel_nzI))
           stringBRI = paste0(
             '*Dirg(',
             paste0(brI[sel_nzI], collapse = ','),
@@ -335,17 +344,27 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
         stringBR = substring(stringBRI,2) # Remove leading star
       
       else {
-        r = ru[1]
+        r = ru[1] 
         X = c(brNeu,brIon)
-        X = threshComp( X, r)
         if(newGam) {
-          gammaNI = gamDiriGM(X, r)
+          # Interpret r as absolute uncertainty
+          bru = r * X
+          if(fDirg)
+            bru = bru * fScaleDirg(2)
+          stringBR = paste0(
+            'Dirg(',X[1],stringBRN,',',X[2],stringBRI,';',
+            paste0(bru, collapse = ','),')'
+          )
         } else {
+          X = threshComp( X, r)
           gammaNI = gamDiri(X, r)
+          # gammaNI = gamDiriGM(X, r)
+          stringBR = paste0(
+            'Diri(',X[1],stringBRN,',',X[2],stringBRI,';',
+            gammaNI,')'
+          )
         } 
-        stringBR = paste0(
-          'Diri(',X[1],stringBRN,',',X[2],stringBRI,';',gammaNI,')'
-        )
+        
       }
       qySample[, il, ret_nz] = nds(nMC, stringBR)
     }    
@@ -390,4 +409,17 @@ arrangeSample = function(S, useRanks = FALSE) {
   }
   
   return(S)
+}
+gm = function(X) { 
+  # Geometric mean
+  x = X[X != 0]
+  if(length(x) == 0) 
+    return(NA)
+  else
+    return( prod(x)^(1/length(x)) )
+} 
+fScaleDirg = function(d) {
+  # Scale for b params of Dirg(a;b) to recover 
+  # prescribed mean relative uncert.
+  0.95 * (1 + 1/d)
 }

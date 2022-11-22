@@ -721,17 +721,13 @@ output$plotPhotoBRSample = shiny::renderPlot({
     leg = c("Sum-to-one")
     
   } else if (input$photoEditBRDisplay == 3) {
-    # ionic = c()
-    # for (i in 1:nBR)
-    #   ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[channels[i]])
-
     mu  = apply(sampleBR, c(2,3), mean, na.rm = TRUE)
     sig = apply(sampleBR, c(2,3), sd  , na.rm = TRUE)
     mu[mu==0] = 1
     qy0 = sig / mu
     leg = photoDB()$PRODUCTS[channels]
     ylab = 'Relative uncertainty'
-    ylim = c(-0.01,1.4*max(qy0))
+    ylim = c(-0.01,1.4*max(qy0, na.rm = TRUE))
     
   } else if (input$photoEditBRDisplay == 4) {
     ionic = c()
@@ -742,17 +738,17 @@ output$plotPhotoBRSample = shiny::renderPlot({
     sig = apply(sampleBR, c(2,3), sd  , na.rm = TRUE)
     mu[mu==0] = 1
     qy = sig / mu
-    gm = function(X) { # Geometric mean
+    nzMean = function(X) {
       x = X[X != 0]
       if(length(x) == 0) 
-        return(NA)
+        return(0)
       else
-        return( prod(x)^(1/length(x)) )
-    } 
+        return( mean(x) )
+    }
     qy0 = matrix(data = 0, nrow = length(sampleWl), ncol = 3)
-    qy0[,1] = apply(qy[, !ionic, drop = FALSE], 1, gm)
-    qy0[,2] = apply(qy[,  ionic, drop = FALSE], 1, gm)
-    qy0[,3] = apply(qy, 1, gm)
+    qy0[,1] = apply(qy[, !ionic, drop = FALSE], 1, nzMean)
+    qy0[,2] = apply(qy[,  ionic, drop = FALSE], 1, nzMean)
+    qy0[,3] = apply(qy, 1, nzMean)
     leg = c("Neutrals", "Ions", "Global")
     ylab = 'Mean relative uncertainty'
     ylim = c(-0.01,1.4*max(qy0, na.rm = TRUE))
@@ -760,7 +756,7 @@ output$plotPhotoBRSample = shiny::renderPlot({
   
   matplot(
     sampleWl, qy0,
-    type = 'l', 
+    type = 'b', 
     lwd  = 3,
     xaxs = 'i',
     xlab = 'Wavelength [nm]',

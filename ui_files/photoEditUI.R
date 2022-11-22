@@ -130,8 +130,8 @@ tabPanel(
                   "All channels"   = 0,
                   "Neus vs Ions"   = 1,
                   "Sum-to-one"     = 2,
-                  "Rel. unc."      = 3,
-                  "Mean rel. unc." = 4
+                  "Rel. uncert."    = 3,
+                  "Mean rel. unc."   = 4
                 )
               )
             ),
@@ -191,13 +191,10 @@ tabPanel(
                   )
                 )
               ),
-              sliderInput(
+              checkboxInput(
                 "fDirg",
-                label = "Dirg factor",
-                min   =  1, 
-                max   =  3,
-                value =  1.5,
-                step  =  0.1
+                label = "Dirg scaling",
+                value =  TRUE
               )
             ),
             conditionalPanel(
