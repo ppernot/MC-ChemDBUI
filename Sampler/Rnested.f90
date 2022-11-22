@@ -131,7 +131,7 @@ contains
 
     rand_tab=0
     u   = genunf(0.0,1.0)
-    sa  =sum(alpha)
+    sa  = sum(alpha)
     vmax=0
     do i= 1, size(alpha)
       vmin=vmax
@@ -218,7 +218,63 @@ contains
 
   end function Dirz
 
+  function fd(n) result (f)
+    implicit none
+    integer, intent(in)  :: n
+    real                 :: f
+    real, dimension(100) :: fc
+    data fc /0, 0.99, 0.93, 0.92, 0.92, 0.93, 0.94, 0.95, 92*0.96/
+    
+    f = fc(n) * (1.0 + 1.0 / n)
+   
+  end function fd
+  
   function Dirg(alpha,beta) result (rand_tab)
+  ! Generalized Dirichlet distribution according to Lingwan REF???
+  ! with correction for uncertainty under-estimation 
+    implicit none
+    real, dimension(:), intent(in) :: alpha, beta
+    real, dimension(size(alpha))   :: rand_tab, betac
+    real                           :: gengam, a, b, f
+    integer                        :: i, count, nc
+    logical                        :: ok
+
+    ok = .FALSE.
+    count = 0
+    nc = size(alpha)
+    
+    ! Scaling to recover prescribed relative uncertainty
+    f = fd(nc)
+    do i= 1, nc
+       betac(i) = beta(i) * f
+    enddo
+    
+    do while (.NOT. ok)
+
+       do i= 1, nc
+          a= alpha(i)/betac(i)**2
+          b=(alpha(i)/betac(i))**2
+          rand_tab(i)= gengam(a,b) ! Generate Gamma deviates
+       enddo
+       rand_tab=rand_tab/sum(rand_tab)
+
+       ! Control of stray runs by marginals
+       ok = .TRUE.
+       do i= 1, nc
+          if(rand_tab(i) .LT. alpha(i)-3*betac(i) .OR. &
+             rand_tab(i) .GT. alpha(i)+3*betac(i) ) then
+             ok = .FALSE.
+             count = count +1
+             if (count .GT.50) stop 'Problem in Dirg'
+             exit
+          endif
+       enddo
+
+    enddo
+
+  end function Dirg
+  
+  function Dirh(alpha,beta) result (rand_tab)
   ! Generalized Dirichlet distribution according to Lingwan REF???
     implicit none
     real, dimension(:),intent(in) :: alpha, beta
@@ -252,7 +308,7 @@ contains
 
     enddo
 
-  end function Dirg
+  end function Dirh
 
   function Diri(alpha,beta) result (rand_tab)
   ! Dirichlet distribution (cf. Gelman)
@@ -783,6 +839,14 @@ contains
              beta=tree%y(nleafs+1:2*nleafs)
              tree%user(1)%f_field=Dirg(alpha,beta)
              deallocate(alpha,beta)
+             
+           case('Dirh')
+             allocate(alpha(nleafs))
+             alpha=tree%y(1:nleafs)
+             allocate(beta(nleafs))
+             beta=tree%y(nleafs+1:2*nleafs)
+             tree%user(1)%f_field=Dirh(alpha,beta)
+             deallocate(alpha,beta)
 
            case('Dirw')
              allocate(alpha(nleafs))
@@ -993,7 +1057,7 @@ contains
 
        select case (oper)
 
-          case ('Dirg','Diut','Dirw','Dirz','Mlgn') ! Look for 2*nleafs params
+          case ('Dirg','Dirh','Diut','Dirw','Dirz','Mlgn') ! Look for 2*nleafs params
             call get_arguments(chain,elts,nel)
             allocate(alpha(nel))
             do i= 1, nel

@@ -419,7 +419,12 @@ gm = function(X) {
     return( prod(x)^(1/length(x)) )
 } 
 fScaleDirg = function(d) {
-  # Scale for b params of Dirg(a;b) to recover 
+  # Scale for b params of Dirg(a;b) to recover
   # prescribed mean relative uncert.
-  0.95 * (1 + 1/d)
+  # fd = c(
+  #   c( NA, 0.99, 0.93, 0.92, 0.92, 0.93, 0.94, 0.95, 0.96, 0.96),
+  #   rep(0.96,50)
+  # )
+  # fd[d] * ( 1 + 1/d )
+  1
 }
