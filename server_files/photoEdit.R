@@ -463,10 +463,10 @@ photoBRSimulate = shiny::reactive({
       # Normal case: several channels
       i0 = 2
     }
-    qy = matrix(0, ncol = np, nrow = length(wl1))
+    qy0 = matrix(0, ncol = np, nrow = length(wl1))
     for (i in 1:np) {
       br = downSample(wl, S[, i+i0]/xs, reso = reso)$xs
-      qy[ ,i] = br[first:last] 
+      qy0[ ,i] = br[first:last] 
     }
     wl = wl1
     
@@ -491,7 +491,7 @@ photoBRSimulate = shiny::reactive({
     xs  = S[, 2]
     xsl = downSample(wl, xs, reso = reso)
     wl  = xsl$wl
-    qy = matrix(0, ncol = length(files), nrow = length(wl))
+    qy0 = matrix(0, ncol = length(files), nrow = length(wl))
     
     for (i in seq_along(files)) {
       S = read.table(file = file.path(source,files[i]),
@@ -502,7 +502,7 @@ photoBRSimulate = shiny::reactive({
         xsl = downSample(wl, xs, reso = reso)
         wl  = xsl$wl
         xs  = xsl$xs
-        qy[ ,i] = xs
+        qy0[ ,i] = xs
     }
     
   }
@@ -518,7 +518,7 @@ photoBRSimulate = shiny::reactive({
 
   } else {
 
-    qy = qy / rowSums(qy)
+    qy = qy0 / rowSums(qy0)
     
     if(input$photoEditGP_Fit) {
       
@@ -578,10 +578,21 @@ photoBRSimulate = shiny::reactive({
       }
       
       if (input$flatDiri) {
-
+        fuBr = function(mS, uS) {
+          mT = sum(mS)
+          uT = sqrt(sum(uS^2))
+          sqrt(uS^2 / mT^2 + uT^2 * (mS/mT^2)^2 - 2 * uS^2 * mS/mT^3)
+        }
+        r = rep(photoRuBRN,nBR)
+        if(sum(ionic) != 0)
+          r[ionic] = photoRuBRNI
+        uqy =  matrix(0, ncol =ncol(qy), nrow = nrow(qy))
+        for(i in 1:nrow(qy0))
+          uqy[i,] = fuBr(qy0[i,],r*qy0[i,])
+        
         # Diri sampling
         qySample = diriSample(
-          qy,
+          qy, uqy,
           ru = photoRuBRN,
           nMC = nMC,
           eps = photoEps,

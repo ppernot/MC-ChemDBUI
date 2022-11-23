@@ -177,7 +177,7 @@ threshComp = function(X,r) {
   }
   return(X)
 }
-diriSample0 = function(br, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
+diriSample0 = function(br, ubr, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
   # Flat sampling by Diri or Dirg
   # 
   qySample = matrix(0, nrow = nMC, ncol = length(br))
@@ -195,14 +195,14 @@ diriSample0 = function(br, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
   } else {
     if(newGam) {
       # Dirg
-      bru = br[sel_nz] * ru
-      if(fDirg)
-        bru = bru * fScaleDirg(sum(sel_nz))
+      # bru = br[sel_nz] * ru
+      # if(fDirg)
+      #   bru = bru * fScaleDirg(sum(sel_nz))
       stringBR = paste0(
         'Dirg(',
         paste0(br[sel_nz], collapse = ','),
         ';',
-        paste0(bru, collapse = ','),
+        paste0(ubr[sel_nz], collapse = ','),
         ')')
       
     } else {
@@ -223,7 +223,7 @@ diriSample0 = function(br, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
 
   return(qySample)
 }
-diriSample = function(qy, ru = 0.1, nMC = 500, eps = 1e-4, 
+diriSample = function(qy, uqy, ru = 0.1, nMC = 500, eps = 1e-4, 
                       newGam = TRUE, fDirg = TRUE) {
 
   nc = ncol(qy)
@@ -234,7 +234,7 @@ diriSample = function(qy, ru = 0.1, nMC = 500, eps = 1e-4,
   )
 
   for (il in 1:nw)
-    qySample[ , il, ] = diriSample0(qy[il,], ru, nMC, eps, newGam, fDirg)
+    qySample[ , il, ] = diriSample0(qy[il,], uqy[il,], ru, nMC, eps, newGam, fDirg)
 
   return(qySample)
 }
