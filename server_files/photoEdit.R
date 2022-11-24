@@ -767,7 +767,7 @@ output$plotPhotoBRSample = shiny::renderPlot({
   
   matplot(
     sampleWl, qy0,
-    type = 'b', 
+    type = 'l', 
     lwd  = 3,
     xaxs = 'i',
     xlab = 'Wavelength [nm]',
