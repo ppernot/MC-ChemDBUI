@@ -156,21 +156,44 @@ tabPanel(
               condition = "!input.photoEditGP_Fit",
               fluidRow(
                 column(
-                  3,
+                  4,
                   checkboxInput(
-                    "newGam",
-                    label = "New unc.",
+                    "useDirg",
+                    label = "Dirg (vs. Diri)",
                     value = TRUE
                   )
                 ),
                 column(
-                  3,
+                  4,
+                  conditionalPanel(
+                    condition = "!input.useDirg",
+                    checkboxInput(
+                      "newDiri",
+                      label = "New Diri",
+                      value = TRUE
+                    )
+                  ),
+                  conditionalPanel(
+                    condition = "input.useDirg",
+                    checkboxInput(
+                      "newDirg",
+                      label = "New Dirg",
+                      value = TRUE
+                    )
+                  )
+                  
+                  
+                ),
+                column(
+                  4,
                   checkboxInput(
-                    "flatDiri",
-                    label = "Flat Diri",
-                    value = FALSE
+                    "flatTree",
+                    label = "Flat tree",
+                    value = TRUE
                   )
                 ),
+              ),
+              fluidRow(
                 column(
                   3,
                   checkboxInput(
@@ -190,11 +213,6 @@ tabPanel(
                     )
                   )
                 )
-              ),
-              checkboxInput(
-                "fDirg",
-                label = "Dirg scaling",
-                value =  TRUE
               )
             ),
             conditionalPanel(

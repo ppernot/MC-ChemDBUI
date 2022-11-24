@@ -577,27 +577,26 @@ photoBRSimulate = shiny::reactive({
         ionic[i] = 'E' %in% getSpecies(photoDB()$PRODUCTS[iReac])
       }
       
-      if (input$flatDiri) {
-        fuBr = function(mS, uS) {
-          mT = sum(mS)
-          uT = sqrt(sum(uS^2))
-          sqrt(uS^2 / mT^2 + uT^2 * (mS/mT^2)^2 - 2 * uS^2 * mS/mT^3)
-        }
-        r = rep(photoRuBRN,nBR)
-        if(sum(ionic) != 0)
-          r[ionic] = photoRuBRNI
+      if (input$flatTree) {
+
         uqy =  matrix(0, ncol =ncol(qy), nrow = nrow(qy))
-        for(i in 1:nrow(qy0))
-          uqy[i,] = fuBr(qy0[i,],r*qy0[i,])
-        
-        # Diri sampling
-        qySample = diriSample(
+        if(input$useDirg) {
+          # Uncertainties on BRs
+          r = rep(photoRuBRN,nBR)
+          if(sum(ionic) != 0)
+            r[ionic] = photoRuBRNI
+          for(i in 1:nrow(qy0))
+            uqy[i,] = fuBr(qy0[i,],r*qy0[i,])
+        }
+          
+        qySample = flatSample(
           qy, uqy,
           ru = photoRuBRN,
           nMC = nMC,
           eps = photoEps,
-          newGam = input$newGam,
-          fDirg = input$fDirg)
+          useDirg = input$useDirg,
+          newDiri = input$newDiri,
+          newDirg = input$newDirg)
         
       } else {
         
@@ -608,8 +607,9 @@ photoBRSimulate = shiny::reactive({
           ru = c(photoRuBRNI, photoRuBRN, photoRuBRI),
           nMC = nMC,
           eps = photoEps,
-          newGam = input$newGam,
-          fDirg = input$fDirg)
+          useDirg = input$useDirg,
+          newDiri = input$newDiri,
+          newDirg = input$newDirg)
       }
       
       # Rearrange samples for better wavelength continuity

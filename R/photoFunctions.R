@@ -157,7 +157,7 @@ downSample = function(wl,xs,reso = 1) {
 #   nds=matrix(liste[2:nlast],ncol=nleaves,byrow=T)
 #   return(nds)
 # }
-gamDiri = function(x,r) { # Eq.9 in Plessis2010
+gamDiriLS = function(x,r) { # Eq.9 in Plessis2010
   x  = x / sum(x)  # Ensure normalization
   return( 1 / r^2 * (sum(x*(1-x)) / sum(x*sqrt(x*(1-x))))^2 - 1 )
 }
@@ -177,7 +177,8 @@ threshComp = function(X,r) {
   }
   return(X)
 }
-diriSample0 = function(br, ubr, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
+flatSample0 = function(br, ubr, ru, nMC, eps, 
+                       useDirg = TRUE, newDiri = TRUE, newDirg = TRUE) {
   # Flat sampling by Diri or Dirg
   # 
   qySample = matrix(0, nrow = nMC, ncol = length(br))
@@ -193,13 +194,10 @@ diriSample0 = function(br, ubr, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
     qySample[,sel_nz] = 1
 
   } else {
-    if(newGam) {
-      # Dirg
-      # bru = br[sel_nz] * ru
-      # if(fDirg)
-      #   bru = bru * fScaleDirg(sum(sel_nz))
+    if(useDirg) {
+      dist = ifelse(newDirg, 'Dirg', 'Dirh')
       stringBR = paste0(
-        'Dirg(',
+        dist,'(',
         paste0(br[sel_nz], collapse = ','),
         ';',
         paste0(ubr[sel_nz], collapse = ','),
@@ -207,9 +205,12 @@ diriSample0 = function(br, ubr, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
       
     } else {
       X = br[sel_nz]
-      X = threshComp( X, ru)
-      gamma = gamDiriGM(X, ru)
-      # Dirichlet
+      if(newDiri) {
+        X = threshComp( X, ru)
+        gamma = gamDiriGM(X, ru)
+      } else {
+        gamma = gamDiriLS(X, ru)
+      }
       stringBR = paste0(
         'Diri(',
         paste0(X, collapse = ','),
@@ -223,8 +224,8 @@ diriSample0 = function(br, ubr, ru, nMC, eps, newGam = TRUE, fDirg = TRUE) {
 
   return(qySample)
 }
-diriSample = function(qy, uqy, ru = 0.1, nMC = 500, eps = 1e-4, 
-                      newGam = TRUE, fDirg = TRUE) {
+flatSample = function(qy, uqy, ru = 0.1, nMC = 500, eps = 1e-4, 
+                      useDirg = TRUE, newDiri = TRUE, newDirg = TRUE) {
 
   nc = ncol(qy)
   nw = nrow(qy)
@@ -234,7 +235,8 @@ diriSample = function(qy, uqy, ru = 0.1, nMC = 500, eps = 1e-4,
   )
 
   for (il in 1:nw)
-    qySample[ , il, ] = diriSample0(qy[il,], uqy[il,], ru, nMC, eps, newGam, fDirg)
+    qySample[ , il, ] = flatSample0(qy[il,], uqy[il,], ru, nMC, eps, 
+                                    useDirg, newDiri, newDirg)
 
   return(qySample)
 }
@@ -246,7 +248,7 @@ defDir = function(n){
 }
 hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1), 
                        nMC = 500, eps = 1e-4, 
-                       newGam = TRUE, fDirg = TRUE) {
+                       useDirg = TRUE, newDiri = TRUE, newDirg = TRUE) {
   # Nested sampling when ionic and !ionic channels present
   # *** Treat only non-zero channels ***
   nc = ncol(qy); nw = nrow(qy)
@@ -269,22 +271,24 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       indxN = which(!ionic)[sel_nzN]
       stringBRN = defDir(sum(sel_nzN))
       if (sum(sel_nzN) > 1) {
-        if (newGam) {
-          r = ru[2]
-          brNu = r * brN
-          if(fDirg)
-            brNu = brNu * fScaleDirg(sum(sel_nzN))
+        if (useDirg) {
+          ubrN = ru[2] * brN
+          dist = ifelse(newDirg, '*Dirg', '*Dirh')
           stringBRN = paste0(
-            '*Dirg(',
+            dist,'(',
             paste0(brN[sel_nzN], collapse = ','),
             ';',
-            paste0(brNu[sel_nzN], collapse = ','),
+            paste0(ubrN[sel_nzN], collapse = ','),
             ')')
         } else {
           r = ru[2]
           X = brN[sel_nzN]
-          X = threshComp( X, r)
-          gamma = gamDiriGM(X, r)
+          if(newDiri) {
+            X = threshComp( X, r)
+            gamma = gamDiriGM(X, r)
+          } else {
+            gamma = gamDiriLS(X, r)
+          }
           stringBRN = paste0(
             '*Diri(',
             paste0(X, collapse = ','), ';',
@@ -301,13 +305,11 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       indxI  = which(ionic)[sel_nzI]
       stringBRI = defDir(sum(sel_nzI))
       if (sum(sel_nzI) > 1) {
-        if (newGam) {
-          r = ru[3]
-          brIu = r * brI
-          if(fDirg)
-            brIu = brIu * fScaleDirg(sum(sel_nzI))
+        if (useDirg) {
+          brIu = ru[3] * brI
+          dist = ifelse(newDirg, '*Dirg', '*Dirh')
           stringBRI = paste0(
-            '*Dirg(',
+            dist,'(',
             paste0(brI[sel_nzI], collapse = ','),
             ';',
             paste0(brIu[sel_nzI], collapse = ','),
@@ -315,8 +317,12 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
         } else {
           r = ru[3]
           X = brI[sel_nzI]
-          X = threshComp( X, r)
-          gamma = gamDiriGM(X, r)
+          if(newDiri) {
+            X = threshComp( X, r)
+            gamma = gamDiriGM(X, r)
+          } else {
+            gamma = gamDiriLS(X, r)
+          }
           stringBRI = paste0(
             '*Diri(',
             paste0(X, collapse = ','), ';',
@@ -346,22 +352,23 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       else {
         r = ru[1] 
         X = c(brNeu,brIon)
-        if(newGam) {
-          # Interpret r as absolute uncertainty
+        if(useDirg) {
           bru = r * X
-          if(fDirg)
-            bru = bru * fScaleDirg(2)
+          dist = ifelse(newDirg, 'Dirg', 'Dirh')
           stringBR = paste0(
-            'Dirg(',X[1],stringBRN,',',X[2],stringBRI,';',
+            dist,'(',X[1],stringBRN,',',X[2],stringBRI,';',
             paste0(bru, collapse = ','),')'
           )
         } else {
-          X = threshComp( X, r)
-          gammaNI = gamDiri(X, r)
-          # gammaNI = gamDiriGM(X, r)
+          if(newDiri) {
+            X = threshComp( X, r)
+            gamma = gamDiriGM(X, r)
+          } else {
+            gamma = gamDiriLS(X, r)
+          }
           stringBR = paste0(
             'Diri(',X[1],stringBRN,',',X[2],stringBRI,';',
-            gammaNI,')'
+            gamma,')'
           )
         } 
         
@@ -418,13 +425,9 @@ gm = function(X) {
   else
     return( prod(x)^(1/length(x)) )
 } 
-fScaleDirg = function(d) {
-  # Scale for b params of Dirg(a;b) to recover
-  # prescribed mean relative uncert.
-  # fd = c(
-  #   c( NA, 0.99, 0.93, 0.92, 0.92, 0.93, 0.94, 0.95, 0.96, 0.96),
-  #   rep(0.96,50)
-  # )
-  # fd[d] * ( 1 + 1/d )
-  1
+fuBr = function(mS, uS) {
+  # LUP uncertainty for branching ratios: BR = S/sum(S)
+  mT = sum(mS)
+  uT = sqrt(sum(uS^2))
+  sqrt(uS^2 / mT^2 + uT^2 * (mS/mT^2)^2 - 2 * uS^2 * mS/mT^3)
 }
