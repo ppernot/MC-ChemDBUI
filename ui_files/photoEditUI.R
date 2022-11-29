@@ -195,7 +195,7 @@ tabPanel(
               ),
               fluidRow(
                 column(
-                  3,
+                  6,
                   checkboxInput(
                     "photoBRArrange",
                     label = "Arrange samples",
@@ -203,7 +203,7 @@ tabPanel(
                   )
                 ),
                 column(
-                  3,
+                  6,
                   conditionalPanel(
                     condition = "input.photoBRArrange",
                     checkboxInput(

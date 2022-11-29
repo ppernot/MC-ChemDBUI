@@ -246,16 +246,17 @@ defDir = function(n){
   else
     paste0('*Diun(',n,')')
 }
-hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1), 
+hierSample  = function(qy0, ionic, ru = c(0.1,0.1,0.1), 
                        nMC = 500, eps = 1e-4, 
                        useDirg = TRUE, newDiri = TRUE, newDirg = TRUE) {
   # Nested sampling when ionic and !ionic channels present
   # *** Treat only non-zero channels ***
-  nc = ncol(qy); nw = nrow(qy)
+  nc = ncol(qy0); nw = nrow(qy0)
   qySample = array(
     data = 0,
     dim  = c(nMC,nw,nc)
   )
+  qy = qy0 / rowSums(qy0)
   
   for (il in 1:nw) {
     
@@ -272,7 +273,8 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       stringBRN = defDir(sum(sel_nzN))
       if (sum(sel_nzN) > 1) {
         if (useDirg) {
-          ubrN = ru[2] * brN
+          xs   = qy0[il,!ionic] # Elicit from cross-sections
+          ubrN = fuBr(xs,ru[2]*xs) #ru[2] * brN
           dist = ifelse(newDirg, '*Dirg', '*Dirh')
           stringBRN = paste0(
             dist,'(',
@@ -306,13 +308,14 @@ hierSample  = function(qy, ionic, ru = c(0.1,0.1,0.1),
       stringBRI = defDir(sum(sel_nzI))
       if (sum(sel_nzI) > 1) {
         if (useDirg) {
-          brIu = ru[3] * brI
+          xs   = qy0[il, ionic] # Elicit from cross-sections
+          ubrI = fuBr(xs,ru[3]*xs) #ru[3] * brI
           dist = ifelse(newDirg, '*Dirg', '*Dirh')
           stringBRI = paste0(
             dist,'(',
             paste0(brI[sel_nzI], collapse = ','),
             ';',
-            paste0(brIu[sel_nzI], collapse = ','),
+            paste0(ubrI[sel_nzI], collapse = ','),
             ')')
         } else {
           r = ru[3]
