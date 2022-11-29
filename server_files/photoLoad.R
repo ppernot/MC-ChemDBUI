@@ -47,9 +47,9 @@ shiny::observe({
   close(con)
   
   # Add a unique id to each line for editing
-  data[1] = paste0('ID;',data[1])
+  data[1] = paste0(data[1],';ID')
   for (i in 2:length(data))
-    data[i] = paste0(i-1,';',data[i])
+    data[i] = paste0(data[i],';',i-1)
   
   photoEditDBText(data)
   
@@ -234,17 +234,17 @@ shiny::observeEvent(
     # Save DB and RN files to target version
     # - for DB, need to remove ID before saving
     dataEditor = photoEditDBText()
-    data = sapply(
-      dataEditor, 
-      function(x) {
-        i = regexpr(";",x)
-        substr(x,i+1,nchar(x))
-      }
-    )
+    data = sapply(dataEditor,
+                  function(x) {
+                    # Remove last column (ID)
+                    S = unlist(strsplit(x, ';'))
+                    paste0(S[-length(S)], collapse = ';')
+                  })
     writeLines(
       data,
       con = file.path(photoCopyDir,photoEditDBFile())
     )
+    
     id = shiny::showNotification(
       h4(paste0('Saved file: ', photoEditDBFile())),
       closeButton = FALSE,

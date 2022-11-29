@@ -320,7 +320,7 @@ tabPanel(
                         <li><strong>Arrange samples</strong> reorder the samples
                            to increase wavelength-wise correlation (default: TRUE)
                         <li><strong>Use ranks</strong> base reordering of samples
-                           on their ranks
+                           on their ranks instead of their values
                       </ul>
                   </ul>
                   <h5>Plot</h5>

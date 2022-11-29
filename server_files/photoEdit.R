@@ -246,12 +246,10 @@ observeEvent(
     nBR = photoBRMask()$nBR
     Lines = c()
     
-    # ID;R1;R2;P1;P2;P3;P4;CHANNEL;XS_SOURCE;XS_F;BR_SOURCE;REFS;COMMENTS;TIMESTAMP
+    # R1;R2;P1;P2;P3;P4;CHANNEL;XS_SOURCE;XS_F;BR_SOURCE;REFS;COMMENTS;TIMESTAMP;ID
     reactants = getSpecies(trimws(input$photoReactants))
     R1 = reactants[1]
     R2 = reactants[2]
-    if(input$ionsParseComment)
-      R1 = paste0('#',R1)
     
     XS_SOURCE = input$photoXSSource
     XS_F      = input$photoXS_F
@@ -270,19 +268,21 @@ observeEvent(
         P4 = products[4]
       
       line = c(
-        id + i -1,
         R1, R2, P1, P2, P3, P4, i,
         input$photoXSSource, 
         input$photoXS_F, 
         input$photoBRSource, 
         input$photoReacREF, 
         input$photoRQ,
-        paste0(Sys.time())
+        paste0(Sys.time()),
+        id + i -1
       )
       line = matrix(line,nrow=1)
       Lines[i] = capture.output(
         write.table(line,sep=';',row.names = FALSE, col.names = FALSE)
       )
+      if(input$photoParseComment)
+        Lines[i] = paste0('#',Lines[i])
     }
     
     # Update editor's content

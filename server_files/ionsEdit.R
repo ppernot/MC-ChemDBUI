@@ -290,7 +290,6 @@ observeEvent(
     
     id = ionsReacID()
     line = c(
-      id,
       reactants,
       trimws(input$ionsReacTYPE),
       rateParDistStrings,
@@ -298,7 +297,8 @@ observeEvent(
       trimws(stringDist),
       refBib,
       input$ionsReacRQ,
-      paste0(Sys.time())
+      paste0(Sys.time()),
+      id
     )
     line = matrix(line,nrow=1)
     line = capture.output(

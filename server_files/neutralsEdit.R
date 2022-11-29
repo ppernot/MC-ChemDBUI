@@ -332,14 +332,14 @@ observeEvent(
     id = neutralsReacID()
 
     line = c(
-      id,
       reactants,
       products,
       paste0(trimws(input$neutralsReacTYPE)),
       ratePars,
       paste0(gsub(';',',',input$neutralsReacREFS)),
       paste0(input$neutralsReacRQ),
-      paste0(Sys.time())
+      paste0(Sys.time()),
+      id
     )
     line = paste0(line,collapse = ";")
     

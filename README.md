@@ -29,6 +29,10 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 
     1. Implements the management of photo-processes.
     
+* `2022/11/29` v1.0
+
+    1. First full version
+    
     
 ## Documentation
 

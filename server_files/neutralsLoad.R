@@ -48,9 +48,9 @@ shiny::observe({
   close(con)
   
   # Add a unique id to each line for editing
-  data[1] = paste0('ID;',data[1])
+  data[1] = paste0(data[1],';ID')
   for (i in 2:length(data))
-    data[i] = paste0(i-1,';',data[i])
+    data[i] = paste0(data[i],';',i-1)
 
   neutralsEditDBText(data)
 })
@@ -212,8 +212,9 @@ shiny::observeEvent(
     data = sapply(
       dataEditor, 
       function(x) {
-        i = regexpr(";",x)
-        substr(x,i+1,nchar(x))
+        # Remove last column (ID)
+        S = unlist(strsplit(x, ';'))
+        paste0(S[-length(S)], collapse = ';')
       }
     )
     writeLines(
