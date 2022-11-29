@@ -63,17 +63,17 @@ tabPanel(
               column(
                 6,
                 checkboxInput(
-                  "photoSampleBRArrange",
-                  label = "Arrange samples",
-                  value = FALSE
+                  "photoSampleFlatTree",
+                  label = "Flat tree",
+                  value = TRUE
                 )
               ),
               column(
                 6,
                 checkboxInput(
-                  "photoSampleBRUseRanks",
-                  label = "Use ranks",
-                  value = FALSE
+                  "photoSampleBRArrange",
+                  label = "Arrange samples",
+                  value = TRUE
                 )
               )
             )
@@ -156,9 +156,11 @@ tabPanel(
                 'photoSampleBRDisplay',
                 label    = 'Display of Brs',
                 choices  = c(
-                  "All channels" = 0,
-                  "Neus vs Ions" = 1,
-                  "Sum-to-one"   = 2
+                  "All channels"   = 0,
+                  "Neus vs Ions"   = 1,
+                  "Sum-to-one"     = 2,
+                  "Rel. uncert."   = 3,
+                  "Mean rel. unc." = 4
                 )
               )
             ),

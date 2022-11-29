@@ -177,24 +177,30 @@ threshComp = function(X,r) {
   }
   return(X)
 }
-flatSample0 = function(br, ubr, ru, nMC, eps, 
-                       useDirg = TRUE, newDiri = TRUE, newDirg = TRUE) {
+flatSample0 = function(qy0, ionic, ru, nMC, eps, useDirg, newDiri, newDirg) {
   # Flat sampling by Diri or Dirg
   # 
-  qySample = matrix(0, nrow = nMC, ncol = length(br))
+  qySample = matrix(0, nrow = nMC, ncol = length(qy0))
 
   # Count non-zero channels
-  br = br / sum(br)
+  br = qy0 / sum(qy0)
   br[br <= eps] = 0
   br = br / sum(br)
   sel_nz = br != 0
+  nBR = sum(sel_nz)
 
-  if( sum(sel_nz) <= 1 ) {
+  if( nBR <= 1 ) {
     # 1 channel: no uncertainty
     qySample[,sel_nz] = 1
 
   } else {
     if(useDirg) {
+      
+      r = rep(ru[1],length(qy0))
+      if(sum(ionic) != 0)
+        r[ionic] = ru[2] 
+      ubr = fuBr(qy0,r*qy0)
+      
       dist = ifelse(newDirg, 'Dirg', 'Dirh')
       stringBR = paste0(
         dist,'(',
@@ -206,10 +212,10 @@ flatSample0 = function(br, ubr, ru, nMC, eps,
     } else {
       X = br[sel_nz]
       if(newDiri) {
-        X = threshComp( X, ru)
-        gamma = gamDiriGM(X, ru)
+        X = threshComp( X, ru[1])
+        gamma = gamDiriGM(X, ru[1])
       } else {
-        gamma = gamDiriLS(X, ru)
+        gamma = gamDiriLS(X, ru[1])
       }
       stringBR = paste0(
         'Diri(',
@@ -224,18 +230,18 @@ flatSample0 = function(br, ubr, ru, nMC, eps,
 
   return(qySample)
 }
-flatSample = function(qy, uqy, ru = 0.1, nMC = 500, eps = 1e-4, 
+flatSample = function(qy0, ionic, ru = c(0.1,0.1), nMC = 500, eps = 1e-4, 
                       useDirg = TRUE, newDiri = TRUE, newDirg = TRUE) {
 
-  nc = ncol(qy)
-  nw = nrow(qy)
+  nc = ncol(qy0)
+  nw = nrow(qy0)
   qySample = array(
     data = 0,
     dim  = c(nMC,nw,nc)
   )
 
   for (il in 1:nw)
-    qySample[ , il, ] = flatSample0(qy[il,], uqy[il,], ru, nMC, eps, 
+    qySample[ , il, ] = flatSample0(qy0[il,], ionic, ru, nMC, eps, 
                                     useDirg, newDiri, newDirg)
 
   return(qySample)
@@ -383,7 +389,7 @@ hierSample  = function(qy0, ionic, ru = c(0.1,0.1,0.1),
   
   return(qySample)
 }
-arrangeSample = function(S, useRanks = FALSE) {
+arrangeSample = function(S, useRanks = TRUE) {
 
   # Reorder MC samples of branching ratios for each wavelength 
   # in order to introduce serial correlation.

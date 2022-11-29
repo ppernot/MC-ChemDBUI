@@ -579,19 +579,10 @@ photoBRSimulate = shiny::reactive({
       
       if (input$flatTree) {
         
-        uqy =  matrix(0, ncol =ncol(qy), nrow = nrow(qy))
-        if(input$useDirg) {
-          # Uncertainties on BRs
-          r = rep(photoRuBRN,nBR)
-          if(sum(ionic) != 0)
-            r[ionic] = photoRuBRI 
-          for(i in 1:nrow(qy0))
-            uqy[i,] = fuBr(qy0[i,],r*qy0[i,])
-        }
-          
         qySample = flatSample(
-          qy, uqy,
-          ru = photoRuBRN,
+          qy0, 
+          ionic = ionic,
+          ru = c(photoRuBRN,photoRuBRI),
           nMC = nMC,
           eps = photoEps,
           useDirg = input$useDirg,
