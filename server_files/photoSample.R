@@ -599,7 +599,7 @@ output$plotSampleBR = renderPlot({
   cols    = rep(gPars$cols,2)
   cols_tr = rep(gPars$cols_tr,2)
   lty     = c(rep(1,length(gPars$cols)),rep(2,length(gPars$cols)))
-  
+    
   ylab = 'Branching ratios'
   ylim = c(-0.01, 1.4)
   

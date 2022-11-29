@@ -85,64 +85,6 @@ tabPanel(
                 icon = icon('save',verify_fa = FALSE)
               )
             )
-          )
-        ),
-        tabPanel(
-          'Plot',
-          br(),
-          fluidRow(
-            column(
-              6,
-              selectInput(
-                'photoSimulateSize',
-                label    = '# MC samples',
-                choices  = c(10,seq(100,1000,by = 100)),
-                selected = 10,
-                width = '200px'
-              )
-            ),
-            column(
-              6,
-              selectInput(
-                "photoXSReso",
-                "Resolution (nm):",
-                photoXSResolutions,
-                selected = 1
-              )
-            )
-          ),
-          sliderInput(
-            "photoWLPlotRange",
-            label = "Wavelength [nm]",
-            min   = 50, 
-            max   = 350,
-            value = c(50,250),
-            step  =  10,
-            round = TRUE
-          ),
-          fluidRow(
-            column(
-              6,
-              selectInput(
-                'photoEditBRDisplay',
-                label    = 'Display of Brs',
-                choices  = c(
-                  "All channels"   = 0,
-                  "Neus vs Ions"   = 1,
-                  "Sum-to-one"     = 2,
-                  "Rel. uncert."    = 3,
-                  "Mean rel. unc."   = 4
-                )
-              )
-            ),
-            column(
-              6,
-              checkboxInput(
-                "photoXSLog",
-                label = "log XS",
-                value = TRUE
-              )
-            )
           ),
           hr(),
           checkboxInput(
@@ -249,6 +191,64 @@ tabPanel(
               )
             )
           )
+        ),
+        tabPanel(
+          'Plot',
+          br(),
+          fluidRow(
+            column(
+              6,
+              selectInput(
+                'photoSimulateSize',
+                label    = '# MC samples',
+                choices  = c(10,seq(100,1000,by = 100)),
+                selected = 10,
+                width = '200px'
+              )
+            ),
+            column(
+              6,
+              selectInput(
+                "photoXSReso",
+                "Resolution (nm):",
+                photoXSResolutions,
+                selected = 1
+              )
+            )
+          ),
+          sliderInput(
+            "photoWLPlotRange",
+            label = "Wavelength [nm]",
+            min   = 50, 
+            max   = 350,
+            value = c(50,250),
+            step  =  10,
+            round = TRUE
+          ),
+          fluidRow(
+            column(
+              6,
+              selectInput(
+                'photoEditBRDisplay',
+                label    = 'Display of Brs',
+                choices  = c(
+                  "All channels"   = 0,
+                  "Neus vs Ions"   = 1,
+                  "Sum-to-one"     = 2,
+                  "Rel. uncert."    = 3,
+                  "Mean rel. unc."   = 4
+                )
+              )
+            ),
+            column(
+              6,
+              checkboxInput(
+                "photoXSLog",
+                label = "log XS",
+                value = TRUE
+              )
+            )
+          )
         )
       )
     ),
@@ -310,28 +310,40 @@ tabPanel(
                     <li> <strong>Apply changes</strong>: click to apply the 
                   changes made to the reaction's data. To save to disk, go to 
                   the Load page.
+                  <li> <strong>Advanced options</strong>
+                      <ul> 
+                        <li><strong>Dirg</strong> Use Dirg instead of Diri
+                        <li><strong>New Dirg/Diri</strong> Use improved versions
+                           of the Diri or Dirg distributions
+                        <li><strong>Flat tree</strong> do not use a nested model
+                           to separate ions from neutral channels (default: TRUE)
+                        <li><strong>Arrange samples</strong> reorder the samples
+                           to increase wavelength-wise correlation (default: TRUE)
+                        <li><strong>Use ranks</strong> base reordering of samples
+                           on their ranks
+                      </ul>
                   </ul>
                   <h5>Plot</h5>
                   <ul>
                     <li> <strong># MC samples</strong>: number of samples 
                          to plot
-                    <li> <strong>Résolution</strong>: wavelength resolution
+                    <li> <strong>Resolution</strong>: wavelength resolution
                     <li> <strong>Wavelength</strong>: defines the wavelength range 
                          of the plot 
-                    <li> <strong>Sort samples</strong>: used to preserve as much 
-                         as possible a wavelength-wise continuity of the random 
-                         samples. Introduces a (unknown) level of systematic
-                         uncertainty wrt the pure random uncertainty generated 
-                         by sampling.
+                    
                     <li> <strong>log XS</strong>: use a log axis for 
                          cross-sections.
-                    <li> <strong>Display of BRs</strong>:
+                   <li> <strong>Display of BRs</strong>:
                          <ul>
-                            <li> All Channels: display all channels
-                            <li> Neus vs Ions: display the sum of neutral
-                                 channels and the sum of ionic channels
-                            <li> Sum-to-one: display the sum of all channels
+                            <li> All Channels: all channels
+                            <li> Neus vs Ions: sum of neutral
+                                 channels and  sum of ionic channels
+                            <li> Sum-to-one: sum of all channels
                                  (should be 1 if sampling is OK)
+                            <li> Rel. uncert: relative uncertainty 
+                                 of all channels
+                            <li> Mean rel. unc.: mean relative uncertainty 
+                                 over ions, neutrals and all channels
                          </ul>
                   </ul>
                   

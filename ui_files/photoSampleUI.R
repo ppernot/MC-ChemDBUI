@@ -210,17 +210,19 @@ tabPanel(
                     <li> <strong>Check only</strong>: goes through the process
                          without saving to disk. Can be used to verify that
                          generation will go smoothly...
-                    <li> <strong>Sort samples</strong>: used to preserve as much 
-                         as possible a wavelength-wise continuity of the random 
-                         samples. Introduces a (unknown) level of systematic
-                         uncertainty wrt the pure random uncertainty generated 
-                         by sampling.
                     <li> <strong>Résolution</strong>: wavelength resolution
                     <li> <strong># MC samples</strong>: number of samples 
                          to generate
                     <li> <strong>Go !</strong>: click to start generation
                          process. This may take some time...
-                    
+                  
+                    <li> <strong>Advanced options</strong>
+                      <ul> 
+                        <li><strong>Flat tree</strong> do not use a nested model
+                           to separate ions from neutral channels (default: TRUE)
+                        <li><strong>Arrange samples</strong> reorder the samples
+                           to increase wavelength-wise correlation (default: TRUE)
+                      </ul>
                   </ul>
                   <h5>Plot</h5>
                   Read XS and BR samples on disk and plot them. 
@@ -234,11 +236,15 @@ tabPanel(
                     
                     <li> <strong>Display of BRs</strong>:
                          <ul>
-                            <li> All Channels: display all channels
-                            <li> Neus vs Ions: display the sum of neutral
-                                 channels and the sum of ionic channels
-                            <li> Sum-to-one: display the sum of all channels
+                            <li> All Channels: all channels
+                            <li> Neus vs Ions: sum of neutral
+                                 channels and  sum of ionic channels
+                            <li> Sum-to-one: sum of all channels
                                  (should be 1 if sampling is OK)
+                            <li> Rel. uncert: relative uncertainty 
+                                 of all channels
+                            <li> Mean rel. unc.: mean relative uncertainty 
+                                 over ions, neutrals and all channels
                          </ul>
                     <li> <strong>log XS</strong>: use a log axis for 
                          cross-sections.
