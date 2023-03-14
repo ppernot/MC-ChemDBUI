@@ -341,7 +341,11 @@ observeEvent(
       paste0(Sys.time()),
       id
     )
-    line = paste0(line,collapse = ";")
+    line = matrix(line,nrow=1)
+    line = capture.output(
+      write.table(line,sep=';',row.names = FALSE, col.names = FALSE)
+    )
+    # line = paste0(line,collapse = ";")
     
     data = neutralsDB()
     tag  = makeTag(

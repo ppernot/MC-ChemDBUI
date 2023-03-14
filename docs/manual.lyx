@@ -131,45 +131,13 @@ key "Peng2014"
  the chemical parameters.
 \end_layout
 
-\begin_layout Standard
-Monte Carlo Uncertainty Propagation is an optimally parallel problem, where
- an 
-\emph on
-uncertainty unaware
-\emph default
- code of a chemistry model is run repeatedly for different realizations
- of its uncertain input data.
- To benefit from this feature and from increasingly available cloud-like
- computing infrastructures, it is best to keep the uncertainty management
- separate from the physical model.
- In the following, one assumes that the uncertain chemistry inputs/databases
- are provided by a server.
- This separation has additional advantages for the final user:
-\end_layout
-
-\begin_layout Itemize
-no change to the chemistry code, or minor ones, depending on the uncertainty
- representation used on the server side;
-\end_layout
-
-\begin_layout Itemize
-no change to the standard format of chemistry files;
-\end_layout
-
-\begin_layout Itemize
-the complex aspects of uncertainty models (
-\emph on
-e.g.
-
-\emph default
- for branching ratios) are implemented on the server side.
-\end_layout
-
 \begin_layout Section
 The MC-ChemDB system
 \end_layout
 
 \begin_layout Standard
+
+\color orange
 In this server-client framework, the chemistry server database (
 \family typewriter
 mc-chemdbui
@@ -225,7 +193,7 @@ reference "fig:Principle-scheme"
 placement H
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \noindent
@@ -274,7 +242,7 @@ Principle scheme of MC-ChemDB ant its articulation with Reactor.
 \family typewriter
 ChemDBPublic
 \family default
- contains all the chemical reactions encoded in the 
+ contains all the chemical reactions encoded in 
 \family typewriter
 MC-ChemDB
 \family default

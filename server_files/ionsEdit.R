@@ -289,6 +289,7 @@ observeEvent(
       reactants = paste0('#',reactants)
     
     id = ionsReacID()
+    
     line = c(
       reactants,
       trimws(input$ionsReacTYPE),
