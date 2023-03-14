@@ -56,12 +56,9 @@ To run the container:
 docker pull ppernot1/mc-chemdbui
 ``` 
 
-4. Run the docker container with source links for MC-ChemDB and ChemDBPublic pointing to *your* directories 
+4. Run the docker container with source links for MC-ChemDB and ChemDBPublic pointing to *your* directories (should be absolute paths)
 ```
-docker run -d -p 3820:3820\
-	--mount type=bind,source=path_to_my_ChemDBPublic,target=/ChemDBPublic\
-	--mount type=bind,source=path_to_my_MC-ChemDB,target=/MC-ChemDB\
-	--name mc-chemdbui ppernot1/mc-chemdbui 
+docker run -d -p 3820:3820 --mount type=bind,source=path_to_my_ChemDBPublic,target=/ChemDBPublic --mount type=bind,source=path_to_my_MC-ChemDB,target=/MC-ChemDB --name mc-chemdbui ppernot1/mc-chemdbui 
 ```
 
 5. Access http://localhost:3820 in your favorite browser
