@@ -10,6 +10,8 @@ observeEvent(
     sampleSize = 1 + as.numeric(input$ionsSampleSize) # Account for nominal
     
     # Temp files
+    if(!file.exists(ionsTmp))
+      dir.create(ionsTmp)
     tmpDir = file.path(ionsTmp,ionsEditOrigVersion())
     if(!file.exists(tmpDir))
       dir.create(tmpDir)
@@ -153,6 +155,10 @@ observeEvent(
           
           
           # Write sample to tmp file
+          if(!file.exists(targetDir))
+            dir.create(targetDir)
+          if(!file.exists(samplesDir)) 
+            dir.create(samplesDir)
           reacType = ionsDB()$TYPE[iReac] 
           writeSample(0, samplesDir, reac, tags, meanPars, meanBR, reacType)
           for (i in 1:sampleSize) 
