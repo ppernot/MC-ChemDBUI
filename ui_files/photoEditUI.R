@@ -219,7 +219,7 @@ tabPanel(
           sliderInput(
             "photoWLPlotRange",
             label = "Wavelength [nm]",
-            min   = 50, 
+            min   = 10, 
             max   = 350,
             value = c(50,250),
             step  =  10,
