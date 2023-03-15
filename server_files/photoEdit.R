@@ -618,7 +618,7 @@ photoBRSimulate = shiny::reactive({
     sampleBR0   = qy,
     sampleBR    = qySample,
     sampleWl    = wl,
-    sampleTitle = paste0(sp,' / ',type,' / ',reso) 
+    sampleTitle = paste0(sp,' / ',type,' / ',reso,' nm') 
   ))
   
 })
