@@ -84,25 +84,27 @@ photoRuBRNI = 0.03 # relative uncertainty on Ionic vs. Neutral channels
 photoEps    = 5e-3 # threshold for zero-rounding in compositions
 source('R/photoFunctions.R')
 
-# Bibliography
+# Bibliography ####
 bibFile = file.path('..','MC-ChemDB','Doc','refsDR.bib')
 bibProc = file.path('..','ChemDBPublic','bib.Rdata')
 if(!file.exists(bibProc)) {
   cat('*** Processing .bib file\n')
-  bib = bibtex::read.bib(file=bibFile)
-  save(bib, file=bibProc)
+  bib = bibtex::read.bib(file = bibFile)
+  save(bib, file = bibProc)
+  cat('*** Processed .bib file saved to ChemDBPublic\n')
 } else {
   sourceTime = file.info(bibFile)["mtime"]
   bibTime    = file.info(bibProc)["mtime"]
-  if(sourceTime > bibTime) {
+  if (sourceTime > bibTime) {
     cat('*** Processing .bib file\n')
-    bib = bibtex::read.bib(file=bibFile)
-    save(bib, file=bibProc)    
+    bib = bibtex::read.bib(file = bibFile)
+    save(bib, file = bibProc)
+    cat('*** Processed .bib file saved to ChemDBPublic\n')
   } else {
-    cat('*** Loading  processed .bib file\n')
+    cat('*** Loading processed .bib file\n')
     load(bibProc)
+    cat('*** Processed .bib loaded from ChemDBPublic\n')
   }
 }
-
 
 

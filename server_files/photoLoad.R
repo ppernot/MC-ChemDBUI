@@ -10,6 +10,17 @@ photoDB              = shiny::reactiveVal()
 photoDBStats         = shiny::reactiveVal()
 
 output$selPhotoEditOrigVersion = shiny::renderUI({
+  
+  if(!file_test("-d",photoSource)) {
+    id = shiny::showNotification(
+      strong(paste0('Cannot find DB:',photoSource)),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'error'
+    )
+    return(NULL)
+  }
+  
   list(
     shiny::selectInput(
       "photoEditOrigVersion",
