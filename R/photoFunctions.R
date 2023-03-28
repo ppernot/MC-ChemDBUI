@@ -94,6 +94,9 @@ getXShdf5 = function (
   return(xs)
 }
 downSample = function(wl,xs,reso = 1) {
+  
+  alert = NULL
+  
   # Define new grid
   lims = round(range(wl))
   wl1  = seq(min(lims), max(lims), by = reso)
@@ -101,6 +104,9 @@ downSample = function(wl,xs,reso = 1) {
 
   # Compute increments on original grid
   dwl = diff(wl)
+  if(any(dwl < 0))
+    alert = 'Problem of decreasing wavelengths'
+  
   ## Remove intervals of null width
   sel = dwl != 0
   dwl = dwl[sel]
@@ -114,8 +120,7 @@ downSample = function(wl,xs,reso = 1) {
   for (il in wl1[1:(nl1 - 1)]) {
     i = i + 1
     # Which points within interval
-    sel = wl >= il - 0.5 * reso &
-      wl <  il + 0.5 * reso
+    sel = wl >= il - 0.5 * reso & wl <  il + 0.5 * reso
     if (sum(sel) == 0) {
       # No point in interval: increase upper limit
       sel1 = which(wl > il + 0.5 * reso)[1]
@@ -144,7 +149,7 @@ downSample = function(wl,xs,reso = 1) {
   # Remove last point
   wl1 = wl1[1:(length(wl1) - 1)]
 
-  return(list(wl = wl1, xs = p1))
+  return(list(wl = wl1, xs = p1, alert = alert))
 }
 # nds = function(ns,dist) {
 #   command=paste("echo ",ns," '",dist,"' | ./Bin/Rnested.x")

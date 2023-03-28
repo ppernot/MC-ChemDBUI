@@ -444,11 +444,21 @@ photoBRSimulate = shiny::reactive({
                    header = TRUE,
                    check.names = FALSE)
     wl  = S[, 1] / 10 # Convert A to nm
-    xs  = S[, 2]
+    xs  = S[, 2]; print(cbind(0,wl,xs))
     xsl = downSample(wl, xs, reso = reso)
+    if(!is.null(xsl$alert)) {
+      id = shiny::showNotification(
+        strong(paste0(alert,' in ',file)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+      return(NULL)
+    }
     wl1  = xsl$wl
     xs1  = xsl$xs
-    # Remove tailing zeroes
+    
+    # Remove trailing zeroes
     first = which(xs1 != 0)[1]
     last  = length(xs1)-which(rev(xs1) !=0)[1] + 1
     wl1    = wl1[first:last]
@@ -490,9 +500,18 @@ photoBRSimulate = shiny::reactive({
     wl  = S[, 1]
     xs  = S[, 2]
     xsl = downSample(wl, xs, reso = reso)
+    if(!is.null(xsl$alert)) {
+      id = shiny::showNotification(
+        strong(paste0(alert,' in ',file)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+      return(NULL)
+    }
     wl  = xsl$wl
-    qy0 = matrix(0, ncol = length(files), nrow = length(wl))
     
+    qy0 = matrix(0, ncol = length(files), nrow = length(wl))
     for (i in seq_along(files)) {
       S = read.table(file = file.path(source,files[i]),
                      header = TRUE,
@@ -500,6 +519,15 @@ photoBRSimulate = shiny::reactive({
         wl  = S[, 1]
         xs  = S[, 2]
         xsl = downSample(wl, xs, reso = reso)
+        if(!is.null(xsl$alert)) {
+          id = shiny::showNotification(
+            strong(paste0(alert,' in ',file)),
+            closeButton = TRUE,
+            duration = NULL,
+            type = 'error'
+          )
+          return(NULL)
+        }
         wl  = xsl$wl
         xs  = xsl$xs
         qy0[ ,i] = xs

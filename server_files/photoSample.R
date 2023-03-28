@@ -153,6 +153,15 @@ observeEvent(
             
             # Interpolate on regular grid
             xsl  = downSample(wl0, xs0, reso = reso)
+            if(!is.null(xsl$alert)) {
+              id = shiny::showNotification(
+                strong(paste0(alert,' in ',file)),
+                closeButton = TRUE,
+                duration = NULL,
+                type = 'error'
+              )
+              return(NULL)
+            }
             wl   = xsl$wl
             xs   = xsl$xs
             
@@ -191,8 +200,18 @@ observeEvent(
               wl  = S[, 1] / 10 # Convert A to nm
               xs  = S[, 2]
               xsl = downSample(wl, xs, reso = reso)
+              if(!is.null(xsl$alert)) {
+                id = shiny::showNotification(
+                  strong(paste0(alert,' in ',file)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
               wl1 = xsl$wl
               xs1 = xsl$xs
+              
               # Remove tailing zeroes
               first = which(xs1 != 0)[1]
               last  = length(xs1)-which(rev(xs1) !=0)[1] + 1
@@ -234,6 +253,15 @@ observeEvent(
               wl  = S[, 1]
               xs  = S[, 2]
               xsl = downSample(wl, xs, reso = reso)
+              if(!is.null(xsl$alert)) {
+                id = shiny::showNotification(
+                  strong(paste0(alert,' in ',file)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
               wl1 = xsl$wl
               xs1 = xsl$xs
               # Remove tailing zeroes

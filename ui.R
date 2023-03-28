@@ -1,6 +1,6 @@
 function(request) {
   navbarPage(
-    "MC-ChemDB",
+    strong(paste0("MC-ChemDB ",version)),
     theme = bslib::bs_theme(
       version = 5, 
       bootswatch = c("united","sketchy")[1]
