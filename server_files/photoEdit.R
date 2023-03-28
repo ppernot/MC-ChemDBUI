@@ -444,7 +444,7 @@ photoBRSimulate = shiny::reactive({
                    header = TRUE,
                    check.names = FALSE)
     wl  = S[, 1] / 10 # Convert A to nm
-    xs  = S[, 2]; print(cbind(0,wl,xs))
+    xs  = S[, 2]
     xsl = downSample(wl, xs, reso = reso)
     if(!is.null(xsl$alert)) {
       id = shiny::showNotification(
