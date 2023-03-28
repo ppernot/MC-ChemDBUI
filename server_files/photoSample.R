@@ -155,7 +155,7 @@ observeEvent(
             xsl  = downSample(wl0, xs0, reso = reso)
             if(!is.null(xsl$alert)) {
               id = shiny::showNotification(
-                strong(paste0(alert,' in ',file)),
+                strong(paste0(xsl$alert,' in ',file)),
                 closeButton = TRUE,
                 duration = NULL,
                 type = 'error'
@@ -202,7 +202,7 @@ observeEvent(
               xsl = downSample(wl, xs, reso = reso)
               if(!is.null(xsl$alert)) {
                 id = shiny::showNotification(
-                  strong(paste0(alert,' in ',file)),
+                  strong(paste0(xsl$alert,' in ',file)),
                   closeButton = TRUE,
                   duration = NULL,
                   type = 'error'
@@ -255,7 +255,7 @@ observeEvent(
               xsl = downSample(wl, xs, reso = reso)
               if(!is.null(xsl$alert)) {
                 id = shiny::showNotification(
-                  strong(paste0(alert,' in ',file)),
+                  strong(paste0(xsl$alert,' in ',file)),
                   closeButton = TRUE,
                   duration = NULL,
                   type = 'error'
@@ -352,12 +352,14 @@ observeEvent(
             # Sample BRs ####
             incProgress(1/len, 
                         detail = paste0(' BRs ',sp,'/',type,'/',reso,' nm'))
+            
             if(!input$photoSampleCheck) { 
               if(nBR == 1) {
                 # A single channel: no uncertainty in BR
+                qy = matrix(1, nrow = length(wavlBR), ncol = 1)
                 qySample = array(
                   data = 1,
-                  dim = c(1+nMC, ncol(qy), nBR)
+                  dim = c(1+nMC, length(wavlBR), nBR)
                 )
                 
               } else {

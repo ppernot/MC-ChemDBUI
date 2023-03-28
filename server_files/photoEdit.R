@@ -448,7 +448,7 @@ photoBRSimulate = shiny::reactive({
     xsl = downSample(wl, xs, reso = reso)
     if(!is.null(xsl$alert)) {
       id = shiny::showNotification(
-        strong(paste0(alert,' in ',file)),
+        strong(paste0(xsl$alert,' in ',file)),
         closeButton = TRUE,
         duration = NULL,
         type = 'error'
@@ -502,7 +502,7 @@ photoBRSimulate = shiny::reactive({
     xsl = downSample(wl, xs, reso = reso)
     if(!is.null(xsl$alert)) {
       id = shiny::showNotification(
-        strong(paste0(alert,' in ',file)),
+        strong(paste0(xsl$alert,' in ',file)),
         closeButton = TRUE,
         duration = NULL,
         type = 'error'
@@ -521,7 +521,7 @@ photoBRSimulate = shiny::reactive({
         xsl = downSample(wl, xs, reso = reso)
         if(!is.null(xsl$alert)) {
           id = shiny::showNotification(
-            strong(paste0(alert,' in ',file)),
+            strong(paste0(xsl$alert,' in ',file)),
             closeButton = TRUE,
             duration = NULL,
             type = 'error'
@@ -539,9 +539,10 @@ photoBRSimulate = shiny::reactive({
   
   if(nBR == 1) {
     # A single channel: no uncertainty in BR
+    qy = rep(1, length(wl))
     qySample = array(
       data = 1,
-      dim = c(nMC, ncol(qy), nBR)
+      dim = c(nMC, ncol(qy0), nBR)
     )
 
   } else {
@@ -702,16 +703,17 @@ output$plotPhotoBRSample = shiny::renderPlot({
   req(photoDB())
   req(photoBRMask())
   
+  nBR         = photoBRMask()$nBR
+  req(nBR > 1)
+  channels    = photoBRMask()$channels
+  
   photoSimulSamples = photoBRSimulate()
   nMC         = photoSimulSamples$sampleSize
   sampleBR0   = photoSimulSamples$sampleBR0
   sampleBR    = photoSimulSamples$sampleBR
   sampleWl    = photoSimulSamples$sampleWl
   sampleTitle = photoSimulSamples$sampleTitle
-  nBR         = photoBRMask()$nBR
-  channels    = photoBRMask()$channels
-  
- 
+
   par(mar = c(4, 4, 2, 1),
       mgp = gPars$mgp,
       tcl = gPars$tcl,
