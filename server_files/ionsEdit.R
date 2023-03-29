@@ -22,12 +22,24 @@ observe({
 
   if(input$ionsReacSel != ""){
     if(input$ionsReacSelKind == "Reactant") {
-      sel = grepl(input$ionsReacSel,reacs) 
+      sel = sapply(
+        reacs,
+        FUN = function(x) 
+          input$ionsReacSel %in% getSpecies(x)
+      )
     } else if(input$ionsReacSelKind == "Product"){
-      sel = grepl(input$ionsReacSel,prods)
+      sel = sapply(
+        prods,
+        FUN = function(x) 
+          input$ionsReacSel %in% getSpecies(x)
+      )
     } else if(input$ionsReacSelKind == "Both"){
-      sel = grepl(input$ionsReacSel,reacs) |
-        grepl(input$ionsReacSel,prods)
+      sel = apply(
+        cbind(reacs,prods),
+        1,
+        FUN = function(x) 
+          input$ionsReacSel %in% getSpecies(paste0(x[1],' + ',x[2]))
+      ) 
     }
     if(sum(sel) == 0) {
       id = shiny::showNotification(

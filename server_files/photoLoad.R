@@ -136,15 +136,18 @@ shiny::observe({
   sel = substr(data$R1,1,1) != '#'
   data = data[sel,]
   
-  data[['REACTANTS']] = apply(data[,paste0("R",1:2)], 1, 
-                              function(x) paste0(x[!is.na(x) & x != ""],
-                                                 collapse = ' + '))
-  data[['PRODUCTS']]  = apply(data[,paste0("P",1:4)], 1, 
-                              function(x) paste0(x[!is.na(x) & x != ""],
-                                                 collapse = ' + '))
+  data[['REACTANTS']] = apply(
+    data[,paste0("R",1:2)], 1, 
+    function(x) paste0(x[!is.na(x) & x != "" & x != " "],
+                       collapse = ' + '))
+  data[['PRODUCTS']]  = apply(
+    data[,paste0("P",1:4)], 1, 
+    function(x) paste0(x[!is.na(x) & x != "" & x != " "],
+                       collapse = ' + '))
   # Build unique tag
-  data[['TAG']]       = apply(data[,c("ID","REACTANTS","PRODUCTS")], 1, 
-                              makeTag)
+  data[['TAG']]       = apply(
+    data[,c("ID","REACTANTS","PRODUCTS")], 1, 
+    makeTag)
   
   # Check that reactions are mass balanced
   reacList = prodList = c()

@@ -20,11 +20,22 @@ observe({
 
   if(input$neutralsReacSel != "" & !is.null(input$neutralsReacSel)){
     if(input$neutralsReacSelKind == "Reactant") {
-      sel = grepl(input$neutralsReacSel,reacs) 
+      sel = sapply(
+        reacs,
+        FUN = function(x) input$neutralsReacSel %in% getSpecies(x)
+      )
     } else if(input$neutralsReacSelKind == "Product"){
-      sel = grepl(input$neutralsReacSel,prods)
+      sel = sapply(
+        prods,
+        FUN = function(x) input$neutralsReacSel %in% getSpecies(x)
+      )
     } else if(input$neutralsReacSelKind == "Both"){
-      sel = grepl(input$neutralsReacSel,tag)    
+      sel = apply(
+        cbind(reacs,prods),
+        1,
+        FUN = function(x) 
+          input$neutralsReacSel %in% getSpecies(paste0(x[1],' + ',x[2]))
+      ) 
     }
     if(sum(sel) == 0) {
       id = shiny::showNotification(

@@ -220,7 +220,7 @@ tabPanel(
             "photoWLPlotRange",
             label = "Wavelength [nm]",
             min   = 10, 
-            max   = 350,
+            max   = 550,
             value = c(50,250),
             step  =  10,
             round = TRUE
