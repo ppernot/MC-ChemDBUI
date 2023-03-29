@@ -530,7 +530,7 @@ output$plotSampleXS = renderPlot({
     ylim = NULL
   }
   
-  par(mar = c(4, 4, 2, 1),
+  par(mar = c(3, 3.5, 2, 1),
       mgp = gPars$mgp,
       tcl = gPars$tcl,
       lwd = gPars$lwd,
@@ -633,11 +633,12 @@ output$plotSampleBR = renderPlot({
   ylab = 'Branching ratios'
   ylim = c(-0.01, 1.4)
   
+  plotBR = FALSE
   if (input$photoSampleBRDisplay == 0 | nBR == 1) {
     qy0 = sampleBR0
     qy  = sampleBR
     leg = photoDB()$PRODUCTS[channels]
-    
+    plotBR = TRUE
     
   } else if (input$photoSampleBRDisplay == 1) {
     ionic = c()
@@ -650,12 +651,14 @@ output$plotSampleBR = renderPlot({
     qy[, , 1] = rowSums(sampleBR[, , !ionic, drop = FALSE], dims = 2)
     qy[, , 2] = rowSums(sampleBR[, ,  ionic, drop = FALSE], dims = 2)
     leg = c("Neutrals", "Ions")
+    plotBR = TRUE
     
   } else if (input$photoSampleBRDisplay == 2) {
     qy0 = rowSums(sampleBR0)
     qy = array(data = 0, dim  = c(nMC, length(wavl), 1))
     qy[, , 1] = rowSums(sampleBR, dims = 2)
     leg = c("Sum-to-one")
+    plotBR = TRUE
     
   } else if (input$photoSampleBRDisplay == 3) {
     mu  = apply(sampleBR, c(2,3), mean, na.rm = TRUE)
@@ -691,20 +694,22 @@ output$plotSampleBR = renderPlot({
     ylim = c(-0.01,1.4*max(qy0, na.rm = TRUE))
   }
   
-  par(mar = c(4, 4, 2, 1),
+  par(mar = c(3, 3, 2, 1),
       mgp = gPars$mgp,
       tcl = gPars$tcl,
       lwd = gPars$lwd,
       pty = 'm',
       cex = 1.5)
   
+  xlim = input$photoSampleWLPlotRange
   matplot(
     wavl, qy0,
     type = 'l', 
     lwd  = 3,
     xaxs = 'i',
     xlab = 'Wavelength [nm]',
-    xlim = input$photoSampleWLPlotRange,
+    xlim = xlim,
+    yaxt = ifelse(plotBR,'n','s'),
     yaxs = 'i',
     ylim = ylim,
     ylab = ylab,
@@ -713,6 +718,10 @@ output$plotSampleBR = renderPlot({
     main = ''
   )
   grid()
+  if(plotBR)
+    axis(side = 2,labels = 0.2*1:5, at = 0.2*1:5)
+  # Space for legend
+  rect(xlim[1],1,xlim[2],ylim[2],col = "white")
   
   if (input$photoSampleBRDisplay < 3) {
     for(iMC in 1:nMC) {
@@ -732,7 +741,7 @@ output$plotSampleBR = renderPlot({
   }
   
   legend(
-    'top', ncol =2, box.col = "white",
+    'topleft', ncol =2, box.col = "white",
     legend = leg,  cex = 0.75,
     col = cols,
     lty = lty,

@@ -671,7 +671,7 @@ output$plotPhotoXSSample = shiny::renderPlot({
     ylim = NULL
   }
 
-  par(mar = c(4, 4, 2, 1),
+  par(mar = c(3, 3.5, 2, 1),
       mgp = gPars$mgp,
       tcl = gPars$tcl,
       lwd = gPars$lwd,
@@ -714,7 +714,7 @@ output$plotPhotoBRSample = shiny::renderPlot({
   sampleWl    = photoSimulSamples$sampleWl
   sampleTitle = photoSimulSamples$sampleTitle
 
-  par(mar = c(4, 4, 2, 1),
+  par(mar = c(3, 3, 2, 1),
       mgp = gPars$mgp,
       tcl = gPars$tcl,
       lwd = gPars$lwd,
@@ -728,11 +728,12 @@ output$plotPhotoBRSample = shiny::renderPlot({
   ylab = 'Branching ratios'
   ylim = c(-0.01, 1.4)
   
+  plotBR = FALSE
   if (input$photoEditBRDisplay == 0 | nBR == 1) {
     qy0 = sampleBR0
     qy  = sampleBR
     leg = photoDB()$PRODUCTS[channels]
-    
+    plotBR = TRUE
     
   } else if (input$photoEditBRDisplay == 1) {
     ionic = c()
@@ -745,12 +746,14 @@ output$plotPhotoBRSample = shiny::renderPlot({
     qy[, , 1] = rowSums(sampleBR[, , !ionic, drop = FALSE], dims = 2)
     qy[, , 2] = rowSums(sampleBR[, ,  ionic, drop = FALSE], dims = 2)
     leg = c("Neutrals", "Ions")
+    plotBR = TRUE
     
   } else if (input$photoEditBRDisplay == 2) {
     qy0 = rowSums(sampleBR0)
     qy = array(data = 0, dim  = c(nMC, length(sampleWl), 1))
     qy[, , 1] = rowSums(sampleBR, dims = 2)
     leg = c("Sum-to-one")
+    plotBR = TRUE
     
   } else if (input$photoEditBRDisplay == 3) {
     mu  = apply(sampleBR, c(2,3), mean, na.rm = TRUE)
@@ -786,13 +789,15 @@ output$plotPhotoBRSample = shiny::renderPlot({
     ylim = c(-0.01,1.4*max(qy0, na.rm = TRUE))
   }
   
+  xlim = input$photoWLPlotRange
   matplot(
     sampleWl, qy0,
     type = 'l', 
     lwd  = 3,
     xaxs = 'i',
     xlab = 'Wavelength [nm]',
-    xlim = input$photoWLPlotRange,
+    xlim = xlim,
+    yaxt = ifelse(plotBR,'n','s'),
     yaxs = 'i',
     ylim = ylim,
     ylab = ylab,
@@ -801,6 +806,10 @@ output$plotPhotoBRSample = shiny::renderPlot({
     main = sampleTitle
   )
   grid()
+  if(plotBR)
+    axis(side = 2,labels = 0.2*1:5, at = 0.2*1:5)
+  # Space for legend
+  rect(xlim[1],1,xlim[2],ylim[2],col = "white")
 
   if (input$photoEditBRDisplay < 3) {
     for(iMC in 1:nMC) {
@@ -820,7 +829,7 @@ output$plotPhotoBRSample = shiny::renderPlot({
   }
   
   legend(
-    'top', ncol =2, box.col = "white",
+    'topleft', ncol =2, box.col = "white",
     legend = leg,  cex = 0.75,
     col = cols,
     lty = lty,
