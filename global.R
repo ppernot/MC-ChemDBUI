@@ -66,7 +66,7 @@ neutralsRateParKwdList = c('A1','B1','C1','F1','G1',
                            'A2','B2','C2','F2','G2',
                            'A3','B3','C3','F3','G3',
                            'FC') 
-neutralsReacTypes  = c('kooij','assocMD','assocVV')
+neutralsReacTypes  = c('kooij','assocMD','assocVV','assoc0')
 source('R/rateFormulas.R')
 
 ionsRateParKwdList = c('ALPHA','BETA','GAMMA') 

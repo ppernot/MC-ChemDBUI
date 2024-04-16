@@ -107,6 +107,14 @@ output$plotRate = renderPlot({
              collapse = ' / '),
       '\n'
     ),
+    assoc0   = paste0(
+      legText,
+      '\n',
+      'Parameters: ',
+      paste0(params0[1:5],
+             collapse = ' / '),
+      '\n'
+    ),
     assocMD  = paste0(
       legText,
       '\n',
@@ -181,6 +189,8 @@ output$plotRate = renderPlot({
       kooij    = kooij(pars, tempRange = tRange),
       assocMD  = k_assocMD(pars, tempRange = tRange, M0),
       assocVV  = k_assocVV(pars, tempRange = tRange, M0),
+      assoc0   = k_assoc0(pars, tempRange = tRange, M0),
+      
       rep(0,length(tRange))
     )
     
@@ -190,6 +200,7 @@ output$plotRate = renderPlot({
       kooij    = kooij(pars, tempRange = T0),
       assocMD  = k_assocMD(pars, tempRange = T0, mRange),
       assocVV  = k_assocVV(pars, tempRange = T0, mRange),
+      assoc0   = k_assoc0(pars, tempRange = T0, mRange),
       rep(0,length(mRange))
     )
       
