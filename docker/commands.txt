@@ -2,7 +2,7 @@ BUILD :
     #1/ cd MC-ChemDBUI # MC-ChemDB is now on users disk
     #1.a/ source compressDB.sh
 
-    1/ docker build -t ppernot1/mc-chemdbui:v1.1 -t ppernot1/mc-chemdbui:latest -f docker/Dockerfile .
+    1/ docker build -t ppernot1/mc-chemdbui:v1.2 -t ppernot1/mc-chemdbui:latest -f docker/Dockerfile .
 
     2/ docker login
 
