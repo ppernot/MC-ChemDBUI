@@ -93,7 +93,7 @@ output$plotRate = renderPlot({
   names(params0) = neutralsRateParKwdList
   for (kwd in neutralsRateParKwdList)
     params0[kwd] = as.numeric(neutralsDB()[[kwd]][iReac])
-  typ0    = neutralsDB()$TYPE[[iReac]]
+  typ0    = tolower(neutralsDB()$TYPE[[iReac]])
   note    = neutralsDB()$COMMENTS[[iReac]]
 
   legText = paste0(tag, '\n', 'Rate law: ', typ0)
@@ -115,7 +115,7 @@ output$plotRate = renderPlot({
              collapse = ' / '),
       '\n'
     ),
-    assocMD  = paste0(
+    assocmd  = paste0(
       legText,
       '\n',
       'Parameters Fc : ', params0[16],'\n',
@@ -129,7 +129,7 @@ output$plotRate = renderPlot({
       paste0(params0[11:15], collapse = ' / '),
       '\n'
     ),
-    assocVV  = paste0(
+    assocvv  = paste0(
       legText,
       '\n',
       'Parameters Fc : ', params0[16],'\n',
@@ -182,13 +182,13 @@ output$plotRate = renderPlot({
     scheme  = gsub(" ", "", scheme)
     params = scheme[8:23]
     pars   = as.numeric(params)
-    type   = scheme[ 24]
+    type   = tolower(scheme[24])
     
     krateT[,irun] = switch(
       type,
       kooij    = kooij(pars, tempRange = tRange),
-      assocMD  = k_assocMD(pars, tempRange = tRange, M0),
-      assocVV  = k_assocVV(pars, tempRange = tRange, M0),
+      assocmd  = k_assocMD(pars, tempRange = tRange, M0),
+      assocvv  = k_assocVV(pars, tempRange = tRange, M0),
       assoc0   = k_assoc0(pars, tempRange = tRange, M0),
       
       rep(0,length(tRange))
@@ -198,8 +198,8 @@ output$plotRate = renderPlot({
     krateM[,irun] = switch(
       type,
       kooij    = kooij(pars, tempRange = T0),
-      assocMD  = k_assocMD(pars, tempRange = T0, mRange),
-      assocVV  = k_assocVV(pars, tempRange = T0, mRange),
+      assocmd  = k_assocMD(pars, tempRange = T0, mRange),
+      assocvv  = k_assocVV(pars, tempRange = T0, mRange),
       assoc0   = k_assoc0(pars, tempRange = T0, mRange),
       rep(0,length(mRange))
     )

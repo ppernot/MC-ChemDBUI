@@ -479,6 +479,12 @@ observeEvent(
             }
           }
         }
+        id = shiny::showNotification(
+          h4('XS & BR samples written to ChemDBPublic'),
+          closeButton = TRUE,
+          duration = NULL,
+          type = 'message'
+        )
       })
     
   })

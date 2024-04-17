@@ -66,7 +66,7 @@ neutralsRateParKwdList = c('A1','B1','C1','F1','G1',
                            'A2','B2','C2','F2','G2',
                            'A3','B3','C3','F3','G3',
                            'FC') 
-neutralsReacTypes  = c('kooij','assocMD','assocVV','assoc0')
+neutralsReacTypes  = c('kooij','assocmd','assocvv','assoc0')
 source('R/rateFormulas.R')
 
 ionsRateParKwdList = c('ALPHA','BETA','GAMMA') 
@@ -74,8 +74,8 @@ ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
 source('R/ionsFunctions.R')
 
 photoKwdList = c('CHANNEL','XS_SOURCE','XS_F','BR_SOURCE')
-photoXSSources = c('Leiden','SWRI','Hebrard','Vulcan')
-photoBRSources = c('SWRI','Vulcan','Plessis')
+photoXSSources = c('leiden','swri','hebrard','vulcan')
+photoBRSources = c('swri','vulcan','plessis')
 photoXSResolutions = c(1,0.1) # nm
 photoDefaultuF = 1.2
 photoRuBRN  = 0.20 # relative uncertainty for Neutral branching ratios

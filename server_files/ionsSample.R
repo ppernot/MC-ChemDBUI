@@ -496,7 +496,7 @@ observeEvent(
             reacType = 'kooij' # default
             if('E' %in% reactants) reacType ='dr'
           } else {  
-            reacType = X[topLeft[1],topLeft[2]+1]
+            reacType = tolower(X[topLeft[1],topLeft[2]+1])
             if(! reacType %in% ionsReacTypes) 
               id = shiny::showNotification(
                 h4(paste0('Improper rate type:',reacType)),
@@ -517,7 +517,8 @@ observeEvent(
           refBib = rep(NA, length(bibKwd))
           names(refBib) = bibKwd
           for (kwd in bibKwd)
-            refBib[kwd] = paste0('"',paste0(getParams(X,kwd),collapse = ';'),'"')
+            refBib[kwd] = paste0('"',paste0(getParams(X,kwd),
+                                            collapse = ';'),'"')
           
           comments = getParams(X,'RQ')
           if(!is.na(comments)) 
@@ -628,7 +629,7 @@ observeEvent(
     )
 
     id = shiny::showNotification(
-      h4('Samples written to ChemDBPublic'),
+      h4('Ions samples written to ChemDBPublic'),
       closeButton = TRUE,
       duration = NULL,
       type = 'message'

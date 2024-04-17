@@ -436,7 +436,7 @@ output$plotIonsParsSample = renderPlot({
   req(ionsRateMask())
   
   mask = isolate(ionsRateMask())
-  reacType  = mask$TYPE
+  reacType  = tolower(mask$TYPE)
   reactants = mask$REACTANTS
   
   ionsSimulSamples = ionsSimulate()

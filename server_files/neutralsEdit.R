@@ -163,7 +163,7 @@ output$neutralsRateMask = shiny::renderUI({
   req(neutralsRateMask())
   
   mask = neutralsRateMask()
-  type = mask[['TYPE']]
+  type = tolower(mask[['TYPE']])
   
   list(
     br(),
@@ -198,7 +198,7 @@ output$neutralsRateMask = shiny::renderUI({
     fluidRow(
       column(
         1,
-        strong(ifelse(type == 'assocVV','kInf','k0'))
+        strong(ifelse(type == 'assocvv','kInf','k0'))
       ),
       column(
         2,
@@ -224,7 +224,7 @@ output$neutralsRateMask = shiny::renderUI({
     fluidRow(
       column(
         1,
-        strong(ifelse(type == 'assocVV','k0','kInf'))
+        strong(ifelse(type == 'assocvv','k0','kInf'))
       ),
       column(
         2,
@@ -397,16 +397,11 @@ oneSampleNeutralsPars = function(i, pars, type) {
   p = pars = as.numeric(pars)
   rmax = ifelse(type == 'kooij', 1, 3)
   for (r in 1:rmax) {
-    # rnd = ifelse(i==0, 0, rnorm(1))
-    rnd = ifelse(i==0, 0, truncnorm::rtruncnorm(1,-3,3,0,1)) # Avoid outliers
+    rnd = ifelse(i==0, 0, truncnorm::rtruncnorm(1,-3,3,0,1)) 
     i0 = (r-1)*5
-    # p[i0+1] = pars[i0+1]
-    # p[i0+2] = pars[i0+2]
-    # p[i0+3] = pars[i0+3]
     p[i0+4] = topow(pars[i0+4], rnd)
     p[i0+5] = pars[i0+5] * rnd
   }
-  # p[16] = pars[16]
   return(p)
 }
 sampleNeutralsPars = function(nMC, pars, type) {
@@ -427,7 +422,7 @@ neutralsParsSampling = reactive({
     for (kwd in neutralsRateParKwdList)
       pars[kwd] = as.numeric(input[[paste0('neutralsReac',kwd)]])
 
-    type = input$neutralsReacTYPE
+    type = tolower(input$neutralsReacTYPE)
 
     sampleRateParams = sampleNeutralsPars(nMC, pars, type)
     colnames(sampleRateParams) = neutralsRateParKwdList
@@ -449,7 +444,7 @@ output$plotNeutralsRate = renderPlot({
   M0  = 10^as.numeric(input$M0Plot)
   mRange = 10^seq(input$densRangePlot[1],input$densRangePlot[2],0.5)
 
-  type = input$neutralsReacTYPE
+  type = tolower(input$neutralsReacTYPE)
   
   krateT = matrix(NA, ncol = nrow(sample),nrow= length(tRange))
   krateM = matrix(NA, ncol = nrow(sample),nrow= length(mRange))
@@ -460,8 +455,8 @@ output$plotNeutralsRate = renderPlot({
     krateT[,i] = switch(
       type,
       kooij    = kooij(pars, tempRange = tRange),
-      assocMD  = k_assocMD(pars, tempRange = tRange, M0),
-      assocVV  = k_assocVV(pars, tempRange = tRange, M0),
+      assocmd  = k_assocMD(pars, tempRange = tRange, M0),
+      assocvv  = k_assocVV(pars, tempRange = tRange, M0),
       assoc0   = k_assoc0(pars, tempRange = tRange, M0),
       rep(0,length(tRange))
     )
@@ -469,8 +464,8 @@ output$plotNeutralsRate = renderPlot({
     krateM[,i] = switch(
       type,
       kooij    = kooij(pars, tempRange = T0),
-      assocMD  = k_assocMD(pars, tempRange = T0, mRange),
-      assocVV  = k_assocVV(pars, tempRange = T0, mRange),
+      assocmd  = k_assocMD(pars, tempRange = T0, mRange),
+      assocvv  = k_assocVV(pars, tempRange = T0, mRange),
       assoc0   = k_assoc0(pars, tempRange = T0, mRange),
       rep(0,length(mRange))
     )
