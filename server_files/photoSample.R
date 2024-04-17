@@ -280,7 +280,7 @@ observeEvent(
                 qy0[ ,i] = interpBR(wl0, S[, i+1], reso = reso)$br
               
               wavlBR = wl
-              files = paste0(sp,'_branch.csv')
+              files = paste0(sp,'/',sp,'_branch.csv')
               
             } else if (tolower(type) == 'plessis') {
               
@@ -351,14 +351,14 @@ observeEvent(
               qy1[sel,] = qy0
               # print(sel)
               if(!sel[1]) {
-                print('Extrap. left')
+                # print('Extrap. left')
                 # Extrapolate towards short wavl
                 i0 = which(sel)[1]
                 for(i in 1:(i0-1))
                   qy1[i,] = qy0[1,]
               }
               if(!sel[length(sel)]) {
-                print('Extrap. right')
+                # print('Extrap. right')
                 # Extrapolate towards long wavl
                 i0 = length(sel) - which(rev(sel))[1] + 1
                 for(i in (i0+1):nrow(qy1))
