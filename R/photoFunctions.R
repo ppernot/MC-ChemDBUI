@@ -94,7 +94,7 @@ getXShdf5 = function (
   return(xs)
 }
 downSample = function(wl,xs,reso = 1) {
-  
+  # Interpolate cross-section vectors
   alert = NULL
   
   # Define new grid
@@ -150,6 +150,15 @@ downSample = function(wl,xs,reso = 1) {
   wl1 = wl1[1:(length(wl1) - 1)]
 
   return(list(wl = wl1, xs = p1, alert = alert))
+}
+interpBR = function(wl,br,reso = 1) {
+  # Interpolate sparse BR vectors on regulat grid
+  alert = NULL
+  # Define new grid
+  lims = round(range(wl))
+  wl1  = seq(lims[1], lims[2], by = reso)
+  br1  = approx(x = wl, y = br, xout = wl1, rule = 2)$y
+  return(list(wl = wl1, br = br1, alert = alert))
 }
 # nds = function(ns,dist) {
 #   command=paste("echo ",ns," '",dist,"' | ./Bin/Rnested.x")

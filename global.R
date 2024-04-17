@@ -74,8 +74,8 @@ ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
 source('R/ionsFunctions.R')
 
 photoKwdList = c('CHANNEL','XS_SOURCE','XS_F','BR_SOURCE')
-photoXSSources = c('Leiden','SWRI','Hebrard')
-photoBRSources = c('SWRI','Plessis')
+photoXSSources = c('Leiden','SWRI','Hebrard','Vulcan')
+photoBRSources = c('SWRI','Vulcan','Plessis')
 photoXSResolutions = c(1,0.1) # nm
 photoDefaultuF = 1.2
 photoRuBRN  = 0.20 # relative uncertainty for Neutral branching ratios

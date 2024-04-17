@@ -131,7 +131,7 @@ shiny::observe({
     )
     return(NULL)
   }
-  
+
   # Filter out comment lines
   sel = substr(data$R1,1,1) != '#'
   data = data[sel,]

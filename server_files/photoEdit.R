@@ -117,7 +117,7 @@ shiny::observe({
   chans  = which(photoDB()$REACTANTS == tag)
   nBR    = length(chans)
   source = photoDB()[['BR_SOURCE']][iReac] # Assumed identical for all channels
-  
+
   photoBRMask(
     list(
       nBR      = nBR,
@@ -129,9 +129,7 @@ shiny::observe({
 })
 
 output$photoXSMaskUI = shiny::renderUI({
-  req(photoXSMask())
-  
-  mask = photoXSMask()
+  req(mask <- photoXSMask())
   
   uncF = mask[['XS_F']]
   if(is.null(uncF) | is.na(uncF) | uncF == "")
@@ -306,40 +304,50 @@ observeEvent(
 
 
 # Sampling ####
+shiny::observeEvent(
+  input$photoXSSource,
+  {
+    req(mask <- photoXSMask())
+    mask[['XS_SOURCE']] = input$photoXSSource
+    photoXSMask(mask)
+  }
+)
+
 ## XS ####
 photoXSSimulate = shiny::reactive({
   req(photoXSMask())
 
   nMC  = as.numeric(input$photoSimulateSize)
   reso = as.numeric(input$photoXSReso)
-  type = input$photoXSSource
-  req(type)
   
+  type = photoXSMask()[['XS_SOURCE']] 
   sp   = photoXSMask()[['REACTANTS']][1]
   
   # Get data
-  source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
+  source = file.path(photoSource,photoEditOrigVersion(),
+                     'Data', type)
   
-  if(type == 'Leiden') {
+  if(tolower(type) == 'leiden') {
     xsl  = getXShdf5( sp, source_dir = source)
     if(is.null(xsl)) {
       id = shiny::showNotification(
-        strong(paste0('No data for:', sp,' in ',type)),
+        strong(paste0('No XS data for ', sp,' in ',type)),
         closeButton = TRUE,
         duration = NULL,
         type = 'error'
       )
       return(NULL)
+      req(FALSE, cancelOutput = TRUE)
     }
     wl   = xsl$wavelength
     xs   = xsl$photoabsorption
     uF   = xsl$uncF
     
-  } else if (type == 'SWRI') {
+  } else if (tolower(type) == 'swri') {
     file = file.path(source,paste0(sp, '.dat'))
     if (!file.exists(file)) {
       id = shiny::showNotification(
-        strong(paste0('No data for:', sp,' in ',type)),
+        strong(paste0('No XS data for ', sp,' in ',type)),
         closeButton = TRUE,
         duration = NULL,
         type = 'error'
@@ -356,12 +364,35 @@ photoXSSimulate = shiny::reactive({
       uF = as.numeric(input$photoXS_F)
     else
       uF = photoDefaultuF
+ 
+  } else if (tolower(type) == 'vulcan') {
+    file = file.path(source,sp,paste0(sp,'_cross.csv'))
+    if (!file.exists(file)) {
+      id = shiny::showNotification(
+        strong(paste0('No XS data for:', sp,' in ',type)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+      return(NULL)
+    }
+    S = read.table(file = file,
+                   sep = ",",
+                   header = FALSE,
+                   check.names = FALSE)
     
-  } else if (type == 'Hebrard') {
+    wl = as.numeric(S[, 1]) 
+    xs = as.numeric(S[, 2])
+    if(!is.null(input$photoXS_F))
+      uF = as.numeric(input$photoXS_F)
+    else
+      uF = photoDefaultuF
+    
+  } else if (tolower(type) == 'hebrard') {
     file = file.path(source,paste0('se', sp, '.dat'))
     if (!file.exists(file)) {
       id = shiny::showNotification(
-        strong(paste0('No data for:', sp,' in ',type)),
+        strong(paste0('No XS data for ', sp,' in ',type)),
         closeButton = TRUE,
         duration = NULL,
         type = 'error'
@@ -397,7 +428,6 @@ photoXSSimulate = shiny::reactive({
   sampleXS[1, ] = xs
   for (iMC in 1:nMC) {
     rnd =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
-    # rnd = rlnorm(1, meanlog = 0, sdlog = log(uF))
     sampleXS[1 + iMC, ] = xs * exp( log(uF) * rnd )
   }
   
@@ -429,7 +459,7 @@ photoBRSimulate = shiny::reactive({
   # Get data
   source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
   
-  if (type == 'SWRI') {
+  if (tolower(type) == 'swri') {
     file = file.path(source,paste0(sp, '.dat'))
     if (!file.exists(file)) {
       id = shiny::showNotification(
@@ -480,7 +510,33 @@ photoBRSimulate = shiny::reactive({
     }
     wl = wl1
     
-  } else if (type == 'Plessis') {
+  } else if (tolower(type) == 'vulcan') {
+    file = file.path(source,sp,paste0(sp,'_branch.csv'))
+    if (!file.exists(file)) {
+      id = shiny::showNotification(
+        strong(paste0('No BR data for:', sp,' in ',type)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+      return(NULL)
+    }
+    S = read.table(file = file,
+                   sep = ',',
+                   header = FALSE,
+                   skip = 0,
+                   check.names = FALSE)
+    
+    wl0 = S[, 1] 
+    
+    # Branching ratios
+    np  = ncol(S) - 1
+    wl  = interpBR(wl0, S[, 2], reso = reso)$wl
+    qy0 = matrix(0, nrow = length(wl), ncol = np)
+    for (i in 1:np)
+      qy0[ ,i] = interpBR(wl0, S[, i+1], reso = reso)$br
+    
+  } else if (tolower(type) == 'plessis') {
     
     pattern = paste0('qy', sp)
     files = list.files(source, pattern)
@@ -657,12 +713,11 @@ photoBRSimulate = shiny::reactive({
 output$plotPhotoXSSample = shiny::renderPlot({
   req(photoXSMask())
   req(input$photoXSSource)
-  
-  photoSimulSamples = photoXSSimulate()
-  
-  sampleXS    = photoSimulSamples$sampleXS
-  sampleWl    = photoSimulSamples$sampleWl
-  sampleTitle = photoSimulSamples$sampleTitle
+  req(photoXSSimulate())
+
+  sampleXS    = photoXSSimulate()$sampleXS
+  sampleWl    = photoXSSimulate()$sampleWl
+  sampleTitle = photoXSSimulate()$sampleTitle
   
   log = ''
   ylim = c(0, 1.1*max(sampleXS[1,]))
@@ -702,17 +757,16 @@ height = plotHeight, width = plotWidth)
 output$plotPhotoBRSample = shiny::renderPlot({
   req(photoDB())
   req(photoBRMask())
-  
-  nBR         = photoBRMask()$nBR
+  nBR = photoBRMask()$nBR
   req(nBR > 1)
   channels    = photoBRMask()$channels
-  
-  photoSimulSamples = photoBRSimulate()
-  nMC         = photoSimulSamples$sampleSize
-  sampleBR0   = photoSimulSamples$sampleBR0
-  sampleBR    = photoSimulSamples$sampleBR
-  sampleWl    = photoSimulSamples$sampleWl
-  sampleTitle = photoSimulSamples$sampleTitle
+
+  req(photoBRSimulate())
+  nMC         = photoBRSimulate()$sampleSize
+  sampleBR0   = photoBRSimulate()$sampleBR0
+  sampleBR    = photoBRSimulate()$sampleBR
+  sampleWl    = photoBRSimulate()$sampleWl
+  sampleTitle = photoBRSimulate()$sampleTitle
 
   par(mar = c(3, 3, 2, 1),
       mgp = gPars$mgp,
@@ -723,7 +777,8 @@ output$plotPhotoBRSample = shiny::renderPlot({
   
   cols    = rep(gPars$cols,2)
   cols_tr = rep(gPars$cols_tr,2)
-  lty     = c(rep(1,length(gPars$cols)),rep(2,length(gPars$cols)))
+  lty     = c(rep(1,length(gPars$cols)),
+              rep(2,length(gPars$cols)))
   
   ylab = 'Branching ratios'
   ylim = c(-0.01, 1.4)
@@ -841,8 +896,6 @@ output$plotPhotoBRSample = shiny::renderPlot({
   
 },
 height = plotHeight, width = plotWidth)
-
-
 # Biblio ####
 output$photoBiblio = shiny::renderUI({
   req(photoXSMask())

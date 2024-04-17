@@ -88,7 +88,7 @@ observeEvent(
             # Get data
             source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
             
-            if(type == 'Leiden') {
+            if(tolower(type) == 'leiden') {
               xsl  = getXShdf5( sp, source_dir = source)
               if(is.null(xsl)) {
                 id = shiny::showNotification(
@@ -105,7 +105,7 @@ observeEvent(
               file = file.path(source, 'cross_sections', 
                                sp, paste0( sp, '.hdf5') )
               
-            } else if (type == 'SWRI') {
+            } else if (tolower(type) == 'swri') {
               file = file.path(source,paste0(sp, '.dat'))
               if (!file.exists(file)) {
                 id = shiny::showNotification(
@@ -123,7 +123,26 @@ observeEvent(
               wl0 = S[, 1] / 10 # Convert A to nm
               xs0 = S[, 2]
               
-            } else if (type == 'Hebrard') {
+            } else if (tolower(type) == 'vulcan') {
+              file = file.path(source,sp,paste0(sp,'_cross.csv'))
+              if (!file.exists(file)) {
+                id = shiny::showNotification(
+                  strong(paste0('No data for:', sp,' in ',type)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
+              S = read.table(file = file,
+                             sep = ",",
+                             header = FALSE,
+                             check.names = FALSE)
+              
+              wl0 = as.numeric(S[, 1]) 
+              xs0 = as.numeric(S[, 2])
+              
+            } else if (tolower(type) == 'hebrard') {
               file = file.path(source,paste0('se', sp, '.dat'))
               if (!file.exists(file)) {
                 id = shiny::showNotification(
@@ -150,7 +169,7 @@ observeEvent(
             sink(file = photoSourceFile, append = TRUE)
             cat(sp,'\n','  XS :',file,'; Unc. F = ',uF,'\n')
             sink()
-            
+
             # Interpolate on regular grid
             xsl  = downSample(wl0, xs0, reso = reso)
             if(!is.null(xsl$alert)) {
@@ -183,7 +202,7 @@ observeEvent(
             # Get data
             source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
             
-            if (type == 'SWRI') {
+            if (tolower(type) == 'swri') {
               file = file.path(source,paste0(sp, '.dat'))
               if (!file.exists(file)) {
                 id = shiny::showNotification(
@@ -234,7 +253,36 @@ observeEvent(
               wavlBR = wl1
               files = paste0(sp, '.dat')
               
-            } else if (type == 'Plessis') {
+            } else if (tolower(type) == 'vulcan') {
+              file = file.path(source,sp,paste0(sp,'_branch.csv'))
+              if (!file.exists(file)) {
+                id = shiny::showNotification(
+                  strong(paste0('No BR data for:', sp,' in ',type)),
+                  closeButton = TRUE,
+                  duration = NULL,
+                  type = 'error'
+                )
+                return(NULL)
+              }
+              S = read.table(file = file,
+                             sep = ',',
+                             header = FALSE,
+                             skip = 0,
+                             check.names = FALSE)
+              
+              wl0 = S[, 1] 
+              
+              # Branching ratios
+              np  = ncol(S) - 1
+              wl  = interpBR(wl0, S[, 2], reso = reso)$wl
+              qy0 = matrix(0, nrow = length(wl), ncol = np)
+              for (i in 1:np)
+                qy0[ ,i] = interpBR(wl0, S[, i+1], reso = reso)$br
+              
+              wavlBR = wl
+              files = paste0(sp,'_branch.csv')
+              
+            } else if (tolower(type) == 'plessis') {
               
               pattern = paste0('qy', sp)
               files = list.files(source, pattern)
@@ -291,9 +339,9 @@ observeEvent(
             lims   = range(wavlXS)
             selBR  = wavlBR >= lims[1] & wavlBR <= lims[2]
             wavlBR = wavlBR[selBR]
-            qy0    = qy0[selBR,]
+            qy0    = qy0[selBR,,drop = FALSE]
             # print(str(wavlBR))
-            # print(rowSums(qy))
+            # print(rowSums(qy0))
             
             # Expand BR range to XS if necessary
             lims = range(wavlBR)
@@ -303,14 +351,14 @@ observeEvent(
               qy1[sel,] = qy0
               # print(sel)
               if(!sel[1]) {
-                # print('Extrap. left')
+                print('Extrap. left')
                 # Extrapolate towards short wavl
                 i0 = which(sel)[1]
                 for(i in 1:(i0-1))
                   qy1[i,] = qy0[1,]
               }
               if(!sel[length(sel)]) {
-                # print('Extrap. right')
+                print('Extrap. right')
                 # Extrapolate towards long wavl
                 i0 = length(sel) - which(rev(sel))[1] + 1
                 for(i in (i0+1):nrow(qy1))
@@ -320,7 +368,7 @@ observeEvent(
               qy0 = qy1
               wavlBR = wavlXS
             }
-            # print(rowSums(qy))
+            # print(rowSums(qy0))
             
             
             # Sample XS ####
