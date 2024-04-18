@@ -320,7 +320,7 @@ photoXSSimulate = shiny::reactive({
   nMC  = as.numeric(input$photoSimulateSize)
   reso = as.numeric(input$photoXSReso)
   
-  type = photoXSMask()[['XS_SOURCE']] 
+  type = tolower(photoXSMask()[['XS_SOURCE']]) 
   sp   = photoXSMask()[['REACTANTS']][1]
   
   # Get data
@@ -427,7 +427,7 @@ photoXSSimulate = shiny::reactive({
   sampleXS = matrix(NA, nrow = nMC + 1, ncol = length(wl))
   sampleXS[1, ] = xs
   for (iMC in 1:nMC) {
-    rnd =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
+    rnd = truncnorm::rtruncnorm(1,-truncFactor,truncFactor,0,1)
     sampleXS[1 + iMC, ] = xs * exp( log(uF) * rnd )
   }
   
@@ -448,7 +448,7 @@ photoBRSimulate = shiny::reactive({
   
   nMC  = as.numeric(input$photoSimulateSize)
   reso = as.numeric(input$photoXSReso)
-  type = photoBRMask()$source
+  type = tolower(photoBRMask()$source)
   req(type)
   
   sort = FALSE # input$photoBRSort

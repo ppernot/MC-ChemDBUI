@@ -1,16 +1,16 @@
-kooij = function(p, tempRange, T0=300, T1=300) {
+k_kooij = function(p, tempRange, T0=300, T1=300) {
   p[1] * (tempRange / T0)^p[2] * exp(-p[3]/tempRange) *
     p[4] * exp(p[5] * abs(1/tempRange -1/ T1))
 }
 k_assoc0 = function(p, tempRange, M, T0 = 300) {
-  k0M  = kooij(p[1:5], tempRange, T0) * M
+  k0M  = k_kooij(p[1:5], tempRange, T0) * M
   return(k0M)
 }
-k_assocMD = function(p, tempRange, M, T0 = 300) {
+k_assocmd = function(p, tempRange, M, T0 = 300) {
   # kAss from Dobrijevic2016, corrected...
-  k0M  = kooij(p[1:5],   tempRange, T0) * M
-  kInf = kooij(p[6:10],  tempRange, T0)
-  kR   = kooij(p[11:15], tempRange, T0)
+  k0M  = k_kooij(p[1:5],   tempRange, T0) * M
+  kInf = k_kooij(p[6:10],  tempRange, T0)
+  kR   = k_kooij(p[11:15], tempRange, T0)
   Fc   = p[16]
   
   N   = 0.75 - 1.27 * log10(Fc)
@@ -21,12 +21,12 @@ k_assocMD = function(p, tempRange, M, T0 = 300) {
   
   return(k)
 }
-k_assocVV = function(p, tempRange, M, T0 = 1) {
+k_assocvv = function(p, tempRange, M, T0 = 1) {
   # kAss from Vuitton2019
   # Note: kInf and k0 in reverse order from k_assocMD and T0 = 1
-  kInf = kooij(p[1:5],   tempRange, T0)
-  k0M  = kooij(p[6:10],  tempRange, T0) * M
-  kR   = kooij(p[11:15], tempRange, T0)
+  kInf = k_kooij(p[1:5],   tempRange, T0)
+  k0M  = k_kooij(p[6:10],  tempRange, T0) * M
+  kR   = k_kooij(p[11:15], tempRange, T0)
   Fc   = p[16]
   
   if (max(kR) > min(0.99 * kInf) ) {
@@ -43,11 +43,21 @@ k_assocVV = function(p, tempRange, M, T0 = 1) {
   
   return(k)
 }
-# # Troe formula
-# Pr   = k0 * M / kInf
-# cExp = -0.4 - 0.67 * log10(fc)
-# NExp = 0.75 - 1.27 * log10(fc)
-# dExp = 0.14
-# fExp = 1 + ((log10(Pr) + cExp) / (NExp - dExp * (log10(Pr) + cExp)))^2
-# broadF = fc ^ (1 / fExp)
-# k = kInf * (Pr / (1 + Pr)) * broadF
+
+k_assoctroe = function(p, tempRange, M, T0 = 300) {
+  fTroe = function(k0, kInf, P) {
+    # Simplified Troe formula
+    Fc = 0.64
+    lFc= log10(Fc)
+    Pr = k0 * P / kInf
+    cE = -0.4 -0.67*lFc
+    nE = 0.75 -1.27*lFc
+    dE = 0.14
+    c1 = log10(Pr) + cE
+    fE = 1.0 + (c1/(nE-dE*c1))**2
+    return( kInf * (Pr/(1.0+Pr)) * Fc**(1.0/fE) )  
+  }
+  k0   = k_kooij(p[1:5],  tempRange, T0)
+  kInf = k_kooij(p[6:10], tempRange, T0)
+  return( fTroe(k0, kInf, M) )
+}

@@ -26,7 +26,7 @@ plotHeight = 600
 plotWidth  = 550
 
 # Max. nb. of options in drop-down menus 
-# (upper limit to nb. of reactions)
+# (upper limit to nb. of reactions in db)
 maxOptions = 10000 
 
 # Graphical parameters ####
@@ -38,6 +38,10 @@ col2tr =function(x,alpha=80){
 # Fine tune graph. params
 gPars$cex = 1.5
 gPars$mar[3] = 2
+
+# Truncate standard normal random draws to +/- truncFactor
+# to avoid outlying samples
+truncFactor = 3
 
 # Data paths ####
 neutralsSource = file.path('..','MC-ChemDB','Neutrals')
@@ -62,17 +66,28 @@ stoechFilters = read.csv(file.path('data','stoechFilters.csv'),
                          header = FALSE, 
                          allowEscapes = TRUE)
 
+# Neutrals ####
 neutralsRateParKwdList = c('A1','B1','C1','F1','G1',
                            'A2','B2','C2','F2','G2',
                            'A3','B3','C3','F3','G3',
-                           'FC') 
-neutralsReacTypes  = c('kooij','assocmd','assocvv','assoc0')
-source('R/rateFormulas.R')
+                           'FC')
 
+# For neutrals, each reaction type (X) should have a corresponding k_X() 
+# function in rateFormulas.R
+neutralsReacTypes  = c('kooij','assocmd','assocvv','assoc0','assoctroe')
+source('R/rateFormulas.R')
+for (type in neutralsReacTypes)
+  if(!exists(paste0('k_',type)))
+    stop(paste0('Missing function: ',paste0('k_',type)))
+
+# Ions ####
+# For ions, the rate functions are hard coded in scripts
+# TBD: create functions in rateFormulas.R
 ionsRateParKwdList = c('ALPHA','BETA','GAMMA') 
 ionsReacTypes = c('dr','kooij','ionpol1','ionpol2')
 source('R/ionsFunctions.R')
 
+# Photo-processes ####
 photoKwdList = c('CHANNEL','XS_SOURCE','XS_F','BR_SOURCE')
 photoXSSources = c('leiden','swri','hebrard','vulcan')
 photoBRSources = c('swri','vulcan','plessis')

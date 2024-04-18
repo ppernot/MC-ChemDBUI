@@ -382,7 +382,7 @@ observeEvent(
                   # Nominal run
                   Frnd = 1
                 } else {
-                  rnd  =  truncnorm::rtruncnorm(1,-3,3,0,1) # Avoid outliers
+                  rnd  =  truncnorm::rtruncnorm(1,-truncFactor,truncFactor,0,1)
                   Frnd = exp( log(uF) * rnd )
                 }
                 write.table(

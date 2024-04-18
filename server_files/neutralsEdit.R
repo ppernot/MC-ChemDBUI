@@ -397,7 +397,10 @@ oneSampleNeutralsPars = function(i, pars, type) {
   p = pars = as.numeric(pars)
   rmax = ifelse(type == 'kooij', 1, 3)
   for (r in 1:rmax) {
-    rnd = ifelse(i==0, 0, truncnorm::rtruncnorm(1,-3,3,0,1)) 
+    rnd = ifelse(
+      i==0, 
+      0, 
+      truncnorm::rtruncnorm(1,-truncFactor,truncFactor,0,1)) 
     i0 = (r-1)*5
     p[i0+4] = topow(pars[i0+4], rnd)
     p[i0+5] = pars[i0+5] * rnd
@@ -451,22 +454,24 @@ output$plotNeutralsRate = renderPlot({
   
   for (i in 1:nrow(sample)) {
     pars = sample[i,]
-    #fixed M, T varies
+    # fixed M, T varies
     krateT[,i] = switch(
       type,
-      kooij    = kooij(pars, tempRange = tRange),
-      assocmd  = k_assocMD(pars, tempRange = tRange, M0),
-      assocvv  = k_assocVV(pars, tempRange = tRange, M0),
-      assoc0   = k_assoc0(pars, tempRange = tRange, M0),
+      kooij     = k_kooij(pars, tempRange = tRange),
+      assocmd   = k_assocmd(pars, tempRange = tRange, M0),
+      assocvv   = k_assocvv(pars, tempRange = tRange, M0),
+      assoc0    = k_assoc0(pars, tempRange = tRange, M0),
+      assoctroe = k_assoctroe(pars, tempRange = tRange, M0),
       rep(0,length(tRange))
     )
     # fixed T, M varies
     krateM[,i] = switch(
       type,
-      kooij    = kooij(pars, tempRange = T0),
-      assocmd  = k_assocMD(pars, tempRange = T0, mRange),
-      assocvv  = k_assocVV(pars, tempRange = T0, mRange),
-      assoc0   = k_assoc0(pars, tempRange = T0, mRange),
+      kooij     = k_kooij(pars, tempRange = T0),
+      assocmd   = k_assocmd(pars, tempRange = T0, mRange),
+      assocvv   = k_assocvv(pars, tempRange = T0, mRange),
+      assoc0    = k_assoc0(pars, tempRange = T0, mRange),
+      assoctroe = k_assoctroe(pars, tempRange = T0, mRange),
       rep(0,length(mRange))
     )
   }

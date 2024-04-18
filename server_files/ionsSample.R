@@ -69,7 +69,8 @@ observeEvent(
           
           incProgress(1/length(reacs), detail = reac)
           
-          if(!needSample) next()
+          if(!needSample) 
+            next()
           
           sampled = c(sampled, reac)
           

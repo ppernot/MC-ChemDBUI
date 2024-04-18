@@ -374,7 +374,7 @@ ionsSimulate = reactive({
   # Branching ratios
   # stringDist = ionsBRMask()$StringBR
   req(input$ionsStringDist)
-  stringDist = input$ionsStringDist # Enable user mod
+  stringDist = input$ionsStringDist # Enable user choice
   stringDist = gsub('\n','',stringDist)
   stringDist = gsub('\t','',stringDist)
   tags = getTagsFromTaggedDist(stringDist)

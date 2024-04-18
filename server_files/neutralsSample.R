@@ -186,21 +186,22 @@ output$plotRate = renderPlot({
     
     krateT[,irun] = switch(
       type,
-      kooij    = kooij(pars, tempRange = tRange),
-      assocmd  = k_assocMD(pars, tempRange = tRange, M0),
-      assocvv  = k_assocVV(pars, tempRange = tRange, M0),
-      assoc0   = k_assoc0(pars, tempRange = tRange, M0),
-      
+      kooij     = k_kooij(pars, tempRange = tRange),
+      assocmd   = k_assocmd(pars, tempRange = tRange, M0),
+      assocvv   = k_assocvv(pars, tempRange = tRange, M0),
+      assoc0    = k_assoc0(pars, tempRange = tRange, M0),
+      assoctroe = k_assoctroe(pars, tempRange = tRange, M0),
       rep(0,length(tRange))
     )
     
     # fixed T, M varies
     krateM[,irun] = switch(
       type,
-      kooij    = kooij(pars, tempRange = T0),
-      assocmd  = k_assocMD(pars, tempRange = T0, mRange),
-      assocvv  = k_assocVV(pars, tempRange = T0, mRange),
-      assoc0   = k_assoc0(pars, tempRange = T0, mRange),
+      kooij     = k_kooij(pars, tempRange = T0),
+      assocmd   = k_assocmd(pars, tempRange = T0, mRange),
+      assocvv   = k_assocvv(pars, tempRange = T0, mRange),
+      assoc0    = k_assoc0(pars, tempRange = T0, mRange),
+      assoctroe = k_assoctroe(pars, tempRange = T0, mRange),
       rep(0,length(mRange))
     )
       
