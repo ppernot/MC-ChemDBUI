@@ -58,9 +58,9 @@ shiny::observe({
   close(con)
   
   # Add a unique id to each line for editing
-  data[1] = paste0(data[1],';ID')
+  data[1] = paste0(data[1],',"ID" ')
   for (i in 2:length(data))
-    data[i] = paste0(data[i],';',i-1)
+    data[i] = paste0(data[i],',',i-1)
   
   photoEditDBText(data)
   
@@ -112,16 +112,21 @@ shiny::observe({
   req(input$acePhotoDB)
   
   # Get all data in (do not use comment.char here because it mixes up with id.)
+  # data = try(
+  #   read.table(
+  #     header = TRUE, 
+  #     text = input$acePhotoDB, 
+  #     sep = ';',
+  #     quote = "\"",
+  #     comment.char = ""),
+  #   silent = TRUE
+  # )
   data = try(
-    read.table(
-      header = TRUE, 
-      text = input$acePhotoDB, 
-      sep = ';',
-      quote = "\"",
-      comment.char = ""),
+    data.table::fread(
+      text = input$acePhotoDB 
+    ),
     silent = TRUE
   )
-  
   if(class(data)=="try-error") {
     id = shiny::showNotification(
       strong(paste0('Cannot parse DB: incorrect format! Msg:',data)),
@@ -248,12 +253,13 @@ shiny::observeEvent(
     # Save DB and RN files to target version
     # - for DB, need to remove ID before saving
     dataEditor = photoEditDBText()
-    data = sapply(dataEditor,
-                  function(x) {
-                    # Remove last column (ID)
-                    S = unlist(strsplit(x, ';'))
-                    paste0(S[-length(S)], collapse = ';')
-                  })
+    data = sapply(
+      dataEditor,
+      function(x) {
+        # Remove last column (ID)
+        S = unlist(strsplit(x, ','))
+        paste0(S[-length(S)], collapse = ',')
+      })
     writeLines(
       data,
       con = file.path(photoCopyDir,photoEditDBFile())

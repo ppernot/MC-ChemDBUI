@@ -45,9 +45,9 @@ shiny::observe({
   close(con)
   
   # Add a unique id to each line for editing
-  data[1] = paste0(data[1],';"ID" ')
+  data[1] = paste0(data[1],',"ID" ')
   for (i in 2:length(data))
-    data[i] = paste0(data[i],';',i-1)
+    data[i] = paste0(data[i],',',i-1)
   
   ionsEditDBText(data)
   
@@ -99,16 +99,21 @@ shiny::observe({
   req(input$aceIonsDB)
   
   # Get all data in (do not use comment.char here because it mixes up with id.)
+  # data = try(
+  #   read.table(
+  #     header = TRUE, 
+  #     text = input$aceIonsDB, 
+  #     sep=';',
+  #     quote = "\"",
+  #     comment.char = ""),
+  #   silent = TRUE
+  # )
   data = try(
-    read.table(
-      header = TRUE, 
-      text = input$aceIonsDB, 
-      sep=';',
-      quote = "\"",
-      comment.char = ""),
+    data.table::fread(
+      text = input$aceIonsDB 
+    ),
     silent = TRUE
   )
-  
   if(class(data)=="try-error") {
     id = shiny::showNotification(
       strong(paste0('Cannot parse DB: incorrect format! Msg:',data)),
@@ -170,8 +175,8 @@ shiny::observeEvent(
       dataEditor, 
       function(x) {
         # Remove last column (ID)
-        S = unlist(strsplit(x, ';'))
-        paste0(S[-length(S)], collapse = ';')
+        S = unlist(strsplit(x, ','))
+        paste0(S[-length(S)], collapse = ',')
       }
     )
     writeLines(

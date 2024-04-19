@@ -291,7 +291,7 @@ output$neutralsRateMask = shiny::renderUI({
           value = mask[['FC']]
         ),
         shiny::textInput(
-          "neutralsReacREFS",
+          "neutralsReacREF",
           "References",
           value = mask[['REFS']]
         ),
@@ -347,7 +347,7 @@ observeEvent(
       products,
       paste0(trimws(input$neutralsReacTYPE)),
       ratePars,
-      paste0(gsub(';',',',input$neutralsReacREFS)),
+      paste0(input$neutralsReacREF),
       paste0(input$neutralsReacRQ),
       paste0(Sys.time()),
       id
@@ -533,14 +533,12 @@ height = plotHeight)
 # Biblio ####
 output$neutralsBiblio = shiny::renderUI({
   req(neutralsRateMask())
-
-  keys = unlist(
-    str_split(
-      gsub(';',',',input$neutralsReacREFS),
-      ',')
-  )
-  keys = sort(unique(keys))
+  req(input$neutralsReacREF)
   
+  k = input$neutralsReacREF
+  keys = unlist(str_split(k,';'))
+  keys = trimws(sort(unique(keys)))
+
   refs = '<H4>References</H4><DL>'
   if(length(keys) != 0) {
     for (key in keys)

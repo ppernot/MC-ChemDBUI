@@ -731,7 +731,7 @@ output$ionsBiblio = shiny::renderUI({
     if(k != "NA" & !is.na(k) & k!="")
       keys = c(keys,unlist(str_split(k,';')))
   }
-  keys = sort(unique(keys))
+  keys = trimws(sort(unique(keys)))
   
   refs = '<H4>References</H4><DL>'
   if(length(keys) != 0) {

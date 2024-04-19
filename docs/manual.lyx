@@ -568,8 +568,12 @@ ID
 \begin_inset Newline newline
 \end_inset
 
-Note: If you have important changes to do to the database (such as adding
- many reactions), it might be simpler to make them directly in the .csv file,
+
+\emph on
+Note
+\emph default
+: If you have important changes to do to the database (such as adding many
+ reactions), it might be simpler to make them directly in the .csv file,
  before loading it in 
 \family typewriter
 mc-chemdbui
@@ -1228,7 +1232,11 @@ ID
 \begin_inset Newline newline
 \end_inset
 
-If you have important changes to do to the database, it might be better
+
+\emph on
+Note
+\emph default
+: If you have important changes to do to the database, it might be better
  to make them directly in the .csv file before loading it in 
 \family typewriter
 mc-chemdbui
