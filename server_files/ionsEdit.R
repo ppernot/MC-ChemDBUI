@@ -129,7 +129,7 @@ shiny::observe({
   mask = list()
   reactants = getSpecies(ionsDB()$REACTANTS[iReac])
   mask[['REACTANTS']] = reactants
-  massReactants = getMassList(reactants, excludeList = dummySpecies)
+  # massReactants = getMassList(reactants, excludeList = dummySpecies)
   
   mask[['TYPE']] = ionsDB()$TYPE[iReac]
   for (kwd in ionsRateParKwdList)
@@ -149,6 +149,24 @@ shiny::observe({
       REF_BR   = mask[['REF_BR']]
     )
   )
+  
+  # Check mass balance
+  stringDist = ionsDB()$STRINGBR[iReac]
+  stringDist = gsub('\n','',stringDist)
+  stringDist = gsub('\t','',stringDist)
+  tags = getTagsFromTaggedDist(stringDist)
+  for(i in 1:length(tags)) {
+    products = trimws(strsplit(tags[i],' \\+ ')[[1]])
+    msg = checkBalance(reactants,products)
+    if(!is.null(msg))
+      id = shiny::showNotification(
+        strong(paste0('Reac ',iReac,', Channel ',i,': ',msg)),
+        closeButton = TRUE,
+        duration = NULL,
+        type = 'error'
+      )
+    req(is.null(msg))
+  }
 })
 
 output$ionsRateMask = shiny::renderUI({
@@ -285,7 +303,6 @@ observeEvent(
     
     # Sanity checks !!!!!
     # TBD...
-    # * Mass consistency
     # * Correct distributions for Pars (Delta, Logu, Logn, Unif...)
     # * Correct distributions for BRs (Diri, Diun, Dirg, Mlgn...)
     
@@ -351,7 +368,6 @@ ionsSimulate = reactive({
   
   # Sanity checks !!!!!
   # TBD...
-  # * Mass consistency
   # * Correct distributions for Pars (Delta, Logu, Logn, Unif...)
   # * Correct distributions for BRs (Diri, Diun, Dirg, Mlgn...)
   
@@ -587,14 +603,17 @@ height = plotHeight, width = 1.2*plotWidth)
 # Plot BRs ####
 ## Sample ####
 output$plotIonsBRSample = renderPlot({
-  # req(ionsSimulSamples())
+  req(ionsSimulate())
+  req(ionsRateMask())
+  
   ionsSimulSamples = ionsSimulate()
+  tags = ionsSimulSamples$tags
   
   req(!is.null(ionsSimulSamples$mytree))
   
   sampleSize       = ionsSimulSamples$sampleSize
   sampleBR         = ionsSimulSamples$sampleBR
-  tags             = ionsSimulSamples$tags
+  # tags             = ionsSimulSamples$tags
   
   meanBR    = colMeans(sampleBR)
   meanBR    = meanBR / sum(meanBR)
