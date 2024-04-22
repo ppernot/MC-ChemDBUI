@@ -107,8 +107,8 @@ shiny::observe({
   for (kwd in photoKwdList)
     mask[[kwd]] = photoDB()[[kwd]][iReac]
   
-  mask[['REFS']] = photoDB()$REFS[iReac]
-  mask[['COMMENTS']] = photoDB()$COMMENTS[iReac]
+  mask[['REFS']]      = photoDB()$REFS[iReac]
+  mask[['COMMENTS']]  = photoDB()$COMMENTS[iReac]
   mask[['TIMESTAMP']] = photoDB()$TIMESTAMP[iReac]
 
   photoXSMask(mask)
@@ -117,7 +117,18 @@ shiny::observe({
   chans  = which(photoDB()$REACTANTS == tag)
   nBR    = length(chans)
   source = photoDB()[['BR_SOURCE']][iReac] # Assumed identical for all channels
-
+  
+  # Check mass balance
+  msg = checkBalance(reactants,products)
+  if(!is.null(msg))
+    id = shiny::showNotification(
+      strong(paste0('Reac ',iReac,': ',msg)),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'error'
+    )
+  req(is.null(msg))
+  
   photoBRMask(
     list(
       nBR      = nBR,
