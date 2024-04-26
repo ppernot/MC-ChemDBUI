@@ -1,6 +1,6 @@
 BUILD :
     
-    1/ docker build -t ppernot1/mc-chemdbui:v1.2 -t ppernot1/mc-chemdbui:latest -f docker/Dockerfile .
+    1/ docker build -t ppernot1/mc-chemdbui:v1.2a -t ppernot1/mc-chemdbui:latest -f docker/Dockerfile .
 
     2/ docker login
 
