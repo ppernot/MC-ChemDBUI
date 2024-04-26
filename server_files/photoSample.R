@@ -86,7 +86,8 @@ observeEvent(
             comments = photoDB()$COMMENTS[iReac]
             
             # Get data
-            source = file.path(photoSource,photoEditOrigVersion(),'Data', type)
+            source = file.path(photoSource,photoEditOrigVersion(),
+                               'Data', type)
             
             if(tolower(type) == 'leiden') {
               xsl  = getXShdf5( sp, source_dir = source)

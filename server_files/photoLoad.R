@@ -37,6 +37,7 @@ output$selPhotoEditOrigVersion = shiny::renderUI({
 
 shiny::observe({
   photoEditOrigVersion(input$photoEditOrigVersion)
+  photoEditDBText(NULL)
 })
 
 shiny::observe({
@@ -109,6 +110,8 @@ shiny::observe({
 
 # Parse ####
 shiny::observe({
+  req(photoEditOrigVersion())
+  req(photoEditDBFile())
   req(input$acePhotoDB)
   
   # Get all data in (do not use comment.char here because it mixes up with id.)
@@ -123,11 +126,11 @@ shiny::observe({
   # )
   data = try(
     data.table::fread(
-      text = input$acePhotoDB 
+      text = input$acePhotoDB
     ),
     silent = TRUE
   )
-  if(class(data)=="try-error") {
+  if(class(data) == "try-error") {
     id = shiny::showNotification(
       strong(paste0('Cannot parse DB: incorrect format! Msg:',data)),
       closeButton = TRUE,
@@ -140,6 +143,9 @@ shiny::observe({
   # Filter out comment lines
   sel = substr(data$R1,1,1) != '#'
   data = data[sel,]
+  
+  data[['XS_SOURCE']] = tolower(data[['XS_SOURCE']])
+  data[['BR_SOURCE']] = tolower(data[['BR_SOURCE']])
   
   data[['REACTANTS']] = apply(
     data[,paste0("R",1:2)], 1, 
