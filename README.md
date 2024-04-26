@@ -4,6 +4,7 @@
 
 UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 
+<!--
 ## News
 
 * `2022/07/21` First docker version (v0.1) to handle neutral reactions with three main functions:
@@ -32,7 +33,8 @@ UI to manage [MC-ChemDB](https://github.com/ppernot/MC-ChemDB).
 * `2022/11/29` v1.0
 
     1. First full version
-    
+
+-->    
     
 ## Documentation
 
