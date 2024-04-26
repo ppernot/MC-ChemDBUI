@@ -51,6 +51,8 @@ ionsTmp        = file.path('..','MC-ChemDB','Tmp')
 ionsPublic     = file.path('..','ChemDBPublic','Ions')
 photoSource    = file.path('..','MC-ChemDB','PhotoProcs')
 photoPublic    = file.path('..','ChemDBPublic','PhotoProcs')
+beamSource     = file.path('..','MC-ChemDB','BeamSpectrumFiles')
+beamPublic     = file.path('..','ChemDBPublic')
 
 # Load data and functions ####
 source('R/massCalc.R')

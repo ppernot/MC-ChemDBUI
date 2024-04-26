@@ -6,6 +6,13 @@ observeEvent(
   {
     req(photoDB())
     
+    # Manage spectrum files
+    source = beamSource
+    target = beamPublic
+    if(!dir.exists(target))
+      dir.create(target)
+    file.copy(from = source, to = target, recursive = TRUE)
+    
     nMC = as.numeric(input$photoSampleSize) 
     
     sortBR = FALSE #input$photoBRSampleSort
